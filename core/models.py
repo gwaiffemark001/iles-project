@@ -31,3 +31,8 @@ class CustomUser(AbstractUser):
     # Method to display user name and role in admin interface
     def __str__(self):
         return f'{self.username} ({self.get_role_display()})'
+
+class InternshipPlacement(models.Model):
+    pass
+  
+  
