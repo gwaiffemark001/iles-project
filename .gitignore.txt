@@ -264,3 +264,8 @@ poetry.toml
 pyrightconfig.json
 
 # End of https://www.toptal.com/developers/gitignore/api/pytho
+__pycache__/
+*.pyc
+db.sqlite3
+venv/
+*.sqlite3
