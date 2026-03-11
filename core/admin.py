@@ -3,7 +3,7 @@ from django.contrib.auth.admin import UserAdmin
 from .models import CustomUser, InternshipPlacement, WeeklyLog, EvaluationCriteria, Evaluation
 class CustomUserAdmin(UserAdmin):
     fieldsets = UserAdmin.fieldsets + (
-        ('Role & Contact', {'fields':('role', 'phone')}),
+        ('Role & Contact', {'fields':('role', 'phone', 'department', 'staff_number', 'student_number')}),
     )
 admin.site.register(CustomUser, CustomUserAdmin)
 admin.site.register(InternshipPlacement)
