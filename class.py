@@ -41,7 +41,21 @@ class WeeklyLog:
         self.status = "submitted"
         return (f"Log {self.status}")
         
-        
+class InternshipPlacementListView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        placements = InternshipPlacement.objects.filter(student=request.user)
+        serializer = InternshipPlacementSerializer(placements, many=True)
+        return Response (serializer.data)
+    
+    def post(self, request):
+        serializer = InternshipPLacementSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serilizer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
 p = InternshipPlacement("Mugabe Gideon", "MTN-Uganda", date(2026,6,1), date(2026, 8, 30)) 
 print(p.duration())    
 

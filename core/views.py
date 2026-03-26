@@ -8,7 +8,7 @@ class WeeklyLogListView(APIView):
     permission_classes =[IsAuthenticated]   
 
     def get(self, request):
-        logs = WeeklyLog.objects.filter(placement__student==request.user)
+        logs = WeeklyLog.objects.filter(placement__student=request.user)
         serializer = WeeklyLogSerializer(logs, many=True)
         return Response(serializer.data) 
     
@@ -41,3 +41,17 @@ class WeeklyLogDetailView(APIView):
             serializer.save()
             return Response(serializer.data)
         return Response(serializer.errors, status=status.HTTP_400_NOT_FOUND)
+class InternshipPlacementListView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        placements = InternshipPlacement.objects.filter(student=request.user)
+        serializer = InternshipPlacementSerializer(placements, many=True)
+        return Response(serializer.data)
+
+    def post(self, request):
+        serializer = InternshipPlacementSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)  
