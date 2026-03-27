@@ -4,11 +4,11 @@ on:
   push:
     branches: [ main, develop ]
     paths:
-      - 'iles-frontend/**'
+      - 'iles_frontend/**'
   pull_request:
     branches: [ main ]
     paths:
-      - 'iles-frontend/**'
+      - 'iles_frontend/**'
 
 jobs:
   build:
@@ -23,16 +23,16 @@ jobs:
         with:
           node-version: '25'
           cache: 'npm'
-          cache-dependency-path: iles-frontend/package-lock.json
+          cache-dependency-path: iles_frontend/package-lock.json
 
       - name: Install dependencies
-        working-directory: ./iles-frontend
+        working-directory: ./iles_frontend
         run: npm ci   
 
       - name: Run linting (optional)
-        working-directory: ./iles-frontend
+        working-directory: ./iles_frontend
         run: npm run lint 
 
       - name: Build the app
-        working-directory: ./iles-frontend
+        working-directory: ./iles_frontend
         run: npm run build
