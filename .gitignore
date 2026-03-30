@@ -91,3 +91,4 @@ Thumbs.db
 # Temporary / swap files
 *.swp
 *.swo
+.env
