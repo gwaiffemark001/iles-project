@@ -1,5 +1,4 @@
 name: Backend CI (Django)
-
 on:
   push:
     branches: [ main, develop ]
@@ -9,30 +8,44 @@ on:
     branches: [ main ]
     paths:
       - 'iles_backend/**'
-
 jobs:
   test:
     runs-on: ubuntu-latest
-
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_DB: iles_db
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres123
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      DB_NAME: iles_db
+      DB_USER: postgres
+      DB_PASSWORD: postgres123
+      DB_HOST: localhost
+      DB_PORT: 5432
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-
       - name: Install dependencies
         working-directory: ./iles_backend
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
-
       - name: Run migrations
         working-directory: ./iles_backend
-        run: python manage.py migrate --check
-
+        run: python manage.py migrate
       - name: Run tests
         working-directory: ./iles_backend
         run: python manage.py test
