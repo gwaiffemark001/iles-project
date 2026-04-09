@@ -61,22 +61,25 @@ class UserRegistrationView(APIView):
     permission_class = [AllowAny] # Anyone can register - no token needed
 
     def post(self, request):
-        serializer = CustomUserSerializer(data = request.data)
-        if serializer.is_valid():
-            #create user with hashed password
-            user = CustomUser.objects.create_user(
-                username = serializer.validated_data['username'],
-                email= serializer.validated_data.get('email'),
-                password= request.dataget('password'),
-                role= serializer.validate_data.get('role', 'student'),
+        serializer = CustomUserSerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-            )
-            return Response({
-                'message': 'User created successfully',
-                'username': user.username,
-                'role': user.role,
-            }, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        username = request.data.get('username')
+        if not username:
+            return Response({'username': ['This field is required.']}, status=status.HTTP_400_BAD_REQUEST)
+
+        user = CustomUser.objects.create_user(
+            username=username,
+            email=request.data.get('email'),
+            password=request.data.get('password'),
+            role=request.data.get('role', 'student'),
+        )
+        return Response({
+            'message': 'User created successfully',
+            'username': user.username,
+            'role': user.role,
+        }, status=status.HTTP_201_CREATED)
     
     
 class EvaluationListView(APIView):
