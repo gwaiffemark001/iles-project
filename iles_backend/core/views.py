@@ -61,7 +61,7 @@ class UserRegistrationView(APIView):
     permission_class = [AllowAny] # Anyone can register - no token needed
 
     def post(self, request):
-        serializer = CustomUserSerializer(data=request.data)
+        serializer = CustomUserSerializer(data=request.data)            
         if not serializer.is_valid():
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
