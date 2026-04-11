@@ -17,9 +17,9 @@ body {
     margin-top: 10px;
 }
 
-.header_1 {
+.header {
     align-items: center;
-    padding: 20px;
+    padding: 1rem 2rem;
     text-align: center;
     color: aliceblue;
     text-transform: uppercase;
@@ -27,7 +27,30 @@ body {
     font-family: "Lato", Arial;
     letter-spacing: 8px;
     font-size: 20px;
+    justify-content: space-between;
 
+}
+.nav-menu ul{
+    display: flex;
+    list-style: none;
+    gap: 2rem;
+    margin: 0;
+    padding: 0;
+}
+.nav-menu a{
+    color: white;
+    text-decoration: none;
+    font-weight: 500;
+    transition: color 0.3s;
+}
+
+.nav-menu a:hover{
+    color: #00ffcc;
+
+}
+.header h1{
+    margin: 0;
+    font-size: 1.8rem;
 }
 
 .logins {
