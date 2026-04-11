@@ -74,22 +74,31 @@ class EvaluationCriteria(models.Model):
 class Evaluation(models.Model):
     placement =models.ForeignKey(InternshipPlacement, on_delete=models.CASCADE, related_name='evaluations')
     evaluator = models.ForeignKey(CustomUser, on_delete=models.CASCADE,related_name='given_evaluations')
-    supervisor_score= models.DecimalField(max_digits=5, decimal_places=2)
-    academic_score= models.DecimalField(max_digits=5, decimal_places=2)
-    logbook_score = models.DecimalField(max_digits=5, decimal_places=2)
-    total_score = models.DecimalField(max_digits=5, decimal_places=2, blank=True, null=True)
-    evaluated_at =models.DateTimeField(auto_now_add=True)
+    #supervisor_score= models.DecimalField(max_digits=5, decimal_places=2)
+    #academic_score= models.DecimalField(max_digits=5, decimal_places=2)
+    #logbook_score = models.DecimalField(max_digits=5, decimal_places=2)
+    #total_score = models.DecimalField(max_digits=5, decimal_places=2, blank=True, null=True)
+    score = models.DecimalField(max_digits=5, decimal_places=2)
+    evaluation_type = models.CharField(max_length=20, choices=[
+        ('supervisor', 'Supervisor Assessment'),    
+        ('academic', 'Academic Assessment'),        
+        ('logbook', 'Logbook Assessment'),       
+    ])
 
     class Meta:
-        unique_together =[['placement', 'evaluator']]
+        unique_together = [['placement', 'evaluation_type']]  
+    evaluated_at =models.DateTimeField(auto_now_add=True)
 
-    def save(self, *args, **kwargs):
-        self.total_score =(
-            (self.supervisor_score * 40 /100) +
-            (self.academic_score * 30 /100) +
-            (self.logbook_score * 30 / 100)
-        )       
-        super ().save(*args, **kwargs)
+    #class Meta:
+        #unique_together =[['placement', 'evaluator']]
+
+    #def save(self, *args, **kwargs):
+    #    self.total_score =(
+    #       (self.supervisor_score * 40 /100) +
+    #       (self.academic_score * 30 /100) +
+    #       (self.logbook_score * 30 / 100)
+    #)       
+    #    super ().save(*args, **kwargs)
 
     def __str__(self):
-        return (f"{self.placement.student.username} - Total: {self.total_score}")      
+        return (f"{self.placement.student.username} - Total: {self.score}")      
