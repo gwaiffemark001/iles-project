@@ -3,7 +3,7 @@ import { useState } from 'react';
 import './Signup.css';
 import './ILES.css';
 
-function Signup() {
+function Signup() { 
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [extraFields, setExtraFields] = useState(false);
@@ -81,7 +81,7 @@ function Signup() {
 
                 {extraFields && (
                     <div className="extra-fields">
-                        <p>Student email detected. Additional student fields can go here.</p>
+                        <p>Student email detected.! Additional student fields can go here.</p>
                         <input
                             type="text"
                             placeholder="Student Number"
