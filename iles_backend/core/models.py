@@ -74,16 +74,16 @@ class EvaluationCriteria(models.Model):
 class Evaluation(models.Model):
     placement =models.ForeignKey(InternshipPlacement, on_delete=models.CASCADE, related_name='evaluations')
     evaluator = models.ForeignKey(CustomUser, on_delete=models.CASCADE,related_name='given_evaluations')
-    #supervisor_score= models.DecimalField(max_digits=5, decimal_places=2)
+    #supervisor_score = models.DecimalField(max_digits=5, decimal_places=2, default=0)
     #academic_score= models.DecimalField(max_digits=5, decimal_places=2)
     #logbook_score = models.DecimalField(max_digits=5, decimal_places=2)
     #total_score = models.DecimalField(max_digits=5, decimal_places=2, blank=True, null=True)
-    score = models.DecimalField(max_digits=5, decimal_places=2)
+    score = models.DecimalField(max_digits=5, decimal_places=2, default=0) # type: ignore
     evaluation_type = models.CharField(max_length=20, choices=[
         ('supervisor', 'Supervisor Assessment'),    
         ('academic', 'Academic Assessment'),        
         ('logbook', 'Logbook Assessment'),       
-    ])
+    ], default='supervisor')
 
     class Meta:
         unique_together = [['placement', 'evaluation_type']]  
