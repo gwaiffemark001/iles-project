@@ -22,7 +22,7 @@ class WeeklyLogListView(APIView):
 class WeeklyLogDetailView(APIView):
     permission_classes = [IsAuthenticated]
 
-    def get (self, request, pk):
+    def get(self, request, pk):
         try:
             log = WeeklyLog.objects.get(pk=pk, placement__student=request.user)
         except WeeklyLog.DoesNotExist:
@@ -42,39 +42,59 @@ class WeeklyLogDetailView(APIView):
             serializer.save()
             return Response(serializer.data)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
 class InternshipPlacementListView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        placements = InternshipPlacement.objects.filter(student=request.user)
+        if request.user.role == 'admin':
+            placements = InternshipPlacement.objects.all()
+        elif request.user.role == 'workplace_supervisor':
+            placements = InternshipPlacement.objects.filter(
+                workplace_supervisor=request.user
+            )
+        elif request.user.role == 'academic_supervisor':
+            placements = InternshipPlacement.objects.filter(
+                academic_supervisor=request.user
+            )
+        else:
+            placements = InternshipPlacement.objects.filter(
+                student=request.user
+            )
         serializer = InternshipPlacementSerializer(placements, many=True)
         return Response(serializer.data)
 
     def post(self, request):
+        if request.user.role != 'admin':
+            return Response(
+                {'error': 'Only admins can create placements'},
+                status=status.HTTP_403_FORBIDDEN
+            )
         serializer = InternshipPlacementSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)  
-
-
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 class UserRegistrationView(APIView):
-    permission_class = [AllowAny] # Anyone can register - no token needed
+    permission_classes = [AllowAny]
 
     def post(self, request):
         serializer = CustomUserSerializer(data=request.data)            
-        if not serializer.is_valid():
+        if not serializer.is_valid(raise_exception=True):
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
         username = request.data.get('username')
         if not username:
             return Response({'username': ['This field is required.']}, status=status.HTTP_400_BAD_REQUEST)
 
         user = CustomUser.objects.create_user(
-            username=username,
-            email=request.data.get('email'),
-            password=request.data.get('password'),
-            role=request.data.get('role', 'student'),
+            username = serializer.validated_data['username'],
+            email = serializer.validated_data.get('email',''),
+            password = serializer.validated_data['password'],
+            role = serializer.validated_data.get('role', 'student'),
+          # ''' username=username,
+          #  email=request.data.get('email'),
+           # password=request.data.get('password'),
+           # role=request.data.get('role', 'student'),'''
         )
         return Response({
             'message': 'User created successfully',
@@ -85,7 +105,7 @@ class UserRegistrationView(APIView):
     
 class EvaluationListView(APIView):
     permission_classes = [IsAuthenticated]
-
+    '''
     def get(self, request):
         # Admins and supervisors see all evaluations
         # Students only see their own evaluations
@@ -97,8 +117,42 @@ class EvaluationListView(APIView):
             )
         serializer = EvaluationSerializer(evaluations, many=True)
         return Response(serializer.data)
+    '''
+    def get(self, request):
+     if request.user.role == 'student':
+        evaluations = Evaluation.objects.filter(placement__student=request.user)
+        
+        # check if all three evaluations are done
+        if evaluations.count() == 3:
+            supervisor = evaluations.get(evaluation_type='supervisor').score
+            academic = evaluations.get(evaluation_type='academic').score
+            logbook = evaluations.get(evaluation_type='logbook').score
 
+            total = (
+                (supervisor * 40 / 100) +
+                (academic * 30 / 100) +
+                (logbook * 30 / 100)
+            )
+
+            return Response({
+                'evaluations': EvaluationSerializer(evaluations, many=True).data,
+                'total_score': total,
+                'complete': True
+            })
+        else:
+            # not all evaluations done yet
+            return Response({
+                'evaluations': EvaluationSerializer(evaluations, many=True).data,
+                'total_score': None,
+                'complete': False,
+                'message': f'{evaluations.count()} of 3 evaluations completed'
+            })
     def post(self, request):
+        if request.user.role not in ['admin', 'workplace_supervisor', 'academic_supervisor']:
+         return Response(
+            {'error': 'You are not allowed to submit evaluations'},
+            status=status.HTTP_403_FORBIDDEN
+        )
         serializer = EvaluationSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save()
