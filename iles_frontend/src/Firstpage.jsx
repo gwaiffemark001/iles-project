@@ -12,7 +12,7 @@ function Firstpage() {
                     <nav className='nav-menu'>
                         <ul>
                             <li><a href="">Home</a></li>
-                            <li><a href="">About Us</a></li>
+                            <li><a href="">About </a></li>
                             <li><a href="">services</a></li>
                             <li><a href="">Contact</a></li>
                         </ul>
