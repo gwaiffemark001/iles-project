@@ -72,7 +72,8 @@ function InternshipDashboard(){
                         value={FormData.hours}
                         style={styles.input}
                         required
-                    />              
+                    />  
+                    <button type="submit" style={styles.button}>Submit Log</button>            
 
                 </form>
             </div>
