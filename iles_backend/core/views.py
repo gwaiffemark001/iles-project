@@ -94,12 +94,13 @@ class UserRegistrationView(APIView):
         username = request.data.get('username')
         if not username:
             return Response({'username': ['This field is required.']}, status=status.HTTP_400_BAD_REQUEST)
-
+        
         user = CustomUser.objects.create_user(
             username = serializer.validated_data['username'],
             email = serializer.validated_data.get('email',''),
             password = serializer.validated_data['password'],
-            role = serializer.validated_data.get('role', 'student'),         
+            role = serializer.validated_data.get('role', 'student'),
+          
         )
         return Response({
             'message': 'User created successfully',
