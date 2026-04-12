@@ -2,6 +2,7 @@ import { Routes, Route } from 'react-router-dom';
 import Firstpage from './Firstpage';
 import Signup from './Signup';
 import ForgotPassword from './ForgotPassword';
+import InternshipDashboard from './StudentDash.jsx';
 
 function ILES() {
     return (
