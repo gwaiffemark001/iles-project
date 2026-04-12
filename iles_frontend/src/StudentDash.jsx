@@ -40,7 +40,7 @@ function InternshipDashboard(){
                 <form onSubmit={handleSubmit}>
                     <input 
                         type="text"
-                        name="Week" 
+                        name="week" 
                         placeholder="Week Number"
                         value={FormData.week}
                         onChange={handleChange}
@@ -51,7 +51,7 @@ function InternshipDashboard(){
                     <textarea 
                         name="tasks" 
                         placeholder="Tasks Completed"
-                        value="{formData.tasks}"
+                        value={formData.tasks}
                         onChange={handleChange}
                         style={styles.textarea}
                         required
@@ -76,6 +76,27 @@ function InternshipDashboard(){
                     <button type="submit" style={styles.button}>Submit Log</button>            
 
                 </form>
+            </div>
+            <div style={styles.logsSection}>
+                <h2> Submitted Logs</h2>
+                {logs.length === 0 ? (
+                    <p> No Logs Submiited yet.</p>
+                ) : ( 
+                    logs.map((log) => (
+                        <div key={log.id} style={styles.logCard}>
+                            <h3>Week {log.week}</h3>
+                            <p><strong>Tasks:</strong>{log.tasks}</p>
+                            <p><strong>Skills:</strong>{log.skills}</p>
+                            <p><strong>Hours:</strong>{log.hours}</p>
+                            <p>
+                                <strong>Status:</strong>{" "}
+                                <span style={{color: "orange"}}>{log.status}</span>
+                            </p>
+
+                        </div>
+                    ))
+
+                )}
             </div>
         </div>
     );
