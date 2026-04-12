@@ -84,6 +84,40 @@ class InternshipPlacementListView(APIView):
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+class InternshipPlacementDetailView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, pk):
+        try:
+            placement = InternshipPlacement.objects.get(pk=pk)
+        except InternshipPlacement.DoesNotExist:
+            return Response({'error': 'Placement not found'}, status=status.HTTP_404_NOT_FOUND)
+        serializer = InternshipPlacementSerializer(placement)
+        return Response(serializer.data)
+
+    def put(self, request, pk):
+        if request.user.role != 'admin':
+            return Response({'error': 'Only admins can update placements'}, status=status.HTTP_403_FORBIDDEN)
+        try:
+            placement = InternshipPlacement.objects.get(pk=pk)
+        except InternshipPlacement.DoesNotExist:
+            return Response({'error': 'Placement not found'}, status=status.HTTP_404_NOT_FOUND)
+        serializer = InternshipPlacementSerializer(placement, data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def delete(self, request, pk):
+        if request.user.role != 'admin':
+            return Response({'error': 'Only admins can delete placements'}, status=status.HTTP_403_FORBIDDEN)
+        try:
+            placement = InternshipPlacement.objects.get(pk=pk)
+        except InternshipPlacement.DoesNotExist:
+            return Response({'error': 'Placement not found'}, status=status.HTTP_404_NOT_FOUND)
+        placement.delete()
+        return Response({'message': 'Placement deleted'}, status=status.HTTP_204_NO_CONTENT)
+    
 class UserRegistrationView(APIView):
     permission_classes = [AllowAny]
 
