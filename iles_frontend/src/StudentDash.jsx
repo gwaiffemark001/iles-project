@@ -17,7 +17,7 @@ function InternshipDashboard(){
     const handleSubmit = (e) => {
         e.preventDefault();
         const newLog = {...FormData, 
-                        staus: "Pending Review",
+                        status: "Pending Review",
                         id: Date.now(),
 
         };
