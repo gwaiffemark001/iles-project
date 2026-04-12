@@ -32,6 +32,55 @@ function InternshipDashboard(){
         });
     };
 
+    return(
+        <div sytle={styles.container}>
+            <h1 style={styles.header}> Student Internship Dashboard </h1>
+            <div style={styles.card}>
+                <h2>  Submit Weekly Internship Log</h2> 
+                <form onSubmit={handleSubmit}>
+                    <input 
+                        type="text"
+                        name="Week" 
+                        placeholder="Week Number"
+                        value={FormData.week}
+                        onChange={handleChange}
+                        style={styles.input}
+                        required
+                    />       
+
+                    <textarea 
+                        name="tasks" 
+                        placeholder="Tasks Completed"
+                        value="{formData.tasks}"
+                        onChange={handleChange}
+                        style={styles.textarea}
+                        required
+                    />
+
+                    <textarea 
+                        name="skills"
+                        placeholder="Skills Learned"
+                        value={FormData.skills}
+                        onChange={handleChange}
+                        style={styles.textarea} 
+                        /> 
+
+                    <input 
+                        type="number"
+                        name="hours"
+                        placeholder="Hours Worked"
+                        value={FormData.hours}
+                        style={styles.input}
+                        required
+                    />              
+
+                </form>
+            </div>
+        </div>
+    );
+
+  
+
 
 }
 export default InternshipDashboard 
