@@ -18,7 +18,16 @@ class WeeklyLogListView(APIView):
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
+    def delete(self, request, pk):
+        try:
+            log = WeeklyLog.objects.get(pk=pk, placement__student=request.user)
+        except WeeklyLog.DoesNotExist:
+            return Response({'error': 'Log not found'}, status=status.HTTP_404_NOT_FOUND)
+        if log.status != 'draft':
+            return Response({'error': 'Only draft logs can be deleted'}, status=status.HTTP_400_BAD_REQUEST)
+        log.delete()
+        return Response({'message': 'Log deleted successfully'}, status=status.HTTP_204_NO_CONTENT)
+    
 class WeeklyLogDetailView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -90,11 +99,7 @@ class UserRegistrationView(APIView):
             username = serializer.validated_data['username'],
             email = serializer.validated_data.get('email',''),
             password = serializer.validated_data['password'],
-            role = serializer.validated_data.get('role', 'student'),
-          # ''' username=username,
-          #  email=request.data.get('email'),
-           # password=request.data.get('password'),
-           # role=request.data.get('role', 'student'),'''
+            role = serializer.validated_data.get('role', 'student'),         
         )
         return Response({
             'message': 'User created successfully',
