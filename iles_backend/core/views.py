@@ -145,7 +145,7 @@ class UserRegistrationView(APIView):
     
 class EvaluationListView(APIView):
     permission_classes = [IsAuthenticated]
-    '''
+
     def get(self, request):
         # Admins and supervisors see all evaluations
         # Students only see their own evaluations
@@ -157,42 +157,13 @@ class EvaluationListView(APIView):
             )
         serializer = EvaluationSerializer(evaluations, many=True)
         return Response(serializer.data)
-    '''
-    def get(self, request):
-     if request.user.role == 'student':
-        evaluations = Evaluation.objects.filter(placement__student=request.user)
-        
-        # check if all three evaluations are done
-        if evaluations.count() == 3:
-            supervisor = evaluations.get(evaluation_type='supervisor').score
-            academic = evaluations.get(evaluation_type='academic').score
-            logbook = evaluations.get(evaluation_type='logbook').score
 
-            total = (
-                (supervisor * 40 / 100) +
-                (academic * 30 / 100) +
-                (logbook * 30 / 100)
-            )
-
-            return Response({
-                'evaluations': EvaluationSerializer(evaluations, many=True).data,
-                'total_score': total,
-                'complete': True
-            })
-        else:
-            # not all evaluations done yet
-            return Response({
-                'evaluations': EvaluationSerializer(evaluations, many=True).data,
-                'total_score': None,
-                'complete': False,
-                'message': f'{evaluations.count()} of 3 evaluations completed'
-            })
     def post(self, request):
         if request.user.role not in ['admin', 'workplace_supervisor', 'academic_supervisor']:
-         return Response(
-            {'error': 'You are not allowed to submit evaluations'},
-            status=status.HTTP_403_FORBIDDEN
-        )
+            return Response(
+                {'error': 'You are not allowed to submit evaluations'},
+                status=status.HTTP_403_FORBIDDEN
+            )
         serializer = EvaluationSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save()
