@@ -27,35 +27,13 @@ body {
     font-family: "Lato", Arial;
     letter-spacing: 8px;
     font-size: 20px;
-    justify-content: space-between;
-    background-color: #1a1a2e;
-    flex-wrap: wrap;
-    gap: 1rem;
+
 
 }
-.nav-menu ul{
-    display: flex;
-    list-style: none;
-    gap: 2.5rem;
-    margin: 0;
-    padding: 0;
-    justify-content: center;
-    flex: 1;
-    
-}
-.nav-menu a{
-    color: white;
-    text-decoration: none;
-    font-weight: 500;
-    transition: color 0.3s;
-    font-family: Arial, Helvetica, sans-serif;
-    font-size: 1.1rem;
+.subhead {
+    font-size: 20px;
 }
 
-.nav-menu a:hover{
-    color: #00ffcc;
-
-}
 .header h1{
     margin: 0;
     font-size: 1.8rem;
@@ -69,12 +47,12 @@ body {
 }
 .logins input {
     display: block;
-    margin-top: 20px;
+    margin-top: 17px;
     padding: 10px 8px 10px 6px;
     width: 35%;
     border-radius: 6px;
     border: 1px solid transparent;
-    margin-bottom: 30px;
+    margin-bottom: 25px;
     box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.2);
     font-family: "Lato", Arial;
     font-weight: 500;
