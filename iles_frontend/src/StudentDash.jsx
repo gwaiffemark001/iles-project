@@ -1,5 +1,6 @@
 import React, {useState} from 'react';
 
+
 function InternshipDashboard(){
     const [logs, setLogs] = useState([]);
     const [FormData, setFormData] = useState({
@@ -63,7 +64,7 @@ function InternshipDashboard(){
                         value={FormData.skills}
                         onChange={handleChange}
                         style={styles.textarea} 
-                        /> 
+                    /> 
 
                     <input 
                         type="number"
@@ -100,9 +101,7 @@ function InternshipDashboard(){
             </div>
         </div>
     );
-
+}
+export default InternshipDashboard
   
 
-
-}
-export default InternshipDashboard 
