@@ -1,9 +1,9 @@
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useState } from 'react';
 import './Signup.css';
 import './ILES.css';
 
-function Signup() { 
+function Signup() {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [extraFields, setExtraFields] = useState(false);
@@ -12,6 +12,8 @@ function Signup() {
     const [studentNumber, setStudentNumber] = useState('');
     const [registrationNumber, setRegistrationNumber] = useState('');
 
+    const navigate = useNavigate();
+    // student email domains are put here
     const universityDomains = ['@students.mak.ac.ug'];
 
     // Show extra fields for students//
@@ -35,7 +37,7 @@ function Signup() {
                 body.registrationNumber = registrationNumber;
             }
 
-            const response = await fetch('http://localhost:8080/api/auth/signup', {
+            const response = await fetch('/api/signup', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -51,6 +53,31 @@ function Signup() {
             }
 
             setSuccessMessage('Account created successfully. Please log in.');
+
+            // Store JWT token in localStorage
+            localStorage.setItem('token', data.token);
+
+            // Get profile
+            const profileResponse = await fetch('/api/profile', {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${data.token}`,
+                },
+            });
+
+            const profileData = await profileResponse.json();
+            const role = profileData.role;
+
+            // Redirect based on role
+            if (role === 'admin') {
+                navigate('/admin-dashboard');
+            } else if (role === 'academic_supervisor') {
+                navigate('/academic_supervisor-dashboard');
+            } else if (role === 'workplace_supervisor') {
+                navigate('/workplace_supervisor-dashboard');
+            } else {
+                navigate('/student-dashboard'); // Default dashboard for other roles
+            }
         } catch (error) {
             setErrorMessage('Unable to reach the server. Please try again later.');
         }
@@ -81,7 +108,7 @@ function Signup() {
 
                 {extraFields && (
                     <div className="extra-fields">
-                        <p>Student email detected.! Additional student fields can go here.</p>
+                        <p className='student_detected'>Student email detected.! Additional student fields can go here.</p>
                         <input
                             type="text"
                             placeholder="Student Number"

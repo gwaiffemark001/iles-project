@@ -9,15 +9,7 @@ function Firstpage() {
             <div className='page_1'>
                 <header className='header'>
                     <h1 className="head">WELCOME TO ILES</h1>
-                    <nav className='nav-menu'>
-                        <ul>
-                            <li><a href="">Home</a></li>
-                            <li><a href="">About </a></li>
-                            <li><a href="">services</a></li>
-                            <li><a href="">Contact</a></li>
-                        </ul>
-
-                    </nav>
+                    <h2 className="subhead">Login to continue</h2>
                     <img className="logo" src="/ILES-Logo.png" alt="ILES logo" />
                 </header>
                 <section className="logins">
