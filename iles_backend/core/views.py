@@ -182,3 +182,31 @@ class UserProfileView(APIView):
             serializer.save()
             return Response(serializer.data)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+class SupervisorReviewView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def put(self, request, pk):
+        if request.user.role not in ['workplace_supervisor', 'academic_supervisor']:
+            return Response(
+                {'error': 'Only supervisors can review logs'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        try:
+            log = WeeklyLog.objects.get(pk=pk)
+        except WeeklyLog.DoesNotExist:
+            return Response({'error': 'Log not found'}, status=status.HTTP_404_NOT_FOUND)
+
+        if log.status != 'submitted':
+            return Response(
+                {'error': 'Only submitted logs can be reviewed'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        comment = request.data.get('comment', '')
+        log.status = 'reviewed'
+        log.supervisor_comment = comment
+        log.save()
+
+        serializer = WeeklyLogSerializer(log)
+        return Response(serializer.data)
