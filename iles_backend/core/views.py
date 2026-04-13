@@ -182,3 +182,85 @@ class UserProfileView(APIView):
             serializer.save()
             return Response(serializer.data)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+class SupervisorReviewView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def put(self, request, pk):
+        if request.user.role not in ['workplace_supervisor', 'academic_supervisor']:
+            return Response(
+                {'error': 'Only supervisors can review logs'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        try:
+            log = WeeklyLog.objects.get(pk=pk)
+        except WeeklyLog.DoesNotExist:
+            return Response({'error': 'Log not found'}, status=status.HTTP_404_NOT_FOUND)
+
+        if log.status != 'submitted':
+            return Response(
+                {'error': 'Only submitted logs can be reviewed'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        comment = request.data.get('comment', '')
+        log.status = 'reviewed'
+        log.supervisor_comment = comment
+        log.save()
+
+        serializer = WeeklyLogSerializer(log)
+        return Response(serializer.data)
+
+class SupervisorApproveView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def put(self, request, pk):
+        if request.user.role not in ['workplace_supervisor', 'academic_supervisor', 'admin']:
+            return Response(
+                {'error': 'Only supervisors can approve logs'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        try:
+            log = WeeklyLog.objects.get(pk=pk)
+        except WeeklyLog.DoesNotExist:
+            return Response({'error': 'Log not found'}, status=status.HTTP_404_NOT_FOUND)
+
+        if log.status != 'reviewed':
+            return Response(
+                {'error': 'Only reviewed logs can be approved'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        log.status = 'approved'
+        log.save()
+
+        serializer = WeeklyLogSerializer(log)
+        return Response(serializer.data)
+
+class ChangePasswordView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        old_password = request.data.get('old_password')
+        new_password = request.data.get('new_password')
+
+        if not old_password or not new_password:
+            return Response(
+                {'error': 'old_password and new_password are required'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        if not request.user.check_password(old_password):
+            return Response(
+                {'error': 'Old password is incorrect'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        request.user.set_password(new_password)
+        request.user.save()
+
+        return Response(
+            {'message': 'Password changed successfully'},
+            status=status.HTTP_200_OK
+        )
+
