@@ -263,4 +263,28 @@ class ChangePasswordView(APIView):
             {'message': 'Password changed successfully'},
             status=status.HTTP_200_OK
         )
+class EvaluationDetailView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, pk):
+        try:
+            evaluation = Evaluation.objects.get(pk=pk)
+        except Evaluation.DoesNotExist:
+            return Response({'error': 'Evaluation not found'}, status=status.HTTP_404_NOT_FOUND)
+        serializer = EvaluationSerializer(evaluation)
+        return Response(serializer.data)
+
+    def delete(self, request, pk):
+        if request.user.role != 'admin':
+            return Response(
+                {'error': 'Only admins can delete evaluations'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        try:
+            evaluation = Evaluation.objects.get(pk=pk)
+        except Evaluation.DoesNotExist:
+            return Response({'error': 'Evaluation not found'}, status=status.HTTP_404_NOT_FOUND)
+        evaluation.delete()
+        return Response({'message': 'Evaluation deleted'}, status=status.HTTP_204_NO_CONTENT)
+        
 
