@@ -5,8 +5,13 @@ from core.views import (
     WeeklyLogListView,
     WeeklyLogDetailView,
     InternshipPlacementListView,
+    InternshipPlacementDetailView,
     UserRegistrationView,
+    UserProfileView,
     EvaluationListView,
+    SupervisorReviewView,
+    SupervisorApproveView,
+    ChangePasswordView,
 )
 
 urlpatterns = [
@@ -27,4 +32,12 @@ urlpatterns = [
 
     # Evaluations
     path('api/evaluations/', EvaluationListView.as_view(), name='evaluation-list'),
+
+    # Supervisor workflow
+    path('api/logs/<int:pk>/review/', SupervisorReviewView.as_view(), name='log-review'),
+    path('api/logs/<int:pk>/approve/', SupervisorApproveView.as_view(), name='log-approve'),
+
+    # Password
+    path('api/change-password/', ChangePasswordView.as_view(), name='change-password'),
+
 ]
