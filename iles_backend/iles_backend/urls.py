@@ -12,6 +12,7 @@ from core.views import (
     SupervisorReviewView,
     SupervisorApproveView,
     ChangePasswordView,
+    EvaluationDetailView,
 )
 
 urlpatterns = [
@@ -39,5 +40,8 @@ urlpatterns = [
 
     # Password
     path('api/change-password/', ChangePasswordView.as_view(), name='change-password'),
+
+    # EvaluationDetailView
+    path('api/evaluations/<int:pk>/', EvaluationDetailView.as_view(), name='evaluation-detail'),
 
 ]
