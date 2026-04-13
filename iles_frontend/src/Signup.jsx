@@ -31,13 +31,14 @@ function Signup() {
         setSuccessMessage('');
 
         try {
-            let body = { email, password };
+            const username = email.includes('@') ? email.split('@')[0] : email;
+            let body = { username, email, password };
             if (extraFields) {
                 body.studentNumber = studentNumber;
                 body.registrationNumber = registrationNumber;
             }
 
-            const response = await fetch('/api/signup', {
+            const response = await fetch('/api/register/', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -85,65 +86,68 @@ function Signup() {
 
     return (
         <div className="page_1">
-            <header className="header_1">
-                <h1 className="head">create an ILES account</h1>
-                <img className="logo" src="/ILES-Logo.png" alt="ILES logo" />
-            </header>
+            <div className="centre_logins">
+                <header className="header_1">
+                    <h1 className="head">create an ILES account</h1>
+                    <img className="logo" src="/ILES-Logo.png" alt="ILES logo" />
+                </header>
 
-            <section className="logins" onSubmit={handleSignup}>
-                <input
-                    type="email"
-                    placeholder="Email"
-                    value={email}
-                    onChange={handleEmailChange}
-                    required
-                />
-                <input
-                    type="password"
-                    placeholder="Password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
-                />
+                <form className="logins" onSubmit={handleSignup}>
+                    <input
+                        type="email"
+                        placeholder="Email"
+                        value={email}
+                        onChange={handleEmailChange}
+                        required
+                    />
+                    <input
+                        type="password"
+                        placeholder="Password"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        required
+                    />
 
-                {extraFields && (
-                    <div className="extra-fields">
-                        <p className='student_detected'>Student email detected.! Additional student fields can go here.</p>
-                        <input
-                            type="text"
-                            placeholder="Student Number"
-                            value={studentNumber}
-                            onChange={(e) => setStudentNumber(e.target.value)}
-                            required
-                        />
+                    {extraFields && (
+                        <div className="extra-fields">
+                            <p className='student_detected'>Student email detected! Please fill in the additional fields</p>
+                            <input
+                                type="text"
+                                placeholder="Student Number"
+                                value={studentNumber}
+                                onChange={(e) => setStudentNumber(e.target.value)}
+                                required
+                            />
 
-                        <input
-                            type="text"
-                            placeholder="Registration Number"
-                            value={registrationNumber}
-                            onChange={(e) => setRegistrationNumber(e.target.value)}
-                            required
-                        />
+                            <input
+                                type="text"
+                                placeholder="Registration Number"
+                                value={registrationNumber}
+                                onChange={(e) => setRegistrationNumber(e.target.value)}
+                                required
+                            />
 
-                    </div>
-                )}
+                        </div>
+                    )}
 
-                <button type="submit" className="login-btn">
-                    Create an Account
-                </button>
-            </section>
+                    <button type="submit" className="login-btn">
+                        Create an Account
+                    </button>
+                </form>
 
-            {errorMessage && <p className="error-message">{errorMessage}</p>}
-            {successMessage && <p className="success-message">{successMessage}</p>}
-
-            <section className="failed_login">
-                <p className="signup">
-                    <Link to="/">Back to Login</Link>
-                </p>
-                <p className="signup">
-                    <Link to="/forgot-password">Forgot Password</Link>
-                </p>
-            </section>
+                {errorMessage && <p className="error-message">{errorMessage}</p>}
+                {successMessage && <p className="success-message">{successMessage}</p>}
+                <div >
+                    <section className="failed_login">
+                        <p className="signup">
+                            <Link to="/">Back to Login</Link>
+                        </p>
+                        <p className="signup">
+                            <Link to="/forgot-password">Forgot Password</Link>
+                        </p>
+                    </section>
+                </div>
+            </div>
         </div>
     );
 }
