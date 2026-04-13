@@ -16,6 +16,7 @@ urlpatterns = [
     path('api/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
     path('api/register/', UserRegistrationView.as_view(), name='register'),
+    path('api/profile/', UserProfileView.as_view(), name='profile'),
 
     # Weekly Logs
     path('api/logs/', WeeklyLogListView.as_view(), name='weekly-log-list'),
