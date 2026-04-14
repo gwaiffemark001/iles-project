@@ -3,10 +3,16 @@ body {
   background-size: cover;        /* fills screen */
   background-position: top;   /* tops image */
   background-repeat: no-repeat;  /* no repeating */
-  height: 100vh;
+  height: 100%;
+
 }
 .page_1 {
-    height: 100vh;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    padding-top: 5%;
+    padding-bottom: 5%;
+    
 
 }
 .logo {
@@ -17,9 +23,9 @@ body {
     margin-top: 10px;
 }
 
-.header_1 {
+.header {
     align-items: center;
-    padding: 20px;
+    padding: 1rem 2rem;
     text-align: center;
     color: aliceblue;
     text-transform: uppercase;
@@ -28,32 +34,58 @@ body {
     letter-spacing: 8px;
     font-size: 20px;
 
+
+}
+.subhead {
+    font-size: 20px;
+}
+
+.header h1{
+    margin: 0;
+    font-size: 1.8rem;
 }
 
 .logins {
-    margin-left: 20%;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    /*margin-left: 20%;*/
    /* background: rgba(255, 255, 255, 0.1);
     backdrop-filter: blur(10px);*/
 
 }
+.centre_logins {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin: 0 auto;
+    padding: 20px;
+    width: min(540px, 90%);
+    background-color:#2c2c2c;
+    border-radius: 24px;
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.15);
+}
 .logins input {
     display: block;
-    margin-top: 20px;
+    margin: 17px auto 25px;
     padding: 10px 8px 10px 6px;
-    width: 35%;
+    width: 400px;
+    max-width: 70%;
     border-radius: 6px;
     border: 1px solid transparent;
-    margin-bottom: 30px;
-    box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.2);
+    /*box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.2);*/
     font-family: "Lato", Arial;
     font-weight: 500;
     font-size: 15px;
+    transition: all 0.3s ease;
 
 }
 
 .logins input:hover {
-    border: 1px solid #89eba3;
-    box-shadow: 0px 4px 7px rgba(0, 0, 0, 0.2);
+    /*border: 1px solid #89eba3;
+    box-shadow: 0px 4px 7px rgba(0, 0, 0, 0.2);*/
+    transform: scale(1.03);
+    opacity: 0.9;
 }
 .logins input:focus {
     outline: none;
@@ -66,18 +98,23 @@ body {
 
 .logins input:focus:valid {
   border-bottom: 2px solid green;
+
+
 }
 
 .login-btn {
+    display: block;
+    width: 200px;
+
+    margin: 17px auto 25px;
     background-color: #28b487;
     color: white;
     padding: 10px 20px;
     border: none;
     font-size: 15px;
-    border-radius: 6px;
+    border-radius: 20px;
     cursor: pointer;
-    transition: background-color 0.3s ease;
-    margin-bottom: 3%;
+    transition: all 0.3s ease;
     box-shadow: 0px 2px 4px rgba(54, 87, 62, 0.4);
 }
 .login-btn a{
@@ -85,14 +122,23 @@ body {
     text-decoration: none;
 }
 .login-btn:hover {
-    box-shadow: 0px 4px 8px rgba(54, 87, 62, 0.4);
+    transform: scale(1.03);
+    opacity: 0.9;
+
 }
 .login-btn:focus {
     background-color: #45a05c;
+
+
+}
+.failed_login {
+    display: flex;
+    flex-direction: row;
+    margin: 0 auto;
 }
 
 .failed_login p {
-    display: inline;
+
     margin-left: 20%;
     font-size: 18px;
 }
@@ -103,5 +149,13 @@ body {
 }
 .failed_login p a:hover {
     text-decoration: underline;
-    color: rgb(95, 95, 176);
+    color: rgb(98, 230, 58);
+}
+.footer{
+    font-size: 14px;
+    margin-top: 20px;
+    text-align: center;
+    padding: 15px;
+    color: #555;
+    font-family: Arial, Helvetica, sans-serif;
 }

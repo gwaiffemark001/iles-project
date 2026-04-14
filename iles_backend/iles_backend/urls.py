@@ -5,8 +5,14 @@ from core.views import (
     WeeklyLogListView,
     WeeklyLogDetailView,
     InternshipPlacementListView,
+    InternshipPlacementDetailView,
     UserRegistrationView,
+    UserProfileView,
     EvaluationListView,
+    SupervisorReviewView,
+    SupervisorApproveView,
+    ChangePasswordView,
+    EvaluationDetailView,
 )
 
 urlpatterns = [
@@ -16,6 +22,7 @@ urlpatterns = [
     path('api/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
     path('api/register/', UserRegistrationView.as_view(), name='register'),
+    path('api/profile/', UserProfileView.as_view(), name='profile'),
 
     # Weekly Logs
     path('api/logs/', WeeklyLogListView.as_view(), name='weekly-log-list'),
@@ -26,4 +33,15 @@ urlpatterns = [
 
     # Evaluations
     path('api/evaluations/', EvaluationListView.as_view(), name='evaluation-list'),
+
+    # Supervisor workflow
+    path('api/logs/<int:pk>/review/', SupervisorReviewView.as_view(), name='log-review'),
+    path('api/logs/<int:pk>/approve/', SupervisorApproveView.as_view(), name='log-approve'),
+
+    # Password
+    path('api/change-password/', ChangePasswordView.as_view(), name='change-password'),
+
+    # EvaluationDetailView
+    path('api/evaluations/<int:pk>/', EvaluationDetailView.as_view(), name='evaluation-detail'),
+
 ]

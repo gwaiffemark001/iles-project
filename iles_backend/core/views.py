@@ -1,9 +1,13 @@
+# ILES Backend API Views
+# Built by Mugabe Gideon
+# Endpoints: WeeklyLog, Placement, Evaluation, Auth, Profile, Supervisor Workflow
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from .models import CustomUser, InternshipPlacement, WeeklyLog, Evaluation 
 from .serializers import CustomUserSerializer, InternshipPlacementSerializer, WeeklyLogSerializer , EvaluationSerializer
+
 class WeeklyLogListView(APIView):
     permission_classes =[IsAuthenticated]   
 
@@ -18,7 +22,16 @@ class WeeklyLogListView(APIView):
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
+    def delete(self, request, pk):
+        try:
+            log = WeeklyLog.objects.get(pk=pk, placement__student=request.user)
+        except WeeklyLog.DoesNotExist:
+            return Response({'error': 'Log not found'}, status=status.HTTP_404_NOT_FOUND)
+        if log.status != 'draft':
+            return Response({'error': 'Only draft logs can be deleted'}, status=status.HTTP_400_BAD_REQUEST)
+        log.delete()
+        return Response({'message': 'Log deleted successfully'}, status=status.HTTP_204_NO_CONTENT)
+    
 class WeeklyLogDetailView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -75,6 +88,41 @@ class InternshipPlacementListView(APIView):
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+class InternshipPlacementDetailView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, pk):
+        try:
+            placement = InternshipPlacement.objects.get(pk=pk)
+        except InternshipPlacement.DoesNotExist:
+            return Response({'error': 'Placement not found'}, status=status.HTTP_404_NOT_FOUND)
+        serializer = InternshipPlacementSerializer(placement)
+        return Response(serializer.data)
+
+    def put(self, request, pk):
+        if request.user.role != 'admin':
+            return Response({'error': 'Only admins can update placements'}, status=status.HTTP_403_FORBIDDEN)
+        try:
+            placement = InternshipPlacement.objects.get(pk=pk)
+        except InternshipPlacement.DoesNotExist:
+            return Response({'error': 'Placement not found'}, status=status.HTTP_404_NOT_FOUND)
+        serializer = InternshipPlacementSerializer(placement, data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def delete(self, request, pk):
+        if request.user.role != 'admin':
+            return Response({'error': 'Only admins can delete placements'}, status=status.HTTP_403_FORBIDDEN)
+        try:
+            placement = InternshipPlacement.objects.get(pk=pk)
+        except InternshipPlacement.DoesNotExist:
+            return Response({'error': 'Placement not found'}, status=status.HTTP_404_NOT_FOUND)
+        placement.delete()
+        return Response({'message': 'Placement deleted'}, status=status.HTTP_204_NO_CONTENT)
+    
 class UserRegistrationView(APIView):
     permission_classes = [AllowAny]
 
@@ -85,16 +133,13 @@ class UserRegistrationView(APIView):
         username = request.data.get('username')
         if not username:
             return Response({'username': ['This field is required.']}, status=status.HTTP_400_BAD_REQUEST)
-
+        
         user = CustomUser.objects.create_user(
             username = serializer.validated_data['username'],
             email = serializer.validated_data.get('email',''),
             password = serializer.validated_data['password'],
             role = serializer.validated_data.get('role', 'student'),
-          # ''' username=username,
-          #  email=request.data.get('email'),
-           # password=request.data.get('password'),
-           # role=request.data.get('role', 'student'),'''
+          
         )
         return Response({
             'message': 'User created successfully',
@@ -105,7 +150,7 @@ class UserRegistrationView(APIView):
     
 class EvaluationListView(APIView):
     permission_classes = [IsAuthenticated]
-    '''
+
     def get(self, request):
         # Admins and supervisors see all evaluations
         # Students only see their own evaluations
@@ -117,45 +162,134 @@ class EvaluationListView(APIView):
             )
         serializer = EvaluationSerializer(evaluations, many=True)
         return Response(serializer.data)
-    '''
-    def get(self, request):
-     if request.user.role == 'student':
-        evaluations = Evaluation.objects.filter(placement__student=request.user)
-        
-        # check if all three evaluations are done
-        if evaluations.count() == 3:
-            supervisor = evaluations.get(evaluation_type='supervisor').score
-            academic = evaluations.get(evaluation_type='academic').score
-            logbook = evaluations.get(evaluation_type='logbook').score
 
-            total = (
-                (supervisor * 40 / 100) +
-                (academic * 30 / 100) +
-                (logbook * 30 / 100)
-            )
-
-            return Response({
-                'evaluations': EvaluationSerializer(evaluations, many=True).data,
-                'total_score': total,
-                'complete': True
-            })
-        else:
-            # not all evaluations done yet
-            return Response({
-                'evaluations': EvaluationSerializer(evaluations, many=True).data,
-                'total_score': None,
-                'complete': False,
-                'message': f'{evaluations.count()} of 3 evaluations completed'
-            })
     def post(self, request):
         if request.user.role not in ['admin', 'workplace_supervisor', 'academic_supervisor']:
-         return Response(
-            {'error': 'You are not allowed to submit evaluations'},
-            status=status.HTTP_403_FORBIDDEN
-        )
+            return Response(
+                {'error': 'You are not allowed to submit evaluations'},
+                status=status.HTTP_403_FORBIDDEN
+            )
         serializer = EvaluationSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+class UserProfileView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        serializer = CustomUserSerializer(request.user)
+        return Response(serializer.data)
+
+    def put(self, request):
+        serializer = CustomUserSerializer(request.user, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+class SupervisorReviewView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def put(self, request, pk):
+        if request.user.role not in ['workplace_supervisor', 'academic_supervisor']:
+            return Response(
+                {'error': 'Only supervisors can review logs'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        try:
+            log = WeeklyLog.objects.get(pk=pk)
+        except WeeklyLog.DoesNotExist:
+            return Response({'error': 'Log not found'}, status=status.HTTP_404_NOT_FOUND)
+
+        if log.status != 'submitted':
+            return Response(
+                {'error': 'Only submitted logs can be reviewed'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        comment = request.data.get('comment', '')
+        log.status = 'reviewed'
+        log.supervisor_comment = comment
+        log.save()
+
+        serializer = WeeklyLogSerializer(log)
+        return Response(serializer.data)
+
+class SupervisorApproveView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def put(self, request, pk):
+        if request.user.role not in ['workplace_supervisor', 'academic_supervisor', 'admin']:
+            return Response(
+                {'error': 'Only supervisors can approve logs'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        try:
+            log = WeeklyLog.objects.get(pk=pk)
+        except WeeklyLog.DoesNotExist:
+            return Response({'error': 'Log not found'}, status=status.HTTP_404_NOT_FOUND)
+
+        if log.status != 'reviewed':
+            return Response(
+                {'error': 'Only reviewed logs can be approved'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        log.status = 'approved'
+        log.save()
+
+        serializer = WeeklyLogSerializer(log)
+        return Response(serializer.data)
+
+class ChangePasswordView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        old_password = request.data.get('old_password')
+        new_password = request.data.get('new_password')
+
+        if not old_password or not new_password:
+            return Response(
+                {'error': 'old_password and new_password are required'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        if not request.user.check_password(old_password):
+            return Response(
+                {'error': 'Old password is incorrect'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        request.user.set_password(new_password)
+        request.user.save()
+
+        return Response(
+            {'message': 'Password changed successfully'},
+            status=status.HTTP_200_OK
+        )
+class EvaluationDetailView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, pk):
+        try:
+            evaluation = Evaluation.objects.get(pk=pk)
+        except Evaluation.DoesNotExist:
+            return Response({'error': 'Evaluation not found'}, status=status.HTTP_404_NOT_FOUND)
+        serializer = EvaluationSerializer(evaluation)
+        return Response(serializer.data)
+
+    def delete(self, request, pk):
+        if request.user.role != 'admin':
+            return Response(
+                {'error': 'Only admins can delete evaluations'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        try:
+            evaluation = Evaluation.objects.get(pk=pk)
+        except Evaluation.DoesNotExist:
+            return Response({'error': 'Evaluation not found'}, status=status.HTTP_404_NOT_FOUND)
+        evaluation.delete()
+        return Response({'message': 'Evaluation deleted'}, status=status.HTTP_204_NO_CONTENT)
+        
 
