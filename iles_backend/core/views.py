@@ -7,6 +7,7 @@ from rest_framework import status
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from .models import CustomUser, InternshipPlacement, WeeklyLog, Evaluation 
 from .serializers import CustomUserSerializer, InternshipPlacementSerializer, WeeklyLogSerializer , EvaluationSerializer
+
 class WeeklyLogListView(APIView):
     permission_classes =[IsAuthenticated]   
 
@@ -87,6 +88,7 @@ class InternshipPlacementListView(APIView):
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
 class InternshipPlacementDetailView(APIView):
     permission_classes = [IsAuthenticated]
 
