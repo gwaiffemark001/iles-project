@@ -52,7 +52,7 @@ function studentDashboard(){
                     <textarea 
                         name="tasks" 
                         placeholder="Tasks Completed"
-                        value={formData.tasks}
+                        value={FormData.tasks}
                         onChange={handleChange}
                         className='dashboard-textarea'
                         required
