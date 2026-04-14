@@ -4,6 +4,18 @@ import "./AcademicSupervisorDashboard.css";
 const AcademicSupervisorDashboard = () => {
   const navigate = useNavigate();
 
+    const students = [
+        { name: "Hope Mwelu", placement: "MTN Uganda", logs: 12, status: "Pending" },
+        { name: "Grace Ahurira", placement: "Stanbic Bank", logs: 15, status: "Reviewed" },
+        { name: "Emma Michael", placement: "Airtel Uganda", logs: 10, status: "Overdue" },
+    ];
+
+    const getStatusClass = (status) => {
+        if (status === "Pending") return "status-pending";
+        if (status === "Reviewed") return "status-reviewed";
+        if (status === "Overdue") return "status-overdue";
+    };
+
     return (
         <div className="dashboard-wrap">
 
@@ -50,6 +62,31 @@ const AcademicSupervisorDashboard = () => {
                             <div className="stat-label">Evaluations Completed</div>
                             <div className="stat-num green">18</div>
                         </div>
+                    </div>
+
+                    {/* Assigned Students Table */}
+                    <div className="section-title">Assigned Students</div>
+                    <div className="intern-table">
+                        <div className="table-header">
+                            <div>Student Name</div>
+                            <div>Place of Internship</div>
+                            <div>Logs Submitted</div>
+                            <div>Status</div>
+                            <div>Action</div>
+                        </div>
+                        {students.map((student, index) => (
+                            <div className="table-row" key={index}>
+                                <div>{student.name}</div>
+                                <div>{student.placement}</div>
+                                <div>{student.logs}</div>
+                                <div><span className={getStatusClass(student.status)}>{student.status}</span></div>
+                                <div>
+                                    <button className="eval-btn">
+                                        {student.status === "Reviewed" ? "View" : "Evaluate"}
+                                    </button>
+                                </div>
+                            </div>
+                        ))}
                     </div>
                 </div>
 
