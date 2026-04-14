@@ -35,6 +35,22 @@ const AcademicSupervisorDashboard = () => {
                         </div>
                         <div className="avatar">DS</div>
                     </div>
+
+                    {/* Stats */}
+                    <div className="stats">
+                        <div className="stat-card">
+                            <div className="stat-label">Assigned Students</div>
+                            <div className="stat-num blue">10</div>
+                        </div>
+                        <div className="stat-card">
+                            <div className="stat-label">Logs Submitted</div>
+                            <div className="stat-num amber">24</div>
+                        </div>
+                        <div className="stat-card">
+                            <div className="stat-label">Evaluations Completed</div>
+                            <div className="stat-num green">18</div>
+                        </div>
+                    </div>
                 </div>
 
             </div>
