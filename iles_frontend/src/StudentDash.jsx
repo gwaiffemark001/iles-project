@@ -1,7 +1,7 @@
 import React, {useState} from 'react';
 
 
-function InternshipDashboard(){
+function studentDashboard(){
     const [logs, setLogs] = useState([]);
     const [FormData, setFormData] = useState({
         week: "",
@@ -102,6 +102,6 @@ function InternshipDashboard(){
         </div>
     );
 }
-export default InternshipDashboard
+export default studentDashboard
   
 
