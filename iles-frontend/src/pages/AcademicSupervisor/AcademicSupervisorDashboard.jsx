@@ -9,7 +9,6 @@ const AcademicSupervisorDashboard = () => {
 
             {/* Sidebar */}
             <div className="sidebar">
-                <div className="sidebar">
                     <div className="sidebar-logo">ILES</div>
                     <div className="sidebar-role">Academic Supervisor</div>
                     <div className="sidebar-divider" />
@@ -24,11 +23,18 @@ const AcademicSupervisorDashboard = () => {
                             Logout
                         </button>
                     </div>
-                </div>
+            </div>
 
                 {/* Main Content */}
                 <div className="main">
-                    {/* Content coming soon */}
+                    {/* Top Bar*/}
+                    <div className="topbar">
+                        <div>
+                            <h1>Welcome back, Dr. Susan</h1>
+                            <p>Academic Supervisor - Internship Logging & Evaluation System</p>
+                        </div>
+                        <div className="avatar">DS</div>
+                    </div>
                 </div>
 
             </div>
