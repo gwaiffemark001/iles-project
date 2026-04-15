@@ -1,7 +1,7 @@
 import React, {useState} from 'react';
 
 
-function InternshipDashboard(){
+function studentDashboard(){
     const [logs, setLogs] = useState([]);
     const [FormData, setFormData] = useState({
         week: "",
@@ -34,9 +34,9 @@ function InternshipDashboard(){
     };
 
     return(
-        <div sytle={styles.container}>
-            <h1 style={styles.header}> Student Internship Dashboard </h1>
-            <div style={styles.card}>
+        <div className='dashbboard-container'>
+            <h1 className='dashboard-header'> Student Internship Dashboard </h1>
+            <div className='dashboard-card'>
                 <h2>  Submit Weekly Internship Log</h2> 
                 <form onSubmit={handleSubmit}>
                     <input 
@@ -45,16 +45,16 @@ function InternshipDashboard(){
                         placeholder="Week Number"
                         value={FormData.week}
                         onChange={handleChange}
-                        style={styles.input}
+                        className='dashboard-input'
                         required
                     />       
 
                     <textarea 
                         name="tasks" 
                         placeholder="Tasks Completed"
-                        value={formData.tasks}
+                        value={FormData.tasks}
                         onChange={handleChange}
-                        style={styles.textarea}
+                        className='dashboard-textarea'
                         required
                     />
 
@@ -63,7 +63,7 @@ function InternshipDashboard(){
                         placeholder="Skills Learned"
                         value={FormData.skills}
                         onChange={handleChange}
-                        style={styles.textarea} 
+                        className='dashboard-textarea'
                     /> 
 
                     <input 
@@ -71,27 +71,27 @@ function InternshipDashboard(){
                         name="hours"
                         placeholder="Hours Worked"
                         value={FormData.hours}
-                        style={styles.input}
+                        className='dashboard-input'
                         required
                     />  
-                    <button type="submit" style={styles.button}>Submit Log</button>            
+                    <button type="submit" className='dashboard-button'>Submit Log</button>            
 
                 </form>
             </div>
-            <div style={styles.logsSection}>
+            <div className='logs-section'>
                 <h2> Submitted Logs</h2>
                 {logs.length === 0 ? (
                     <p> No Logs Submiited yet.</p>
                 ) : ( 
                     logs.map((log) => (
-                        <div key={log.id} style={styles.logCard}>
+                        <div key={log.id} className='log-card'>
                             <h3>Week {log.week}</h3>
                             <p><strong>Tasks:</strong>{log.tasks}</p>
                             <p><strong>Skills:</strong>{log.skills}</p>
                             <p><strong>Hours:</strong>{log.hours}</p>
                             <p>
                                 <strong>Status:</strong>{" "}
-                                <span style={{color: "orange"}}>{log.status}</span>
+                                <span className='pending-status'>{log.status}</span>
                             </p>
 
                         </div>
@@ -102,6 +102,6 @@ function InternshipDashboard(){
         </div>
     );
 }
-export default InternshipDashboard
+export default studentDashboard
   
 
