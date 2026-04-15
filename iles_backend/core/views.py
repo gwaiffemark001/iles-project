@@ -1,9 +1,13 @@
+# ILES Backend API Views
+# Built by Mugabe Gideon
+# Endpoints: WeeklyLog, Placement, Evaluation, Auth, Profile, Supervisor Workflow
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from .models import CustomUser, InternshipPlacement, WeeklyLog, Evaluation 
 from .serializers import CustomUserSerializer, InternshipPlacementSerializer, WeeklyLogSerializer , EvaluationSerializer
+
 class WeeklyLogListView(APIView):
     permission_classes =[IsAuthenticated]   
 
@@ -84,6 +88,7 @@ class InternshipPlacementListView(APIView):
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
 class InternshipPlacementDetailView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -236,3 +241,55 @@ class SupervisorApproveView(APIView):
 
         serializer = WeeklyLogSerializer(log)
         return Response(serializer.data)
+
+class ChangePasswordView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        old_password = request.data.get('old_password')
+        new_password = request.data.get('new_password')
+
+        if not old_password or not new_password:
+            return Response(
+                {'error': 'old_password and new_password are required'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        if not request.user.check_password(old_password):
+            return Response(
+                {'error': 'Old password is incorrect'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        request.user.set_password(new_password)
+        request.user.save()
+
+        return Response(
+            {'message': 'Password changed successfully'},
+            status=status.HTTP_200_OK
+        )
+class EvaluationDetailView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, pk):
+        try:
+            evaluation = Evaluation.objects.get(pk=pk)
+        except Evaluation.DoesNotExist:
+            return Response({'error': 'Evaluation not found'}, status=status.HTTP_404_NOT_FOUND)
+        serializer = EvaluationSerializer(evaluation)
+        return Response(serializer.data)
+
+    def delete(self, request, pk):
+        if request.user.role != 'admin':
+            return Response(
+                {'error': 'Only admins can delete evaluations'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        try:
+            evaluation = Evaluation.objects.get(pk=pk)
+        except Evaluation.DoesNotExist:
+            return Response({'error': 'Evaluation not found'}, status=status.HTTP_404_NOT_FOUND)
+        evaluation.delete()
+        return Response({'message': 'Evaluation deleted'}, status=status.HTTP_204_NO_CONTENT)
+        
+

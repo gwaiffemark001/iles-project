@@ -42,7 +42,6 @@ class WeeklyLog(models.Model):
         ('submitted', 'Submitted'),
         ('reviewed', 'Reviewed'),
         ('approved','Approved'),
-
     ]
     placement = models.ForeignKey(InternshipPlacement, on_delete=models.CASCADE, related_name='logs')
     week_number = models.PositiveIntegerField()
@@ -55,7 +54,7 @@ class WeeklyLog(models.Model):
     submitted_at =models.DateTimeField(blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-
+    
     class Meta:
         unique_together =[['placement', 'week_number']]
 
