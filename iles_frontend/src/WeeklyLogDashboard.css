@@ -1,76 +1,29 @@
 .dashboard-container{
-    max-width: 1000px;
-    margin: 30px auto;
+    width: 80%;
+    margin: auto;
     padding: 20px;
-    font-family: Arial, Helvetica, sans-serif;
-    background-color: #f5f7fa;
-    min-height: 100vh;
-
-
 }
-
-.dashboard-header{
-    text-align: center;
+.log-form {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
     margin-bottom: 30px;
-    color: #222;
-    font-size: 32px;
 }
 
-.dashboard-card{
-    background-color: white;
-    padding: 25px;
-    border-radius: 12px;
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
-    margin-bottom: 30px;
-
-}
-
-.dashboard-input,
-.dashboard-textarea{
-    width: 100%;
+.log-form input,
+.log-form textarea,
+.log-form button {
     padding: 12px;
-    margin: 12px 0;
-    border: 1px solid;
     font-size: 16px;
-    outline: none;
 }
 
-.dashboard-input:focus,
-.dashboard-textarea:focus{
-    border-color: #007bff;
-}
-.dashboard-textarea{
-    min-height: 100px;
-    resize: vertical;
-}
-
-.dashboard-button{
-    width: 100%;
-    padding: 14px;
-    background: #007bff;
-    color: white;
-    font-size: 17px;
-    border: none;
-    border-radius: 8px;
+.log-form button {
     cursor: pointer;
 }
 
-.dashboard-button:hover{
-    background: #0056b3;
-}
-.logs-section{
-    margin-top: 20px;
-}
-
-.log.card{
-    background: white;
-    padding: 20px;
-    border-left: 5px solid #007bff;
-    border-radius: 10px;
+.log-card {
+    border: 1px solid #ccc;
+    padding: 15px;
     margin-top: 15px;
-    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.05);
-}
-.pending-status{
-    color: orange;
-    font-weight: bold;
+    border-radius: 8px;
 }
