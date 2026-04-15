@@ -68,7 +68,7 @@ class EvaluationCriteria(models.Model):
     weight_percent=models.DecimalField(max_digits=5, decimal_places=2)
 
     def __str__(self):
-        return (f"{self.name} ({self.weight_percent}%)")
+        return f"{self.name} - {self.weight_percent}% weight"
     
 class Evaluation(models.Model):
     placement =models.ForeignKey(InternshipPlacement, on_delete=models.CASCADE, related_name='evaluations')
