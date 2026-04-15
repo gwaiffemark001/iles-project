@@ -12,7 +12,7 @@ function ILES() {
             <Route path="/" element={<Firstpage />} />
             <Route path="/signup" element={<Signup />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />
-            <Route path='/weeklyLog' element={ <WeeklyLogDashboard />}/>
+            <Route path="/weekly-log" element={ <WeeklyLogDashboard />}/>
         </Routes>
        
         
