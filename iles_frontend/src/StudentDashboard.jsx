@@ -71,48 +71,68 @@ export default function WeeklyLogDashboard(){
 
     return(
         <div className='dashbboard-container'>
-            <h1 className='dashboard-header'> Student Internship Dashboard </h1>
+            <h1 className='dashboard-header'> Weekly Internship Log </h1>
             <div className='dashboard-card'>
                 <h2>  Submit Weekly Internship Log</h2> 
-                <form onSubmit={handleSubmit}>
+                <form onSubmit={handleSubmit} className='log-form'>
                     <input 
-                        type="text"
-                        name="week" 
-                        placeholder="Week Number"
-                        value={FormData.week}
+                        type="number"
+                        name="placement" 
+                        placeholder="Placement ID"
+                        value={FormData.placement}
                         onChange={handleChange}
-                        className='dashboard-input'
                         required
+                       
+                        
                     />       
 
-                    <textarea 
-                        name="tasks" 
-                        placeholder="Tasks Completed"
-                        value={FormData.tasks}
+                    <input 
+                        type="number" 
+                        name="week_number"
+                        placeholder="Week Number"
+                        value={FormData.week_number}
                         onChange={handleChange}
-                        className='dashboard-textarea'
                         required
+                        
+                        
                     />
 
                     <textarea 
-                        name="skills"
-                        placeholder="Skills Learned"
-                        value={FormData.skills}
+                        name="activities"
+                        placeholder="Activities Done"
+                        value={FormData.activities}
                         onChange={handleChange}
-                        className='dashboard-textarea'
+                        required
                     /> 
 
-                    <input 
-                        type="number"
-                        name="hours"
-                        placeholder="Hours Worked"
-                        value={FormData.hours}
-                        className='dashboard-input'
-                        required
-                    />  
-                    <button type="submit" className='dashboard-button'>Submit Log</button>            
-
+                    <textarea
+                        name="challenges"
+                        placeholder="Challenges Faced"
+                        value={FormData.challenges}
+                        onChange={handleChange}
+                        required 
+                    /> 
+                    
+                    <textarea
+                        name=""
+                        placeholder="What did you learning?"
+                        value={FormData.learning}
+                        onChange={handleChange}
+                        
+                    /> 
+                     
+                    <input
+                        type="date"
+                        name="deadline"
+                        value={FormData.deadline}
+                        onChange={handleChange}
+                    />     
+                    
+                    <button type="submit" className='dashboard-button'>Submit Weekly Log</button>    
+                        
                 </form>
+
+                
             </div>
             <div className='logs-section'>
                 <h2> Submitted Logs</h2>
