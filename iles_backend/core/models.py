@@ -57,6 +57,7 @@ class WeeklyLog(models.Model):
     
     class Meta:
         unique_together =[['placement', 'week_number']]
+        ordering = ['week_number']
 
     def __str__(self):
         return (f"Week {self.week_number}-{self.placement.student.username} ({self.status})")
@@ -68,7 +69,7 @@ class EvaluationCriteria(models.Model):
     weight_percent=models.DecimalField(max_digits=5, decimal_places=2)
 
     def __str__(self):
-        return (f"{self.name} ({self.weight_percent}%)")
+        return f"{self.name} - {self.weight_percent}% weight"
     
 class Evaluation(models.Model):
     placement =models.ForeignKey(InternshipPlacement, on_delete=models.CASCADE, related_name='evaluations')
@@ -86,6 +87,7 @@ class Evaluation(models.Model):
 
     class Meta:
         unique_together = [['placement', 'evaluation_type']]  
+        ordering = ['-evaluated_at']
     evaluated_at =models.DateTimeField(auto_now_add=True)
 
     #class Meta:
