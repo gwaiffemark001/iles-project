@@ -1,4 +1,4 @@
-import React, {useState, useFetch} from 'react';
+import React, {useState, useEffect} from 'react';
 import './WeeklyLogDashboard.css';
 
 export default function WeeklyLogDashboard(){
@@ -72,8 +72,8 @@ export default function WeeklyLogDashboard(){
     return(
         <div className='dashbboard-container'>
             <h1 className='dashboard-header'> Weekly Internship Log </h1>
-            <div className='dashboard-card'>
-                <h2>  Submit Weekly Internship Log</h2> 
+            
+                <h1>  Submit Weekly Internship Log</h1> 
                 <form onSubmit={handleSubmit} className='log-form'>
                     <input 
                         type="number"
@@ -132,32 +132,26 @@ export default function WeeklyLogDashboard(){
                         
                 </form>
 
-                
-            </div>
-            <div className='logs-section'>
-                <h2> Submitted Logs</h2>
-                {logs.length === 0 ? (
-                    <p> No Logs Submiited yet.</p>
-                ) : ( 
-                    logs.map((log) => (
+
+           
+                <div className='logs-list'>
+                    <h2> Submitted Logs</h2>
+                    
+                    {logs.map((log) => (
                         <div key={log.id} className='log-card'>
-                            <h3>Week {log.week}</h3>
-                            <p><strong>Tasks:</strong>{log.tasks}</p>
-                            <p><strong>Skills:</strong>{log.skills}</p>
-                            <p><strong>Hours:</strong>{log.hours}</p>
-                            <p>
-                                <strong>Status:</strong>{" "}
-                                <span className='pending-status'>{log.status}</span>
-                            </p>
+                            <h3>Week {log.week_number}</h3>
+                            <p><strong>Activities: </strong>{log.activities}</p>
+                            <p><strong>Challenges: </strong>{log.challlenges}</p>
+                            <p><strong>Learning: </strong>{log.learning}</p>
+                            <p><strong>Status: </strong>{log.status}</p>
+                            <p><strong>Supervisor Comment: </strong>{log.supervisor_comment || "No comment yet"}</p>
 
                         </div>
-                    ))
+                    ))}
 
-                )}
-            </div>
-        </div>
+                 </div>
+        </div>      
     );
-}
-export default studentDashboard
+}              
   
 
