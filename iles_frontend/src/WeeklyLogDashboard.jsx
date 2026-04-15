@@ -44,7 +44,7 @@ export default function WeeklyLogDashboard(){
                     }, 
                     body: JSON.stringify({
                         ...FormData, 
-                        status: "submiited",
+                        status: "submitted",
                     }),
                 }
                 
@@ -70,7 +70,7 @@ export default function WeeklyLogDashboard(){
     };
 
     return(
-        <div className='dashbboard-container'>
+        <div className='dashboard-container'>
             <h1 className='dashboard-header'> Weekly Internship Log </h1>
             
                 <h1>  Submit Weekly Internship Log</h1> 
@@ -114,7 +114,7 @@ export default function WeeklyLogDashboard(){
                     /> 
                     
                     <textarea
-                        name=""
+                        name="learning"
                         placeholder="What did you learning?"
                         value={FormData.learning}
                         onChange={handleChange}
@@ -141,7 +141,7 @@ export default function WeeklyLogDashboard(){
                         <div key={log.id} className='log-card'>
                             <h3>Week {log.week_number}</h3>
                             <p><strong>Activities: </strong>{log.activities}</p>
-                            <p><strong>Challenges: </strong>{log.challlenges}</p>
+                            <p><strong>Challenges: </strong>{log.challenges}</p>
                             <p><strong>Learning: </strong>{log.learning}</p>
                             <p><strong>Status: </strong>{log.status}</p>
                             <p><strong>Supervisor Comment: </strong>{log.supervisor_comment || "No comment yet"}</p>
