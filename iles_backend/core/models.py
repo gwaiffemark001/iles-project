@@ -57,6 +57,7 @@ class WeeklyLog(models.Model):
     
     class Meta:
         unique_together =[['placement', 'week_number']]
+        ordering = ['week_number']
 
     def __str__(self):
         return (f"Week {self.week_number}-{self.placement.student.username} ({self.status})")
@@ -86,6 +87,7 @@ class Evaluation(models.Model):
 
     class Meta:
         unique_together = [['placement', 'evaluation_type']]  
+        ordering = ['-evaluated_at']
     evaluated_at =models.DateTimeField(auto_now_add=True)
 
     #class Meta:
