@@ -1,37 +1,72 @@
-import React, {useState} from 'react';
-import './StudentDashboard.css';
+import React, {useState, useFetch} from 'react';
+import './WeeklyLogDashboard.css';
 
-
-function studentDashboard(){
+export default function WeeklyLogDashboard(){
     const [logs, setLogs] = useState([]);
     const [FormData, setFormData] = useState({
-        week: "",
-        tasks: "",
-        skills: "",
-        hours: "",
-    });
+        placement: "",
+        week_number: "",
+        activities: "",
+        challenges: "",
+        learning: "",
+        deadline: "",
+    }); 
+
+    useEffect(() => { 
+        fetchLogs();
+    }, []);
+
+    const fetchLogs = async () => {
+        try{
+            const response = await fetch("http://127.0.0.1:8000/api/weekly-logs/");
+            const data = await response.json();
+            setLogs(data);
+        }
+        catch(error){
+            console.error("Error fetching logs: ", error);
+        }
+    };
 
     const handleChange = (e) => {
         setFormData({...FormData, 
                     [e.target.name] : e.target.value});
     };
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
-        const newLog = {...FormData, 
-                        status: "Pending Review",
-                        id: Date.now(),
+        
+        try{
+            const response = await fetch("http://127.0.0.1:8000/api/weekly-logs/", 
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                    }, 
+                    body: JSON.stringify({
+                        ...FormData, 
+                        status: "submiited",
+                    }),
+                }
+                
+            );
 
-        };
+            const newLog = await response.json();
+            setLogs([newLog, ...logs]);
 
-        setLogs([newLog, ...logs]);
-
-        setFormData({
-            week: "",
-            tasks: "",
-            skills: "",
-            hours: "",
-        });
+            setFormData({
+                placement: "",
+                week_number: "",
+                activities: "",
+                challenges: "",
+                learning: "",
+                deadline: "",
+            });
+            
+            
+        } catch(error){
+            console.error("Error submitting log:", error);
+        }
+        
     };
 
     return(
