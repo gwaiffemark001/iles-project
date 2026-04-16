@@ -1,7 +1,7 @@
 import React, {useState, useEffect} from 'react';
-import './WeeklyLogDashboard.css';
+import './StudentDashboard.css';
 
-export default function WeeklyLogDashboard(){
+export default function StudentDashboard(){
     const [logs, setLogs] = useState([]);
     const [FormData, setFormData] = useState({
         placement: "",
@@ -71,9 +71,21 @@ export default function WeeklyLogDashboard(){
 
     return(
         <div className='dashboard-container'>
-            <h1 className='dashboard-header'> Weekly Internship Log </h1>
-            
-                <h1>  Submit Weekly Internship Log</h1> 
+            <header className='dashboard-header'>
+                <h1 className='dashboard-header'> Weekly Internship Log </h1>
+                <p> Track and Submit your weekly internship progress</p>
+            </header>
+                <div className='dashboard-cards'>
+                    <div className='card'>
+                        <h3>Total Logs</h3>
+                        <p>{log.length}</p>
+                    </div>
+                    <div className='card'>
+                        <h3>Submitted</h3>
+                        <p>{logs.filter(log => log.status === "submitted").length}</p>
+                    </div>
+                    
+                </div> 
                 <form onSubmit={handleSubmit} className='log-form'>
                     <input 
                         type="number"
@@ -115,7 +127,7 @@ export default function WeeklyLogDashboard(){
                     
                     <textarea
                         name="learning"
-                        placeholder="What did you learning?"
+                        placeholder="What did you learn?"
                         value={FormData.learning}
                         onChange={handleChange}
                         
