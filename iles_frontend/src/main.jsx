@@ -6,7 +6,9 @@ import { BrowserRouter } from 'react-router-dom';
 import ILES from './ILES';
 
 ReactDOM.createRoot(document.getElementById('root')).render(
-  <BrowserRouter>
-    <ILES />
-  </BrowserRouter>,
+  <React.StrictMode>
+    <BrowserRouter>
+      <ILES />
+    </BrowserRouter>
+  </React.StrictMode>
 );
