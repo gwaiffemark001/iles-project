@@ -78,90 +78,105 @@ export default function StudentDashboard(){
                 <div className='dashboard-cards'>
                     <div className='card'>
                         <h3>Total Logs</h3>
-                        <p>{log.length}</p>
+                        <p>{logs.length}</p>
                     </div>
                     <div className='card'>
                         <h3>Submitted</h3>
                         <p>{logs.filter(log => log.status === "submitted").length}</p>
                     </div>
-                    
+                    <div className='card'>
+                        <h3>Reviewed</h3>
+                        <p>{logs.filter(log => log.supervisor_comment).length}</p>
+                    </div>
                 </div> 
-                <form onSubmit={handleSubmit} className='log-form'>
-                    <input 
-                        type="number"
-                        name="placement" 
-                        placeholder="Placement ID"
-                        value={FormData.placement}
-                        onChange={handleChange}
-                        required
-                       
+                <div className='dashboard-main'>
+                    <div className='form-section'>
+                        <form onSubmit={handleSubmit} className='log-form'>
+                            <input 
+                                type="number"
+                                name="placement" 
+                                placeholder="Placement ID"
+                                value={FormData.placement}
+                                onChange={handleChange}
+                                required
+                            /> 
                         
-                    />       
+                             
 
-                    <input 
-                        type="number" 
-                        name="week_number"
-                        placeholder="Week Number"
-                        value={FormData.week_number}
-                        onChange={handleChange}
-                        required
+                            <input 
+                                type="number" 
+                                name="week_number"
+                                placeholder="Week Number"
+                                value={FormData.week_number}
+                                onChange={handleChange}
+                                required
+                            />
                         
-                        
-                    />
-
-                    <textarea 
-                        name="activities"
-                        placeholder="Activities Done"
-                        value={FormData.activities}
-                        onChange={handleChange}
-                        required
-                    /> 
-
-                    <textarea
-                        name="challenges"
-                        placeholder="Challenges Faced"
-                        value={FormData.challenges}
-                        onChange={handleChange}
-                        required 
-                    /> 
                     
-                    <textarea
-                        name="learning"
-                        placeholder="What did you learn?"
-                        value={FormData.learning}
-                        onChange={handleChange}
+
+                            <textarea 
+                                name="activities"
+                                placeholder="Activities Done"
+                                value={FormData.activities}
+                                onChange={handleChange}
+                                required
+                            /> 
+
+                            <textarea
+                                name="challenges"
+                                placeholder="Challenges Faced"
+                                value={FormData.challenges}
+                                onChange={handleChange}
+                                required 
+                            /> 
+                    
+                            <textarea
+                                name="learning"
+                                placeholder="What did you learn?"
+                                value={FormData.learning}
+                                onChange={handleChange}
                         
-                    /> 
+                            /> 
                      
-                    <input
-                        type="date"
-                        name="deadline"
-                        value={FormData.deadline}
-                        onChange={handleChange}
-                    />     
+                            <input
+                                type="date"
+                                name="deadline"
+                                value={FormData.deadline}
+                                onChange={handleChange}
+                            />     
                     
-                    <button type="submit" className='dashboard-button'>Submit Weekly Log</button>    
+                            <button type="submit" className='dashboard-button'>Submit Weekly Log</button>    
                         
-                </form>
+                        </form>
+                    </div>
+                    
+                    <div className='logs-section'>
+                        <h2> Submitted Logs</h2>
+                        {logs.length === 0? (
+                            <p>No logs submitted yet.</p>
+                        ) : (
+                            logs.map((log) => (
+                                <div key={log.id} className='log-card'>
+                                    <h3>Week {log.week_number}</h3>
+                                    <p><strong>Activities:</strong>{log.activities}</p>
+                                    <p><strong>Challenges:</strong>{log.challenges}</p>
+                                    <p><strong>Learning:</strong>{log.learning}</p>
+                                    <p><strong>Status:</strong>{log.status}</p>
+                                    <p>
+                                        <strong>Supervisor Comment:</strong>{" "}
+                                        {log.supervisor_comment || "No Comment Yet."}
+                                    </p>
+                                </div>
+                            ))
+                        )}
+                    
+                     
+
+                    </div>
+                </div>
 
 
            
-                <div className='logs-list'>
-                    <h2> Submitted Logs</h2>
-                    
-                    {logs.map((log) => (
-                        <div key={log.id} className='log-card'>
-                            <h3>Week {log.week_number}</h3>
-                            <p><strong>Activities: </strong>{log.activities}</p>
-                            <p><strong>Challenges: </strong>{log.challenges}</p>
-                            <p><strong>Learning: </strong>{log.learning}</p>
-                            <p><strong>Status: </strong>{log.status}</p>
-                            <p><strong>Supervisor Comment: </strong>{log.supervisor_comment || "No comment yet"}</p>
-
-                        </div>
-                    ))}
-
-                 </div>
         </div>      
     );
 }              
