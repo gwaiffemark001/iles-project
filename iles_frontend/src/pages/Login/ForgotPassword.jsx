@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
-import './Firstpage.css';
-import './ILES.css';
+import './Login.css';
+import '../../ILES.css';
 
 function ForgotPassword() {
     return (
