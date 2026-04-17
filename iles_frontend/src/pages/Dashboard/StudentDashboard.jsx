@@ -70,27 +70,45 @@ export default function StudentDashboard(){
     };
 
     return(
-        <div className='dashboard-container'>
-            <header className='dashboard-header'>
-                <h1 className='dashboard-header'> Weekly Internship Log </h1>
-                <p> Track and Submit your weekly internship progress</p>
-            </header>
-                <div className='dashboard-cards'>
+        <div className='dashboard'>
+            <aside className='sidebar'>
+                <h2 className='logo'> ILES </h2>
+                <p className='role'>Student </p>
+                 
+                <nav>
+                    <ul>
+                        <li className='active'>Dashboard</li>
+                        <li>My Logs</li>
+                        <li>Submit</li>
+                        <li>Profile</li>
+                    </ul>
+                </nav>
+                <div className='logout'>Logout</div>
+            </aside>
+            <main className='main'>
+                <header className='topbar'>
+                    <h2>Welcome Back, Student</h2>
+                    <div className='avatar'>ST</div>
+                </header>
+            
+
+                <section className='stats'>
                     <div className='card'>
-                        <h3>Total Logs</h3>
+                        <h4>Total Logs</h4>
                         <p>{logs.length}</p>
                     </div>
                     <div className='card'>
-                        <h3>Submitted</h3>
+                        <h4>Submitted</h4>
                         <p>{logs.filter(log => log.status === "submitted").length}</p>
                     </div>
                     <div className='card'>
-                        <h3>Reviewed</h3>
+                        <h4>Reviewed</h4>
                         <p>{logs.filter(log => log.supervisor_comment).length}</p>
                     </div>
-                </div> 
-                <div className='dashboard-main'>
-                    <div className='form-section'>
+                </section> 
+                <section className='grid'>
+                    <div className='form-card'>
+                        <h3>Submit Weekly Log</h3>
                         <form onSubmit={handleSubmit} className='log-form'>
                             <input 
                                 type="number"
@@ -149,8 +167,8 @@ export default function StudentDashboard(){
                         
                         </form>
                     </div>
-                    
-                    <div className='logs-section'>
+            
+                    <div className='logs-card'>
                         <h2> Submitted Logs</h2>
                         {logs.length === 0? (
                             <p>No logs submitted yet.</p>
@@ -162,10 +180,7 @@ export default function StudentDashboard(){
                                     <p><strong>Challenges:</strong>{log.challenges}</p>
                                     <p><strong>Learning:</strong>{log.learning}</p>
                                     <p><strong>Status:</strong>{log.status}</p>
-                                    <p>
-                                        <strong>Supervisor Comment:</strong>{" "}
-                                        {log.supervisor_comment || "No Comment Yet."}
-                                    </p>
+                                    
                                 </div>
                             ))
                         )}
@@ -173,11 +188,12 @@ export default function StudentDashboard(){
                      
 
                     </div>
-                </div>
-
-
+                </section>
+            
+            </main>
+        </div>
            
-        </div>      
+              
     );
 }              
   
