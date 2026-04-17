@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import AuthContext from "./AuthContextInstance";
-import { authAPI } from "../api";
+import { authAPI, getErrorMessage } from "../api";
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
@@ -39,16 +39,24 @@ export const AuthProvider = ({ children }) => {
       localStorage.setItem("user", JSON.stringify(profileResponse.data));
       return { success: true };
     } catch (error) {
-      return { success: false, error: error.response?.data || "Login failed" };
+      return {
+        success: false,
+        error: getErrorMessage(error, "Login failed"),
+        details: error.response?.data,
+      };
     }
   };
 
   const register = async (userData) => {
     try {
-      await authAPI.register(userData);
-      return { success: true };
+      const response = await authAPI.register(userData);
+      return { success: true, data: response.data };
     } catch (error) {
-      return { success: false, error: error.response?.data || "Registration failed" };
+      return {
+        success: false,
+        error: getErrorMessage(error, "Registration failed"),
+        details: error.response?.data,
+      };
     }
   };
 

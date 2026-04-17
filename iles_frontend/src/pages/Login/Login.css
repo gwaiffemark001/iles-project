@@ -141,6 +141,15 @@ body {
   font-size: 0.95rem;
 }
 
+.success-message {
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: 1px solid #9cd7ba;
+  background: #edf9f2;
+  color: #176246;
+  font-size: 0.95rem;
+}
+
 .btn-primary,
 .login-btn {
   width: 100%;

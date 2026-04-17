@@ -1,6 +1,7 @@
 .student-dashboard {
   display: flex;
-  height: 100vh;
+  min-height: 100vh;
+  background: #f4f7f8;
 }
 
 .sidebar {
@@ -87,12 +88,180 @@
   overflow-y: auto;
 }
 
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.section-header p {
+  margin-top: 6px;
+  color: #5f6c76;
+}
+
+.log-editor-card,
 .log-card, .placement-card, .evaluation-card {
   background: white;
   border: 1px solid #ddd;
   border-radius: 8px;
   padding: 15px;
   margin-bottom: 15px;
+}
+
+.log-editor-card {
+  margin-bottom: 24px;
+  border: 1px solid #d7e5e3;
+  box-shadow: 0 10px 24px rgba(20, 53, 42, 0.05);
+}
+
+.log-editor-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.log-form-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.form-row-double {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  color: #24463b;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.form-field input,
+.form-field select,
+.form-field textarea {
+  width: 100%;
+  border: 1px solid #c8d8d1;
+  border-radius: 10px;
+  padding: 12px 14px;
+  font-size: 14px;
+  font-family: inherit;
+  color: #17352a;
+  background: #ffffff;
+}
+
+.form-field textarea {
+  resize: vertical;
+  min-height: 120px;
+}
+
+.form-field input:focus,
+.form-field select:focus,
+.form-field textarea:focus {
+  outline: none;
+  border-color: #1e8d68;
+  box-shadow: 0 0 0 4px rgba(30, 141, 104, 0.12);
+}
+
+.log-form-actions,
+.log-card-actions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.btn-primary-action,
+.secondary-btn,
+.ghost-btn,
+.danger-btn {
+  border: none;
+  border-radius: 999px;
+  padding: 10px 16px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.btn-primary-action {
+  background: #1e8d68;
+  color: #ffffff;
+}
+
+.secondary-btn {
+  background: #e8f3ef;
+  color: #1a6f53;
+}
+
+.ghost-btn {
+  background: #eef3f8;
+  color: #2f5064;
+}
+
+.danger-btn {
+  background: #fdeeee;
+  color: #b63c3c;
+}
+
+.btn-primary-action:hover,
+.secondary-btn:hover,
+.ghost-btn:hover,
+.danger-btn:hover {
+  opacity: 0.92;
+}
+
+.page-alert {
+  margin-bottom: 16px;
+}
+
+.log-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.log-card-header h3,
+.placement-card h3,
+.evaluation-card h3 {
+  margin: 0 0 4px;
+}
+
+.log-company {
+  color: #5f6c76;
+}
+
+.log-card-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.log-card p,
+.placement-card p,
+.evaluation-card p {
+  margin: 8px 0;
+}
+
+.empty-state {
+  background: #ffffff;
+  border: 1px dashed #c8d8d1;
+  border-radius: 10px;
+  padding: 20px;
+  color: #5f6c76;
 }
 
 .status {
@@ -109,3 +278,19 @@
 .status.pending { background: #fef3c7; color: #d97706; }
 .status.active { background: #d1fae5; color: #065f46; }
 .status.completed { background: #e5e7eb; color: #6b7280; }
+
+@media (max-width: 960px) {
+  .student-dashboard {
+    flex-direction: column;
+  }
+
+  .sidebar {
+    width: 100%;
+  }
+
+  .form-row,
+  .form-row-double,
+  .log-card-grid {
+    grid-template-columns: 1fr;
+  }
+}
