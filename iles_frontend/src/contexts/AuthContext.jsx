@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import AuthContext from "./AuthContextInstance";
-import { authAPI, getErrorMessage } from "../api";
+import { authAPI } from "@/api/api";
+import { getErrorMessage } from "@/api/api";
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
