@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../../contexts/useAuth";
 import "./Login.css";
 
@@ -20,8 +20,15 @@ const getDashboardRoute = (role) => {
 };
 
 function Login() {
-  const [loginData, setLoginData] = useState({ username: "", password: "" });
+  const location = useLocation();
+  const [loginData, setLoginData] = useState(() => ({
+    username: location.state?.suggestedUsername || "",
+    password: "",
+  }));
   const [error, setError] = useState("");
+  const [successMessage, setSuccessMessage] = useState(
+    () => location.state?.registrationSuccess || ""
+  );
   const [loading, setLoading] = useState(false);
   const { login, user } = useAuth();
   const navigate = useNavigate();
@@ -31,6 +38,12 @@ function Login() {
       navigate(getDashboardRoute(user.role), { replace: true });
     }
   }, [navigate, user]);
+
+  useEffect(() => {
+    if (location.state?.registrationSuccess) {
+      navigate(location.pathname, { replace: true, state: null });
+    }
+  }, [location.pathname, location.state, navigate]);
 
   const handleChange = (event) => {
     const { name, value } = event.target;
@@ -45,16 +58,12 @@ function Login() {
     const result = await login(loginData);
 
     if (!result.success) {
-      const errorMessage =
-        typeof result.error === "string"
-          ? result.error
-          : result.error?.detail || "Login failed";
-
-      setError(errorMessage);
+      setError(result.error || "Login failed");
       setLoading(false);
       return;
     }
 
+    setSuccessMessage("");
     setLoading(false);
   };
 
@@ -72,6 +81,7 @@ function Login() {
           <h2 className="login-card-title">Login</h2>
 
           <form className="login-form" onSubmit={handleLogin}>
+            {successMessage ? <div className="success-message">{successMessage}</div> : null}
             {error ? <div className="error-message">{error}</div> : null}
 
             <label className="form-group">

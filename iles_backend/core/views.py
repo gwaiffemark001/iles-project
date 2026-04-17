@@ -1,28 +1,122 @@
 # ILES Backend API Views
 # Built by Mugabe Gideon
 # Endpoints: WeeklyLog, Placement, Evaluation, Auth, Profile, Supervisor Workflow
-from rest_framework.views import APIView
-from rest_framework.response import Response
 from rest_framework import status
-from rest_framework.permissions import IsAuthenticated, AllowAny
-from .models import CustomUser, InternshipPlacement, WeeklyLog, Evaluation 
-from .serializers import CustomUserSerializer, InternshipPlacementSerializer, WeeklyLogSerializer , EvaluationSerializer
+from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.response import Response
+from rest_framework.views import APIView
+from django.utils import timezone
+
+from .models import CustomUser, Evaluation, InternshipPlacement, WeeklyLog
+from .serializers import (
+    CustomUserSerializer,
+    EvaluationSerializer,
+    InternshipPlacementSerializer,
+    WeeklyLogSerializer,
+)
 
 class WeeklyLogListView(APIView):
     permission_classes =[IsAuthenticated]   
 
     def get(self, request):
-        logs = WeeklyLog.objects.filter(placement__student=request.user)
+        if request.user.role == 'admin':
+            logs = WeeklyLog.objects.all()
+        elif request.user.role == 'workplace_supervisor':
+            logs = WeeklyLog.objects.filter(placement__workplace_supervisor=request.user)
+        elif request.user.role == 'academic_supervisor':
+            logs = WeeklyLog.objects.filter(placement__academic_supervisor=request.user)
+        else:
+            logs = WeeklyLog.objects.filter(placement__student=request.user)
         serializer = WeeklyLogSerializer(logs, many=True)
         return Response(serializer.data) 
     
     def post(self, request):
+        if request.user.role != 'student':
+            return Response(
+                {'error': 'Only students can create weekly logs'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
         serializer = WeeklyLogSerializer(data=request.data)
         if serializer.is_valid():
-            serializer.save()
+            placement = serializer.validated_data['placement']
+            if placement.student != request.user:
+                return Response(
+                    {'error': 'You can only create logs for your own placement'},
+                    status=status.HTTP_403_FORBIDDEN
+                )
+
+            status_value = serializer.validated_data.get('status', 'draft')
+            serializer.save(
+                submitted_at=timezone.now() if status_value == 'submitted' else None
+            )
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+class WeeklyLogDetailView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def _get_log_for_user(self, request, pk):
+        if request.user.role == 'admin':
+            return WeeklyLog.objects.get(pk=pk)
+
+        if request.user.role == 'workplace_supervisor':
+            return WeeklyLog.objects.get(pk=pk, placement__workplace_supervisor=request.user)
+
+        if request.user.role == 'academic_supervisor':
+            return WeeklyLog.objects.get(pk=pk, placement__academic_supervisor=request.user)
+
+        return WeeklyLog.objects.get(pk=pk, placement__student=request.user)
+
+    def get(self, request, pk):
+        try:
+            log = self._get_log_for_user(request, pk)
+        except WeeklyLog.DoesNotExist:
+            return Response({'error': 'Log not found'}, status=status.HTTP_404_NOT_FOUND)
+        serializer = WeeklyLogSerializer(log)
+        return Response(serializer.data)
+
+    def put(self, request, pk):
+        if request.user.role != 'student':
+            return Response(
+                {'error': 'Only students can update weekly logs'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        try:
+            log = WeeklyLog.objects.get(pk=pk, placement__student=request.user)
+        except WeeklyLog.DoesNotExist:
+            return Response({'error': 'Log Not found'}, status=status.HTTP_404_NOT_FOUND)
+
+        if log.status != 'draft':
+            return Response(
+                {'error': 'Only draft logs can be updated'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        serializer = WeeklyLogSerializer(log, data=request.data)
+                                
+        if serializer.is_valid():
+            placement = serializer.validated_data['placement']
+            if placement.student != request.user:
+                return Response(
+                    {'error': 'You can only update logs for your own placement'},
+                    status=status.HTTP_403_FORBIDDEN
+                )
+
+            status_value = serializer.validated_data.get('status', log.status)
+            serializer.save(
+                submitted_at=timezone.now() if status_value == 'submitted' else None
+            )
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
     def delete(self, request, pk):
+        if request.user.role != 'student':
+            return Response(
+                {'error': 'Only students can delete weekly logs'},
+                status=status.HTTP_403_FORBIDDEN
+            )
         try:
             log = WeeklyLog.objects.get(pk=pk, placement__student=request.user)
         except WeeklyLog.DoesNotExist:
@@ -31,30 +125,6 @@ class WeeklyLogListView(APIView):
             return Response({'error': 'Only draft logs can be deleted'}, status=status.HTTP_400_BAD_REQUEST)
         log.delete()
         return Response({'message': 'Log deleted successfully'}, status=status.HTTP_204_NO_CONTENT)
-    
-class WeeklyLogDetailView(APIView):
-    permission_classes = [IsAuthenticated]
-
-    def get(self, request, pk):
-        try:
-            log = WeeklyLog.objects.get(pk=pk, placement__student=request.user)
-        except WeeklyLog.DoesNotExist:
-            return Response({'error': 'Log not found'}, status=status.HTTP_404_NOT_FOUND)
-        serializer = WeeklyLogSerializer(log)
-        return Response(serializer.data)
-
-    def put(self, request, pk):
-        try:
-            log=WeeklyLog.objects.get(pk=pk, placement__student=request.user)
-        except WeeklyLog.DoesNotExist:
-            return Response({'error': 'Log Not found'}, status=status.HTTP_404_NOT_FOUND)
-
-        serializer = WeeklyLogSerializer(log, data=request.data)
-                                
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 class InternshipPlacementListView(APIView):
     permission_classes = [IsAuthenticated]
@@ -139,7 +209,12 @@ class UserRegistrationView(APIView):
             email = serializer.validated_data.get('email',''),
             password = serializer.validated_data['password'],
             role = serializer.validated_data.get('role', 'student'),
-          
+            first_name=serializer.validated_data.get('first_name', ''),
+            last_name=serializer.validated_data.get('last_name', ''),
+            phone=serializer.validated_data.get('phone', ''),
+            department=serializer.validated_data.get('department', ''),
+            staff_number=serializer.validated_data.get('staff_number', ''),
+            student_number=serializer.validated_data.get('student_number', ''),
         )
         return Response({
             'message': 'User created successfully',
@@ -184,6 +259,8 @@ class UserProfileView(APIView):
     def put(self, request):
         serializer = CustomUserSerializer(request.user, data=request.data, partial=True)
         if serializer.is_valid():
+            if 'password' in serializer.validated_data:
+                serializer.validated_data.pop('password')
             serializer.save()
             return Response(serializer.data)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

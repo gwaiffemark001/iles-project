@@ -1,12 +1,19 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "../../contexts/useAuth";
-import { placementsAPI, logsAPI } from "../../api";
+import { getErrorMessage, logsAPI, placementsAPI } from "../../api";
 import "./WorkplaceSupervisorDashboard.css";
+
+const getUserInitials = (user) => {
+  const firstInitial = user?.first_name?.[0] || "";
+  const lastInitial = user?.last_name?.[0] || "";
+  return `${firstInitial}${lastInitial}` || user?.username?.slice(0, 2)?.toUpperCase() || "IL";
+};
 
 const WorkplaceSupervisorDashboard = () => {
   const { user, logout } = useAuth();
   const [placements, setPlacements] = useState([]);
   const [logs, setLogs] = useState([]);
+  const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -15,6 +22,7 @@ const WorkplaceSupervisorDashboard = () => {
 
   const fetchData = async () => {
     try {
+      setError("");
       const [placementsRes, logsRes] = await Promise.all([
         placementsAPI.getPlacements(),
         logsAPI.getLogs(),
@@ -22,13 +30,14 @@ const WorkplaceSupervisorDashboard = () => {
       setPlacements(placementsRes.data);
       setLogs(logsRes.data);
     } catch (error) {
-      console.error('Error fetching data:', error);
+      setError(getErrorMessage(error, "Unable to load supervisor dashboard data."));
     } finally {
       setLoading(false);
     }
   };
 
   const getStatusClass = (status) => {
+    if (status === "pendingreview") return "badge pending";
     if (status === "draft") return "badge draft";
     if (status === "submitted") return "badge submitted";
     if (status === "reviewed") return "badge reviewed";
@@ -38,14 +47,14 @@ const WorkplaceSupervisorDashboard = () => {
 
   const getInternsData = () => {
     return placements.map(placement => {
-      const internLogs = logs.filter(log => log.placement === placement.id);
+      const internLogs = logs.filter(log => (log.placement?.id ?? log.placement_id) === placement.id);
       const pendingLogs = internLogs.filter(log => log.status === 'submitted').length;
       const totalLogs = internLogs.length;
 
       return {
-        id: placement.student.id,
-        name: `${placement.student.first_name} ${placement.student.last_name}`,
-        department: placement.student.department || 'N/A',
+        id: placement.student?.id || placement.id,
+        name: placement.student_name || placement.student?.full_name || placement.student?.username || "Unassigned Student",
+        department: placement.student?.department || 'N/A',
         logs: totalLogs,
         status: pendingLogs > 0 ? 'Pending Review' : totalLogs > 0 ? 'Reviewed' : 'No Logs',
         placement: placement,
@@ -89,10 +98,10 @@ const WorkplaceSupervisorDashboard = () => {
             <h1>Welcome back, {user?.first_name || user?.username}</h1>
             <p>Workplace Supervisor — Internship Logging & Evaluation System</p>
           </div>
-          <div className="avatar">
-            {user?.first_name?.[0]}{user?.last_name?.[0]}
-          </div>
+          <div className="avatar">{getUserInitials(user)}</div>
         </div>
+
+        {error ? <div className="dashboard-alert">{error}</div> : null}
 
         {/* Stats */}
         <div className="stats">
@@ -115,24 +124,30 @@ const WorkplaceSupervisorDashboard = () => {
         <div className="intern-table">
           <div className="table-header">
             <div>Intern Name</div>
+            <div>Company</div>
             <div>Department</div>
             <div>Logs Submitted</div>
             <div>Status</div>
             <div>Action</div>
           </div>
-          {interns.map((intern) => (
-            <div className="table-row" key={intern.id}>
-              <div>{intern.name}</div>
-              <div>{intern.department}</div>
-              <div>{intern.logs}</div>
-              <div><span className={getStatusClass(intern.status.toLowerCase().replace(' ', ''))}>{intern.status}</span></div>
-              <div>
-                <button className="eval-btn">
-                  {intern.status === "Pending Review" ? "Review" : "View"}
-                </button>
+          {interns.length ? (
+            interns.map((intern) => (
+              <div className="table-row" key={intern.id}>
+                <div>{intern.name}</div>
+                <div>{intern.placement.company_name}</div>
+                <div>{intern.department}</div>
+                <div>{intern.logs}</div>
+                <div><span className={getStatusClass(intern.status.toLowerCase().replace(' ', ''))}>{intern.status}</span></div>
+                <div>
+                  <button className="eval-btn">
+                    {intern.status === "Pending Review" ? "Review" : "View"}
+                  </button>
+                </div>
               </div>
-            </div>
-          ))}
+            ))
+          ) : (
+            <div className="empty-row">No interns are currently assigned to you.</div>
+          )}
         </div>
 
       </div>
