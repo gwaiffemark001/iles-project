@@ -71,15 +71,15 @@ function Signup() {
 
             // Redirect based on role
             if (role === 'admin') {
-                navigate('/admin-dashboard');
+                navigate('/');
             } else if (role === 'academic_supervisor') {
-                navigate('/academic_supervisor-dashboard');
+                navigate('/academic-supervisor/dashboard');
             } else if (role === 'workplace_supervisor') {
-                navigate('/workplace_supervisor-dashboard');
+                navigate('/workplace-supervisor/dashboard');
             } else {
-                navigate('/student-dashboard'); // Default dashboard for other roles
+                navigate('/student/dashboard');
             }
-        } catch (error) {
+        } catch {
             setErrorMessage('Unable to reach the server. Please try again later.');
         }
     };
