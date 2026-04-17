@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "../../contexts/useAuth";
-import { placementsAPI, logsAPI } from "../../api";
+import { logsAPI, placementsAPI } from "@/api/api";
 import "./WorkplaceSupervisorDashboard.css";
 
 const WorkplaceSupervisorDashboard = () => {
