@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/useAuth';
-import { evaluationsAPI, getErrorMessage, logsAPI, placementsAPI } from '../../api';
+import { logsAPI, placementsAPI, evaluationsAPI } from '@/api/api';
+import { getErrorMessage } from '@/api/api';
 import './StudentDashboard.css';
 
 const createInitialLogForm = (defaultPlacementId = '') => ({

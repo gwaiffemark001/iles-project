@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "../../contexts/useAuth";
-import { getErrorMessage, logsAPI, placementsAPI } from "../../api";
+import { logsAPI, placementsAPI } from "@/api/api";
+import { getErrorMessage } from "@/api/api";
 import "./WorkplaceSupervisorDashboard.css";
 
 const getUserInitials = (user) => {
