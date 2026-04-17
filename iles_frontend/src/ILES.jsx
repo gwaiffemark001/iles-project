@@ -4,7 +4,8 @@ import Signup from "./pages/Signup/Signup";
 import WorkplaceSupervisorDashboard from "./pages/WorkplaceSupervisor/WorkplaceSupervisorDashboard";
 import AcademicSupervisorDashboard from "./pages/AcademicSupervisor/AcademicSupervisorDashboard";
 import ForgotPassword from './pages/Login/ForgotPassword';
-import WeeklyLogDashboard from './pages/Dashboard/WeeklyLogDashboard';
+import StudentDashboard from './pages/Dashboard/StudentDashboard';
+
 
 
 function ILES() {
@@ -14,7 +15,7 @@ function ILES() {
             <Route path="/" element={<Login />} />
             <Route path="/signup" element={<Signup />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />
-            <Route path="/weekly-log" element={<WeeklyLogDashboard />}/>
+            <Route path="/student-dashboard/dashboard" element={<StudentDashboard/>}/>
             <Route path="/workplace-supervisor/dashboard" element={<WorkplaceSupervisorDashboard />} />
             <Route path="/academic-supervisor/dashboard" element={<AcademicSupervisorDashboard />} />
         </Routes>

@@ -210,6 +210,9 @@ body { font-family: 'Inter', sans-serif; }
 .badge.pending { background: #faeeda; color: #854F0B; }
 .badge.reviewed { background: #e1f5ee; color: #0F6E56; }
 .badge.overdue { background: #fcebeb; color: #A32D2D; }
+.badge.draft { background: #f0f4fa; color: #6b7280; }
+.badge.submitted { background: #fef3c7; color: #d97706; }
+.badge.approved { background: #d1fae5; color: #065f46; }
 
 /* Evaluate Button */
 .eval-btn {
