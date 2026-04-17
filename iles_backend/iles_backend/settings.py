@@ -80,7 +80,7 @@ import os
 from dotenv import load_dotenv
 
 load_dotenv()
-
+# set environment variables in .env file for DB connection
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
