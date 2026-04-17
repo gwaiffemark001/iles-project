@@ -13,19 +13,28 @@ export default function StudentDashboard(){
     }); 
 
     useEffect(() => { 
-        fetchLogs();
-    }, []);
+        let isMounted = true;
 
-    const fetchLogs = async () => {
-        try{
-            const response = await fetch("http://127.0.0.1:8000/api/weekly-logs/");
-            const data = await response.json();
-            setLogs(data);
-        }
-        catch(error){
-            console.error("Error fetching logs: ", error);
-        }
-    };
+        const loadLogs = async () => {
+            try{
+                const response = await fetch("http://127.0.0.1:8000/api/weekly-logs/");
+                const data = await response.json();
+
+                if (isMounted) {
+                    setLogs(data);
+                }
+            }
+            catch(error){
+                console.error("Error fetching logs: ", error);
+            }
+        };
+
+        loadLogs();
+
+        return () => {
+            isMounted = false;
+        };
+    }, []);
 
     const handleChange = (e) => {
         setFormData({...FormData, 
