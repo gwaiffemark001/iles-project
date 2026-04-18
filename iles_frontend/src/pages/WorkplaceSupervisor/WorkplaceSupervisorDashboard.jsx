@@ -1,20 +1,73 @@
-import { useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useAuth } from "../../contexts/useAuth";
+import { logsAPI, placementsAPI } from "@/api/api";
+import { getErrorMessage } from "@/api/api";
 import "./WorkplaceSupervisorDashboard.css";
 
-const WorkplaceSupervisorDashboard = () => {
-  const navigate = useNavigate();
+const getUserInitials = (user) => {
+  const firstInitial = user?.first_name?.[0] || "";
+  const lastInitial = user?.last_name?.[0] || "";
+  return `${firstInitial}${lastInitial}` || user?.username?.slice(0, 2)?.toUpperCase() || "IL";
+};
 
-  const interns = [
-    { name: "Hope Mwelu", department: "Computer Science", logs: 12, status: "Pending" },
-    { name: "Grace Ahurira", department: "Information Technology", logs: 8, status: "Reviewed" },
-    { name: "Emma Michael", department: "Computer Engineering", logs: 3, status: "Overdue" },
-  ];
+const WorkplaceSupervisorDashboard = () => {
+  const { user, logout } = useAuth();
+  const [placements, setPlacements] = useState([]);
+  const [logs, setLogs] = useState([]);
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  const fetchData = async () => {
+    try {
+      setError("");
+      const [placementsRes, logsRes] = await Promise.all([
+        placementsAPI.getPlacements(),
+        logsAPI.getLogs(),
+      ]);
+      setPlacements(placementsRes.data);
+      setLogs(logsRes.data);
+    } catch (error) {
+      setError(getErrorMessage(error, "Unable to load supervisor dashboard data."));
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const getStatusClass = (status) => {
-    if (status === "Pending") return "badge pending";
-    if (status === "Reviewed") return "badge reviewed";
-    if (status === "Overdue") return "badge overdue";
+    if (status === "pendingreview") return "badge pending";
+    if (status === "draft") return "badge draft";
+    if (status === "submitted") return "badge submitted";
+    if (status === "reviewed") return "badge reviewed";
+    if (status === "approved") return "badge approved";
+    return "badge";
   };
+
+  const getInternsData = () => {
+    return placements.map(placement => {
+      const internLogs = logs.filter(log => (log.placement?.id ?? log.placement_id) === placement.id);
+      const pendingLogs = internLogs.filter(log => log.status === 'submitted').length;
+      const totalLogs = internLogs.length;
+
+      return {
+        id: placement.student?.id || placement.id,
+        name: placement.student_name || placement.student?.full_name || placement.student?.username || "Unassigned Student",
+        department: placement.student?.department || 'N/A',
+        logs: totalLogs,
+        status: pendingLogs > 0 ? 'Pending Review' : totalLogs > 0 ? 'Reviewed' : 'No Logs',
+        placement: placement,
+      };
+    });
+  };
+
+  if (loading) return <div>Loading...</div>;
+
+  const interns = getInternsData();
+  const pendingReviews = logs.filter(log => log.status === 'submitted').length;
+  const completedEvaluations = logs.filter(log => log.status === 'approved').length;
 
   return (
     <div className="workplace-supervisor-dashboard">
@@ -31,7 +84,7 @@ const WorkplaceSupervisorDashboard = () => {
           <button className="nav-item">Evaluation History</button>
         </nav>
         <div className="sidebar-bottom">
-          <button className="nav-item logout" onClick={() => navigate("/")}>
+          <button className="nav-item logout" onClick={logout}>
             Logout
           </button>
         </div>
@@ -43,25 +96,27 @@ const WorkplaceSupervisorDashboard = () => {
         {/* Top Bar */}
         <div className="topbar">
           <div>
-            <h1>Welcome back, Mr. Smith</h1>
+            <h1>Welcome back, {user?.first_name || user?.username}</h1>
             <p>Workplace Supervisor — Internship Logging & Evaluation System</p>
           </div>
-          <div className="avatar">MS</div>
+          <div className="avatar">{getUserInitials(user)}</div>
         </div>
+
+        {error ? <div className="dashboard-alert">{error}</div> : null}
 
         {/* Stats */}
         <div className="stats">
           <div className="stat-card">
             <div className="stat-label">Assigned Interns</div>
-            <div className="stat-num blue">8</div>
+            <div className="stat-num blue">{interns.length}</div>
           </div>
           <div className="stat-card">
             <div className="stat-label">Logs Pending Review</div>
-            <div className="stat-num amber">5</div>
+            <div className="stat-num amber">{pendingReviews}</div>
           </div>
           <div className="stat-card">
             <div className="stat-label">Evaluations Done</div>
-            <div className="stat-num green">12</div>
+            <div className="stat-num green">{completedEvaluations}</div>
           </div>
         </div>
 
@@ -70,24 +125,30 @@ const WorkplaceSupervisorDashboard = () => {
         <div className="intern-table">
           <div className="table-header">
             <div>Intern Name</div>
+            <div>Company</div>
             <div>Department</div>
             <div>Logs Submitted</div>
             <div>Status</div>
             <div>Action</div>
           </div>
-          {interns.map((intern, index) => (
-            <div className="table-row" key={index}>
-              <div>{intern.name}</div>
-              <div>{intern.department}</div>
-              <div>{intern.logs}</div>
-              <div><span className={getStatusClass(intern.status)}>{intern.status}</span></div>
-              <div>
-                <button className="eval-btn">
-                  {intern.status === "Reviewed" ? "View" : "Evaluate"}
-                </button>
+          {interns.length ? (
+            interns.map((intern) => (
+              <div className="table-row" key={intern.id}>
+                <div>{intern.name}</div>
+                <div>{intern.placement.company_name}</div>
+                <div>{intern.department}</div>
+                <div>{intern.logs}</div>
+                <div><span className={getStatusClass(intern.status.toLowerCase().replace(' ', ''))}>{intern.status}</span></div>
+                <div>
+                  <button className="eval-btn">
+                    {intern.status === "Pending Review" ? "Review" : "View"}
+                  </button>
+                </div>
               </div>
-            </div>
-          ))}
+            ))
+          ) : (
+            <div className="empty-row">No interns are currently assigned to you.</div>
+          )}
         </div>
 
       </div>
