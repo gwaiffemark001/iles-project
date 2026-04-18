@@ -1,4 +1,4 @@
-:root {
+/*:root {
   --text: #6b6375;
   --text-h: #08060d;
   --bg: #fff;
@@ -108,4 +108,26 @@ code {
   line-height: 135%;
   padding: 4px 8px;
   background: var(--code-bg);
+/* } */
+/*
+colours:
+light green: #7ed56f
+Medium green: #55c57a
+Dark green: #28b487
+*/
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: "Lato", sans-serif;
+  font-weight: 400;
+  font-size: 16px;
+  line-height: 1.7;
+  color: #777;
+  margin-bottom: 2rem;
+    
 }
