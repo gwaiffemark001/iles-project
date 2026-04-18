@@ -34,7 +34,7 @@ class CustomUserSerializer(serializers.ModelSerializer):
     class Meta:
         model = CustomUser
         fields = [
-            "id", "username", "email", "first_name", "last_name", "full_name", "role", "phone", "department", "staff_number", "student_number", "password"
+            "id", "username", "email", "first_name", "last_name", "full_name", "role", "phone", "department", "staff_number", "student_number", "password", 
             ]
 
     def get_full_name(self, obj):
@@ -157,16 +157,7 @@ class EvaluationSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Evaluation
-        fields = [
-            "id",
-            "placement",
-            "placement_id",
-            "evaluator",
-            "evaluator_id",
-            "evaluator_name",
-            "score",
-            "evaluation_type",
-            "evaluated_at",
+        fields = ["id", "placement", "placement_id", "evaluator", "evaluator_id", "evaluator_name", "score", "evaluation_type", "evaluated_at",
         ]
 
     def get_evaluator_name(self, obj):
