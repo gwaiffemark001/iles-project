@@ -34,19 +34,8 @@ class CustomUserSerializer(serializers.ModelSerializer):
     class Meta:
         model = CustomUser
         fields = [
-            "id",
-            "username",
-            "email",
-            "first_name",
-            "last_name",
-            "full_name",
-            "role",
-            "phone",
-            "department",
-            "staff_number",
-            "student_number",
-            "password",
-        ]
+            "id", "username", "email", "first_name", "last_name", "full_name", "role", "phone", "department", "staff_number", "student_number", "password"
+            ]
 
     def get_full_name(self, obj):
         full_name = f"{obj.first_name} {obj.last_name}".strip()
