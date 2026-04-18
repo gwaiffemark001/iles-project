@@ -1,49 +1,132 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { useAuth } from "../../contexts/useAuth";
 import "./Login.css";
 
-const Login = () => {
-  const [loginData, setLoginData] = useState({ email: "", password: "" });
+const getDashboardRoute = (role) => {
+  if (role === "workplace_supervisor") {
+    return "/workplace-supervisor/dashboard";
+  }
+
+  if (role === "academic_supervisor") {
+    return "/academic-supervisor/dashboard";
+  }
+
+  if (role === "student") {
+    return "/student/dashboard";
+  }
+
+  return "/";
+};
+
+function Login() {
+  const location = useLocation();
+  const [loginData, setLoginData] = useState(() => ({
+    username: location.state?.suggestedUsername || "",
+    password: "",
+  }));
+  const [error, setError] = useState("");
+  const [successMessage, setSuccessMessage] = useState(
+    () => location.state?.registrationSuccess || ""
+  );
+  const [loading, setLoading] = useState(false);
+  const { login, user } = useAuth();
   const navigate = useNavigate();
 
-  const handleChange = (e) => {
-    setLoginData({ ...loginData, [e.target.name]: e.target.value });
+  useEffect(() => {
+    if (user?.role) {
+      navigate(getDashboardRoute(user.role), { replace: true });
+    }
+  }, [navigate, user]);
+
+  useEffect(() => {
+    if (location.state?.registrationSuccess) {
+      navigate(location.pathname, { replace: true, state: null });
+    }
+  }, [location.pathname, location.state, navigate]);
+
+  const handleChange = (event) => {
+    const { name, value } = event.target;
+    setLoginData((currentData) => ({ ...currentData, [name]: value }));
   };
 
-  const handleLogin = (e) => {
-    e.preventDefault();
-    console.log("Login:", loginData);
+  const handleLogin = async (event) => {
+    event.preventDefault();
+    setLoading(true);
+    setError("");
+
+    const result = await login(loginData);
+
+    if (!result.success) {
+      setError(result.error || "Login failed");
+      setLoading(false);
+      return;
+    }
+
+    setSuccessMessage("");
+    setLoading(false);
   };
 
   return (
     <div className="auth-wrap">
-      <div className="auth-left">
-        <div className="auth-left-inner">
-          <div className="brand-icon">📝</div>
-          <h2 className="brand-title">Internship Logging and Evaluation System</h2>
-          <div className="login-card">
-            <h3>Login</h3>
-            <form onSubmit={handleLogin}>
-              <div className="form-group">
-                <input type="email" name="email" placeholder="Email Address" value={loginData.email} onChange={handleChange} required />
-              </div>
-              <div className="form-group">
-                <input type="password" name="password" placeholder="Password" value={loginData.password} onChange={handleChange} required />
-              </div>
-              <button type="submit" className="btn-primary">Login</button>
-            </form>
-            <p className="auth-link"><a href="#">Forgot Password?</a></p>
-            <p className="auth-link">
-              Don't have an account?{" "}
-              <a href="#" onClick={(e) => { e.preventDefault(); navigate("/signup"); }}>
-                Signup
-              </a>
+      <div className="auth-panel">
+        <header className="auth-header">
+          <img className="auth-logo" src="/ILES-Logo.png" alt="ILES logo" />
+          <p className="auth-eyebrow">Welcome to ILES</p>
+          <h1 className="auth-title">Internship Logging and Evaluation System</h1>
+          <p className="auth-subtitle">Sign in to continue to your dashboard.</p>
+        </header>
+
+        <div className="login-card">
+          <h2 className="login-card-title">Login</h2>
+
+          <form className="login-form" onSubmit={handleLogin}>
+            {successMessage ? <div className="success-message">{successMessage}</div> : null}
+            {error ? <div className="error-message">{error}</div> : null}
+
+            <label className="form-group">
+              <span>Username</span>
+              <input
+                type="text"
+                name="username"
+                placeholder="Enter your username"
+                value={loginData.username}
+                onChange={handleChange}
+                required
+              />
+            </label>
+
+            <label className="form-group">
+              <span>Password</span>
+              <input
+                type="password"
+                name="password"
+                placeholder="Enter your password"
+                value={loginData.password}
+                onChange={handleChange}
+                required
+              />
+            </label>
+
+            <button type="submit" className="btn-primary" disabled={loading}>
+              {loading ? "Logging in..." : "Login"}
+            </button>
+          </form>
+
+          <div className="auth-links">
+            <Link to="/forgot-password">Forgot Password?</Link>
+            <p>
+              Don&apos;t have an account? <Link to="/signup">Sign up</Link>
             </p>
           </div>
         </div>
+
+        <footer className="auth-footer">
+          <p>&copy; {new Date().getFullYear()} ILES</p>
+        </footer>
       </div>
     </div>
   );
-};
+}
 
 export default Login;
