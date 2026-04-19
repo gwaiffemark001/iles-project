@@ -227,14 +227,25 @@ class EvaluationListView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        # Admins and supervisors see all evaluations
-        # Students only see their own evaluations
         if request.user.role in ['admin', 'workplace_supervisor', 'academic_supervisor']:
             evaluations = Evaluation.objects.all()
         else:
             evaluations = Evaluation.objects.filter(
                 placement__student=request.user
             )
+            # Calculate total score if all 3 evaluations exist
+            if evaluations.count() == 3:
+                scores = {e.evaluation_type: e.score for e in evaluations}
+                total = (
+                    (scores.get('supervisor', 0) * 40 / 100) +
+                    (scores.get('academic', 0) * 30 / 100) +
+                    (scores.get('logbook', 0) * 30 / 100)
+                )
+                return Response({
+                    'evaluations': EvaluationSerializer(evaluations, many=True).data,
+                    'total_score': round(total, 2),
+                    'complete': True
+                })
         serializer = EvaluationSerializer(evaluations, many=True)
         return Response(serializer.data)
 
@@ -249,6 +260,7 @@ class EvaluationListView(APIView):
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
 class UserProfileView(APIView):
     permission_classes = [IsAuthenticated]
 
