@@ -41,3 +41,35 @@ class AuthenticationTests(TestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data['username'], 'teststudent')
         self.assertEqual(response.data['role'], 'student')
+
+class WeeklyLogTests(TestCase):
+
+    def setUp(self):
+        self.client = APIClient()
+        self.student = CustomUser.objects.create_user(
+            username='student1',
+            password='pass123',
+            role='student'
+        )
+        self.supervisor = CustomUser.objects.create_user(
+            username='supervisor1',
+            password='pass123',
+            role='workplace_supervisor'
+        )
+
+    def test_logs_endpoint_requires_authentication(self):
+        response = self.client.get('/api/logs/')
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_student_can_access_logs(self):
+        self.client.force_authenticate(user=self.student)
+        response = self.client.get('/api/logs/')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+    def test_supervisor_cannot_register_as_student(self):
+        response = self.client.post('/api/register/', {
+            'username': 'newuser',
+            'password': 'pass123',
+            'role': 'student'
+        })
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
