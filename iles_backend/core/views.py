@@ -16,6 +16,10 @@ from .serializers import (
 )
 
 class WeeklyLogListView(APIView):
+    """
+    GET /api/logs/ - list all logs for logged in student
+    POST /api/logs/ - Create a new weekly log
+    """
     permission_classes =[IsAuthenticated]   
 
     def get(self, request):
@@ -54,6 +58,11 @@ class WeeklyLogListView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
 class WeeklyLogDetailView(APIView):
+    """
+    GET /api/logs/<pk>/ - Get a single log
+    PUT /api/logs/<pk>/ -Update a log
+    DELETE /api/logs/<pk>/ - Delete a draft log
+    """
     permission_classes = [IsAuthenticated]
 
     def _get_log_for_user(self, request, pk):
@@ -127,6 +136,10 @@ class WeeklyLogDetailView(APIView):
         return Response({'message': 'Log deleted successfully'}, status=status.HTTP_204_NO_CONTENT)
 
 class InternshipPlacementListView(APIView):
+    """
+    GET /api/placements/ - List placements (filtered by role)
+    POST /api/logs/<pk>/ - DELETE a draft log
+    """
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
