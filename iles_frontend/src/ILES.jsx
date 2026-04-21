@@ -1,7 +1,7 @@
-import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
+import { Navigate, Route, Routes } from "react-router-dom";
 import { AuthProvider } from "./contexts/AuthContext";
 import { useAuth } from "./contexts/useAuth";
-import Login from "./pages/Login/Login";
+import Firstpage from "./pages/Login/Firstpage";
 import ForgotPassword from "./pages/Login/ForgotPassword";
 import Signup from "./pages/Signup/Signup";
 import AcademicSupervisorDashboard from "./pages/AcademicSupervisor/AcademicSupervisorDashboard";
@@ -29,38 +29,38 @@ const ProtectedRoute = ({ allowedRoles, children }) => {
 function App() {
   return (
     <AuthProvider>
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Login />} />
-          <Route path="/signup" element={<Signup />} />
-          <Route path="/forgot-password" element={<ForgotPassword />} />
-          <Route
-            path="/workplace-supervisor/dashboard"
-            element={
-              <ProtectedRoute allowedRoles={["workplace_supervisor"]}>
-                <WorkplaceSupervisorDashboard />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/academic-supervisor/dashboard"
-            element={
-              <ProtectedRoute allowedRoles={["academic_supervisor"]}>
-                <AcademicSupervisorDashboard />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/student/dashboard"
-            element={
-              <ProtectedRoute allowedRoles={["student"]}>
-                <StudentDashboard />
-              </ProtectedRoute>
-            }
-          />
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
-      </BrowserRouter>
+      
+      <Routes>
+        <Route path="/" element={<Firstpage />} />
+        <Route path="/signup" element={<Signup />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route
+          path="/workplace-supervisor/dashboard"
+          element={
+            <ProtectedRoute allowedRoles={["workplace_supervisor"]}>
+              <WorkplaceSupervisorDashboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/academic-supervisor/dashboard"
+          element={
+            <ProtectedRoute allowedRoles={["academic_supervisor"]}>
+              <AcademicSupervisorDashboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/student/dashboard"
+          element={
+            <ProtectedRoute allowedRoles={["student"]}>
+              <StudentDashboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+      
     </AuthProvider>
   );
 }

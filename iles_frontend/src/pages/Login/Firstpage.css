@@ -1,0 +1,161 @@
+body {
+  background-image:  linear-gradient(to right bottom, #7ed56fee, #28b488ee ), url("/ivory-tower.jpg");
+  background-size: cover;        /* fills screen */
+  background-position: top;   /* tops image */
+  background-repeat: no-repeat;  /* no repeating */
+  height: 100%;
+
+}
+.page_1 {
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    padding-top: 5%;
+    padding-bottom: 5%;
+    
+
+}
+.logo {
+    display: block;
+    margin: 0 auto;
+    width: 9%;
+    height: auto;
+    margin-top: 10px;
+}
+
+.header {
+    align-items: center;
+    padding: 1rem 2rem;
+    text-align: center;
+    color: aliceblue;
+    text-transform: uppercase;
+    margin-top: 20px;
+    font-family: "Lato", Arial;
+    letter-spacing: 8px;
+    font-size: 20px;
+
+
+}
+.subhead {
+    font-size: 20px;
+}
+
+.header h1{
+    margin: 0;
+    font-size: 1.8rem;
+}
+
+.logins {
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    /*margin-left: 20%;*/
+   /* background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);*/
+
+}
+.centre_logins {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin: 0 auto;
+    padding: 20px;
+    width: min(540px, 90%);
+    background-color:#2c2c2c;
+    border-radius: 24px;
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.15);
+}
+.logins input {
+    display: block;
+    margin: 17px auto 25px;
+    padding: 10px 8px 10px 6px;
+    width: 400px;
+    max-width: 70%;
+    border-radius: 6px;
+    border: 1px solid transparent;
+    /*box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.2);*/
+    font-family: "Lato", Arial;
+    font-weight: 500;
+    font-size: 15px;
+    transition: all 0.3s ease;
+
+}
+
+.logins input:hover {
+    /*border: 1px solid #89eba3;
+    box-shadow: 0px 4px 7px rgba(0, 0, 0, 0.2);*/
+    transform: scale(1.03);
+    opacity: 0.9;
+}
+.logins input:focus {
+    outline: none;
+    border: 1px solid #cbe4d1;
+}
+
+.logins input:focus:invalid {
+  border-bottom: 2px solid red;
+}
+
+.logins input:focus:valid {
+  border-bottom: 2px solid green;
+
+
+}
+
+.login-btn {
+    display: block;
+    width: 200px;
+
+    margin: 17px auto 25px;
+    background-color: #28b487;
+    color: white;
+    padding: 10px 20px;
+    border: none;
+    font-size: 15px;
+    border-radius: 20px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0px 2px 4px rgba(54, 87, 62, 0.4);
+}
+.login-btn a{
+    color: white;
+    text-decoration: none;
+}
+.login-btn:hover {
+    transform: scale(1.03);
+    opacity: 0.9;
+
+}
+.login-btn:focus {
+    background-color: #45a05c;
+
+
+}
+.failed_login {
+    display: flex;
+    flex-direction: row;
+    margin: 0 auto;
+}
+
+.failed_login p {
+
+    margin-left: 20%;
+    font-size: 18px;
+}
+.failed_login p a {
+    color: #f4f8f5;
+    text-decoration: none;
+    font-size: 18px;
+}
+.failed_login p a:hover {
+    text-decoration: underline;
+    color: rgb(98, 230, 58);
+}
+.footer{
+    font-size: 14px;
+    margin-top: 20px;
+    text-align: center;
+    padding: 15px;
+    color: #555;
+    font-family: Arial, Helvetica, sans-serif;
+}

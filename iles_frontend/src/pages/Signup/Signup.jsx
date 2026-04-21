@@ -1,208 +1,155 @@
-import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import { useAuth } from "../../contexts/useAuth";
-import "./Signup.css";
-import "../../ILES.css";
-
-const initialFormData = {
-  first_name: "",
-  last_name: "",
-  username: "",
-  email: "",
-  phone: "",
-  role: "student",
-  department: "",
-  student_number: "",
-  staff_number: "",
-  password: "",
-  confirmPassword: "",
-};
+import { Link, useNavigate } from 'react-router-dom';
+import { useState } from 'react';
+import './Signup.css'
+import '../Login/Firstpage.css';
 
 function Signup() {
-  const [formData, setFormData] = useState(initialFormData);
-  const [errorMessage, setErrorMessage] = useState("");
-  const [loading, setLoading] = useState(false);
-  const { register } = useAuth();
-  const navigate = useNavigate();
+    const [email, setEmail] = useState('');
+    const [password, setPassword] = useState('');
+    const [extraFields, setExtraFields] = useState(false);
+    const [errorMessage, setErrorMessage] = useState('');
+    const [successMessage, setSuccessMessage] = useState('');
+    const [studentNumber, setStudentNumber] = useState('');
+    const [registrationNumber, setRegistrationNumber] = useState('');
 
-  const handleChange = (event) => {
-    const { name, value } = event.target;
-    setFormData((currentData) => ({
-      ...currentData,
-      [name]: value,
-    }));
-  };
+    const navigate = useNavigate();
+    // student email domains are put here
+    const universityDomains = ['@students.mak.ac.ug'];
 
-  const handleSignup = async (event) => {
-    event.preventDefault();
-    setErrorMessage("");
+    // Show extra fields for students//
+    const handleEmailChange = (e) => {
+        const value = e.target.value;
+        setEmail(value);
 
-    if (formData.password !== formData.confirmPassword) {
-      setErrorMessage("Passwords do not match.");
-      return;
-    }
-
-    setLoading(true);
-
-    const payload = {
-      first_name: formData.first_name.trim(),
-      last_name: formData.last_name.trim(),
-      username: formData.username.trim(),
-      email: formData.email.trim(),
-      phone: formData.phone.trim(),
-      role: formData.role,
-      department: formData.department.trim(),
-      student_number: formData.role === "student" ? formData.student_number.trim() : "",
-      staff_number: formData.role !== "student" ? formData.staff_number.trim() : "",
-      password: formData.password,
+        const isUniversityEmail = universityDomains.some((domain) => value.endsWith(domain));
+        setExtraFields(isUniversityEmail);
     };
 
-    const result = await register(payload);
-    setLoading(false);
+    const handleSignup = async (e) => {
+        e.preventDefault();
+        setErrorMessage('');
+        setSuccessMessage('');
 
-    if (!result.success) {
-      setErrorMessage(result.error || "Registration failed.");
-      return;
-    }
+        try {
+            const username = email.includes('@') ? email.split('@')[0] : email;
+            let body = { username, email, password };
+            if (extraFields) {
+                body.studentNumber = studentNumber;
+                body.registrationNumber = registrationNumber;
+            }
 
-    navigate("/", {
-      replace: true,
-      state: {
-        registrationSuccess: "Account created successfully. Sign in to continue.",
-        suggestedUsername: payload.username,
-      },
-    });
-  };
+            const response = await fetch('/api/register/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(body),
+            });
 
-  const isStudent = formData.role === "student";
+            const data = await response.json();
 
-  return (
-    <div className="page_1">
-      <div className="centre_logins">
-        <header className="header_1">
-          <h1 className="head">Create an ILES account</h1>
-          <img className="logo" src="/ILES-Logo.png" alt="ILES logo" />
-          <p className="subhead">Set up your role and login details to access the platform.</p>
-        </header>
+            if (!response.ok) {
+                setErrorMessage(data.message || 'Signup failed.');
+                return;
+            }
 
-        <form className="logins signup-form" onSubmit={handleSignup}>
-          {errorMessage ? <div className="error-message">{errorMessage}</div> : null}
+            setSuccessMessage('Account created successfully. Please log in.');
 
-          <div className="signup-grid">
-            <input
-              type="text"
-              name="first_name"
-              placeholder="First name"
-              value={formData.first_name}
-              onChange={handleChange}
-              required
-            />
-            <input
-              type="text"
-              name="last_name"
-              placeholder="Last name"
-              value={formData.last_name}
-              onChange={handleChange}
-              required
-            />
-          </div>
+            // Store JWT token in localStorage
+            localStorage.setItem('token', data.token);
 
-          <div className="signup-grid">
-            <input
-              type="text"
-              name="username"
-              placeholder="Username"
-              value={formData.username}
-              onChange={handleChange}
-              required
-            />
-            <input
-              type="email"
-              name="email"
-              placeholder="Email address"
-              value={formData.email}
-              onChange={handleChange}
-              required
-            />
-          </div>
+            // Get profile
+            const profileResponse = await fetch('/api/profile', {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${data.token}`,
+                },
+            });
 
-          <div className="signup-grid">
-            <input
-              type="tel"
-              name="phone"
-              placeholder="Phone number"
-              value={formData.phone}
-              onChange={handleChange}
-            />
-            <select name="role" value={formData.role} onChange={handleChange} required>
-              <option value="student">Student Intern</option>
-              <option value="workplace_supervisor">Workplace Supervisor</option>
-              <option value="academic_supervisor">Academic Supervisor</option>
-              <option value="admin">Administrator</option>
-            </select>
-          </div>
+            const profileData = await profileResponse.json();
+            const role = profileData.role;
 
-          <input
-            type="text"
-            name="department"
-            placeholder="Department"
-            value={formData.department}
-            onChange={handleChange}
-          />
+            // Redirect based on role
+            if (role === 'admin') {
+                navigate('/admin-dashboard');
+            } else if (role === 'academic_supervisor') {
+                navigate('/academic_supervisor-dashboard');
+            } else if (role === 'workplace_supervisor') {
+                navigate('/workplace_supervisor-dashboard');
+            } else {
+                navigate('/student-dashboard'); // Default dashboard for other roles
+            }
+        } catch (error) {
+            setErrorMessage('Unable to reach the server. Please try again later.');
+        }
+    };
 
-          {isStudent ? (
-            <input
-              type="text"
-              name="student_number"
-              placeholder="Student number"
-              value={formData.student_number}
-              onChange={handleChange}
-            />
-          ) : (
-            <input
-              type="text"
-              name="staff_number"
-              placeholder="Staff number"
-              value={formData.staff_number}
-              onChange={handleChange}
-            />
-          )}
+    return (
+        <div className="page_1">
+            <div className="centre_logins">
+                <header className="header_1">
+                    <h1 className="head">create an ILES account</h1>
+                    <img className="logo" src="/ILES-Logo.png" alt="ILES logo" />
+                </header>
 
-          <div className="signup-grid">
-            <input
-              type="password"
-              name="password"
-              placeholder="Password"
-              value={formData.password}
-              onChange={handleChange}
-              required
-            />
-            <input
-              type="password"
-              name="confirmPassword"
-              placeholder="Confirm password"
-              value={formData.confirmPassword}
-              onChange={handleChange}
-              required
-            />
-          </div>
+                <form className="logins" onSubmit={handleSignup}>
+                    <input
+                        type="email"
+                        placeholder="Email"
+                        value={email}
+                        onChange={handleEmailChange}
+                        required
+                    />
+                    <input
+                        type="password"
+                        placeholder="Password"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        required
+                    />
 
-          <button type="submit" className="login-btn" disabled={loading}>
-            {loading ? "Creating account..." : "Create account"}
-          </button>
-        </form>
+                    {extraFields && (
+                        <div className="extra-fields">
+                            <p className='student_detected'>Student email detected! Please fill in the additional fields</p>
+                            <input
+                                type="text"
+                                placeholder="Student Number"
+                                value={studentNumber}
+                                onChange={(e) => setStudentNumber(e.target.value)}
+                                required
+                            />
 
-        <section className="failed_login">
-          <p className="signup">
-            <Link to="/">Back to Login</Link>
-          </p>
-          <p className="signup">
-            <Link to="/forgot-password">Forgot Password</Link>
-          </p>
-        </section>
-      </div>
-    </div>
-  );
+                            <input
+                                type="text"
+                                placeholder="Registration Number"
+                                value={registrationNumber}
+                                onChange={(e) => setRegistrationNumber(e.target.value)}
+                                required
+                            />
+
+                        </div>
+                    )}
+
+                    <button type="submit" className="login-btn">
+                        Create an Account
+                    </button>
+                </form>
+
+                {errorMessage && <p className="error-message">{errorMessage}</p>}
+                {successMessage && <p className="success-message">{successMessage}</p>}
+                <div >
+                    <section className="failed_login" style={{width: "400px"}}>
+                        <p className="signup">
+                            <Link to="/">Back to Login</Link>
+                        </p>
+                        <p className="signup">
+                            <Link to="/forgot-password">Forgot Password</Link>
+                        </p>
+                    </section>
+                </div>
+            </div>
+        </div>
+    );
 }
 
-export default Signup;
+export default Signup
