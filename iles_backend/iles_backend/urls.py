@@ -13,7 +13,8 @@ from core.views import (
     SupervisorApproveView,
     ChangePasswordView,
     EvaluationDetailView,
-    EvaluationCriteriaListView,  
+    EvaluationCriteriaListView, 
+    LogRevisionView, 
 )
 
 urlpatterns = [
@@ -47,4 +48,9 @@ urlpatterns = [
 
     # EvaluationCriteria
     path('api/criteria/', EvaluationCriteriaListView.as_view(), name='criteria-list'),
+
+    # Log Revison
+    path('api/logs/<int:pk>/revise/', LogRevisionView.as_view(), name='log-revise'),
+
+
 ]

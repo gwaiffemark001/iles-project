@@ -311,6 +311,36 @@ class SupervisorReviewView(APIView):
 
         serializer = WeeklyLogSerializer(log)
         return Response(serializer.data)
+    
+class LogRevisionView(APIView):
+    """
+    PUT /api/logs/<pk>/revise/  - Supervisor sends log back to draft for revision
+    """
+    permission_classes = [IsAuthenticated]
+
+    def put(self, request, pk):
+        if request.user.role not in ['workplace_supervisor', 'academic_supervisor']:
+            return Response(
+                {'error': 'Only supervisors can request revisions'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        try:
+            log = WeeklyLog.objects.get(pk=pk)
+        except WeeklyLog.DoesNotExist:
+            return Response({'error': 'Log not found'}, status=status.HTTP_404_NOT_FOUND)
+
+        if log.status not in ['submitted', 'reviewed']:
+            return Response(
+                {'error': 'Can only revise submitted or reviewed logs'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        log.status = 'draft'
+        log.supervisor_comment = request.data.get('comment', 'Please revise and resubmit')
+        log.save()
+
+        serializer = WeeklyLogSerializer(log)
+        return Response(serializer.data)   
 
 class SupervisorApproveView(APIView):
     permission_classes = [IsAuthenticated]
