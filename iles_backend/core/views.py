@@ -1,19 +1,13 @@
 # ILES Backend API Views
 # Built by Mugabe Gideon
 # Endpoints: WeeklyLog, Placement, Evaluation, Auth, Profile, Supervisor Workflow
+from .models import CustomUser, InternshipPlacement, WeeklyLog, Evaluation, EvaluationCriteria
+from .serializers import CustomUserSerializer, InternshipPlacementSerializer, WeeklyLogSerializer, EvaluationSerializer, EvaluationCriteriaSerializer
 from rest_framework import status
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from django.utils import timezone
-
-from .models import CustomUser, Evaluation, InternshipPlacement, WeeklyLog
-from .serializers import (
-    CustomUserSerializer,
-    EvaluationSerializer,
-    InternshipPlacementSerializer,
-    WeeklyLogSerializer,
-)
 
 class WeeklyLogListView(APIView):
     """
@@ -393,5 +387,27 @@ class EvaluationDetailView(APIView):
             return Response({'error': 'Evaluation not found'}, status=status.HTTP_404_NOT_FOUND)
         evaluation.delete()
         return Response({'message': 'Evaluation deleted'}, status=status.HTTP_204_NO_CONTENT)
-        
 
+class EvaluationCriteriaListView(APIView):
+    """
+    GET  /api/criteria/  - List all evaluation criteria
+    POST /api/criteria/  - Create criteria (admin only)
+    """
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        criteria = EvaluationCriteria.objects.all()
+        serializer = EvaluationCriteriaSerializer(criteria, many=True)
+        return Response(serializer.data)
+
+    def post(self, request):
+        if request.user.role != 'admin':
+            return Response(
+                {'error': 'Only admins can create evaluation criteria'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        serializer = EvaluationCriteriaSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
