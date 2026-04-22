@@ -430,3 +430,37 @@ class EvaluationCriteriaListView(APIView):
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+class WeeklyLogSubmitView(APIView):
+    """
+    PUT /api/logs/<pk>/submit/ - Student submits a draft log
+    """
+    permission_classes = [IsAuthenticated]
+
+    def put(self, request, pk):
+        try:
+            log = WeeklyLog.objects.get(pk=pk, placement__student=request.user)
+        except WeeklyLog.DoesNotExist:
+            return Response({'error': 'Log not found'}, status=status.HTTP_404_NOT_FOUND)
+
+        if log.status != 'draft':
+            return Response(
+                {'error': 'Only draft logs can be submitted'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        from django.utils import timezone
+        import datetime
+        if log.deadline and datetime.date.today() > log.deadline:
+            return Response(
+                {'error': 'Cannot submit after deadline'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        log.status = 'submitted'
+        log.submitted_at = timezone.now()
+        log.save()
+
+        serializer = WeeklyLogSerializer(log)
+        return Response(serializer.data)    
+
