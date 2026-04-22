@@ -29,25 +29,14 @@ class WeeklyLogListView(APIView):
         return Response(serializer.data) 
     
     def post(self, request):
-        if request.user.role != 'student':
-            return Response(
-                {'error': 'Only students can create weekly logs'},
-                status=status.HTTP_403_FORBIDDEN
-            )
-
         serializer = WeeklyLogSerializer(data=request.data)
         if serializer.is_valid():
-            placement = serializer.validated_data['placement']
-            if placement.student != request.user:
-                return Response(
-                    {'error': 'You can only create logs for your own placement'},
-                    status=status.HTTP_403_FORBIDDEN
-                )
-
-            status_value = serializer.validated_data.get('status', 'draft')
-            serializer.save(
-                submitted_at=timezone.now() if status_value == 'submitted' else None
-            )
+            log = serializer.save()
+            # Set submitted_at timestamp if status is submitted
+            if log.status == 'submitted':
+                from django.utils import timezone
+                log.submitted_at = timezone.now()
+                log.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
