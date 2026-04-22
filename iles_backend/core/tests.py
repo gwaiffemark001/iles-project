@@ -73,3 +73,32 @@ class WeeklyLogTests(TestCase):
             'role': 'student'
         })
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+class PermissionTests(TestCase):
+
+    def setUp(self):
+        self.client = APIClient()
+        self.student = CustomUser.objects.create_user(
+            username='student2',
+            password='pass123',
+            role='student'
+        )
+        self.admin = CustomUser.objects.create_user(
+            username='admin1',
+            password='pass123',
+            role='admin'
+        )
+
+    def test_student_cannot_create_placement(self):
+        self.client.force_authenticate(user=self.student)
+        response = self.client.post('/api/placements/', {})
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_admin_can_access_placements(self):
+        self.client.force_authenticate(user=self.admin)
+        response = self.client.get('/api/placements/')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+    def test_unauthenticated_cannot_access_logs(self):
+        response = self.client.get('/api/logs/')
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)       
