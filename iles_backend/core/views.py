@@ -1,6 +1,8 @@
 # ILES Backend API Views
 # Built by Mugabe Gideon
 # Endpoints: WeeklyLog, Placement, Evaluation, Auth, Profile, Supervisor Workflow
+from urllib import request
+
 from .models import CustomUser, InternshipPlacement, WeeklyLog, Evaluation, EvaluationCriteria
 from .serializers import CustomUserSerializer, InternshipPlacementSerializer, WeeklyLogSerializer, EvaluationSerializer, EvaluationCriteriaSerializer
 from rest_framework import status
@@ -18,14 +20,18 @@ class WeeklyLogListView(APIView):
     permission_classes =[IsAuthenticated]   
 
     def get(self, request):
-        if request.user.role == 'admin':
-            logs = WeeklyLog.objects.all()
-        elif request.user.role == 'workplace_supervisor':
-            logs = WeeklyLog.objects.filter(placement__workplace_supervisor=request.user)
-        elif request.user.role == 'academic_supervisor':
-            logs = WeeklyLog.objects.filter(placement__academic_supervisor=request.user)
-        else:
-            logs = WeeklyLog.objects.filter(placement__student=request.user)
+        logs = WeeklyLog.objects.filter(placement__student=request.user)
+
+        # Allow filtering by status: /api/logs/?status=submitted
+        status_filter = request.query_params.get('status')
+        if status_filter:
+            logs = logs.filter(status=status_filter)
+
+        # Allow filtering by week: /api/logs/?week=3
+        week_filter = request.query_params.get('week')
+        if week_filter:
+            logs = logs.filter(week_number=week_filter)
+
         serializer = WeeklyLogSerializer(logs, many=True)
         return Response(serializer.data) 
     
