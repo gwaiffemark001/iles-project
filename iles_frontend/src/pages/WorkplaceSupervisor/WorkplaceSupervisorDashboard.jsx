@@ -47,7 +47,7 @@ const WorkplaceSupervisorDashboard = () => {
   };
 
   const getInternsData = () => {
-    return placements.map(placement => {
+    return placements.map((placement) => {
       const internLogs = logs.filter(log => (log.placement?.id ?? log.placement_id) === placement.id);
       const pendingLogs = internLogs.filter(log => log.status === 'submitted').length;
       const totalLogs = internLogs.length;
