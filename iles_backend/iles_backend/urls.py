@@ -16,6 +16,7 @@ from core.views import (
     EvaluationCriteriaListView, 
     LogRevisionView, 
     WeeklyLogSubmitView,
+    AdminStatisticsView,
 )
 
 urlpatterns = [
@@ -55,5 +56,8 @@ urlpatterns = [
 
     # Weekly Log Submission
     path('api/logs/<int:pk>/submit/', WeeklyLogSubmitView.as_view(), name='log-submit'),
+
+    # Admin Statistics
+    path('api/admin/statistics/', AdminStatisticsView.as_view(), name='admin-statistics'),
 
 ]
