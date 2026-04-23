@@ -8,6 +8,7 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from django.utils import timezone
+from django.db.models import Count, Avg
 
 class WeeklyLogListView(APIView):
     """
@@ -464,3 +465,32 @@ class WeeklyLogSubmitView(APIView):
         serializer = WeeklyLogSerializer(log)
         return Response(serializer.data)    
 
+from django.db.models import Count, Avg
+
+class AdminStatisticsView(APIView):
+    """
+    GET /api/admin/statistics/ - System-wide stats for admin dashboard
+    """
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        if request.user.role != 'admin':
+            return Response(
+                {'error': 'Admin only'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        stats = {
+            'total_students': CustomUser.objects.filter(role='student').count(),
+            'total_supervisors': CustomUser.objects.filter(role='workplace_supervisor').count(),
+            'total_placements': InternshipPlacement.objects.count(),
+            'active_placements': InternshipPlacement.objects.filter(status='active').count(),
+            'total_logs': WeeklyLog.objects.count(),
+            'pending_logs': WeeklyLog.objects.filter(status='submitted').count(),
+            'approved_logs': WeeklyLog.objects.filter(status='approved').count(),
+            'draft_logs': WeeklyLog.objects.filter(status='draft').count(),
+            'total_evaluations': Evaluation.objects.count(),
+            'logs_by_status': list(
+                WeeklyLog.objects.values('status').annotate(count=Count('id'))
+            ),
+        }
+        return Response(stats)
