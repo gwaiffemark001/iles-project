@@ -31,3 +31,6 @@
 - Database: PostgreSQL
 - Authentication: JWT (djangorestframework-simplejwt)
 - Frontend: React + Vite
+
+## Test Credentials
+- Admin: username=gideonadmin, role=admin
