@@ -7,6 +7,7 @@ import Signup from "./pages/Signup/Signup";
 import AcademicSupervisorDashboard from "./pages/AcademicSupervisor/AcademicSupervisorDashboard";
 import StudentDashboard from "./pages/Student/StudentDashboard";
 import WorkplaceSupervisorDashboard from "./pages/WorkplaceSupervisor/WorkplaceSupervisorDashboard";
+import AdminDashboard from "./pages/AdminDashboard";
 
 const ProtectedRoute = ({ allowedRoles, children }) => {
   const { loading, user } = useAuth();
@@ -55,6 +56,14 @@ function App() {
           element={
             <ProtectedRoute allowedRoles={["student"]}>
               <StudentDashboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/dashboard"
+          element={
+            <ProtectedRoute allowedRoles={["admin"]}>
+              <AdminDashboard />
             </ProtectedRoute>
           }
         />
