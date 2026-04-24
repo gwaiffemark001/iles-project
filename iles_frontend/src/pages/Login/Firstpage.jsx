@@ -34,7 +34,8 @@ function Firstpage() {
             }
 
             // Store token
-            localStorage.setItem('token', tokenData.access);
+            localStorage.setItem('access_token', tokenData.access);
+            localStorage.setItem('refresh_token',tokenData.refresh);
 
             // Step 2: Get user profile with token
             const profileResponse = await fetch('/api/profile/', {
