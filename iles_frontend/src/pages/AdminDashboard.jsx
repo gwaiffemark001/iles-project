@@ -1,11 +1,10 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { adminAPI } from '../api/api'
+import api from '../api/api'
 
 function AdminDashboard() {
   const [stats, setStats] = useState(null)
   const [loading, setLoading] = useState(true)
-  const token = localStorage.getItem('access_token')
   const username = localStorage.getItem('username')
   const navigate = useNavigate()
   
@@ -15,10 +14,10 @@ function AdminDashboard() {
 
   const fetchStats = async () => {
     try {
-      const response = await adminAPI.getStatistics()
+      const response = await api.get('/admin/statistics/')
       setStats(response.data)
       } catch (error) {
-        console.log('Error fetching stats:')
+        console.log('Error fetching stats:', error)
       }
       setLoading(false)
   }
