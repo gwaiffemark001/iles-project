@@ -131,4 +131,9 @@ export const evaluationsAPI = {
   updateEvaluation: (id, data) => api.put(`/evaluations/${id}/`, data),
 };
 
+export const adminAPI = {
+  getStatistics: () => api.get('/admin/statistics/'),
+  getUsers: () => api.get('/users/'),
+};
+
 export default api;
