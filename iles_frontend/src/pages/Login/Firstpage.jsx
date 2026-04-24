@@ -1,5 +1,6 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { useState } from 'react';
+import { useAuth } from '../../contexts/useAuth';
 import './Firstpage.css';
 import '../../ILES.css'; 
 
@@ -9,6 +10,7 @@ function Firstpage() {
     const [errorMessage, setErrorMessage] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const navigate = useNavigate();
+    const { login } = useAuth();
 
     const handleLogin = async (e) => {
         e.preventDefault();
@@ -16,47 +18,23 @@ function Firstpage() {
         setIsLoading(true);
 
         try {
-            // Step 1: Get JWT token
-            const tokenResponse = await fetch('/api/token/', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ username, password }),
-            });
+            const result = await login({ username, password });
 
-            const tokenData = await tokenResponse.json();
-
-            if (!tokenResponse.ok) {
-                setErrorMessage(tokenData.detail || 'Login failed. Please try again.');
-                setIsLoading(false);
+            if (!result.success) {
+                setErrorMessage(result.error || 'Login failed. Please try again.');
                 return;
             }
 
-            // Store token
-            localStorage.setItem('access_token', tokenData.access);
-            localStorage.setItem('refresh_token',tokenData.refresh);
+            const role = result.user?.role;
 
-            // Step 2: Get user profile with token
-            const profileResponse = await fetch('/api/profile/', {
-                method: 'GET',
-                headers: {
-                    'Authorization': `Bearer ${tokenData.access}`,
-                },
-            });
-
-            const profileData = await profileResponse.json();
-            const role = profileData.role;
-
-            // Step 3: Redirect based on role
             if (role === 'admin') {
-                navigate('/admin-dashboard');
+                navigate('/admin/dashboard');
             } else if (role === 'academic_supervisor') {
-                navigate('/academic_supervisor-dashboard');
+                navigate('/academic-supervisor/dashboard');
             } else if (role === 'workplace_supervisor') {
-                navigate('/workplace_supervisor-dashboard');
+                navigate('/workplace-supervisor/dashboard');
             } else {
-                navigate('/student-dashboard');
+                navigate('/student/dashboard');
             }
         } catch (error) {
             setErrorMessage('Unable to reach the server. Please try again later.');

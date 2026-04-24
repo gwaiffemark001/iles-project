@@ -1,6 +1,6 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
-from .models import CustomUser, InternshipPlacement, WeeklyLog, EvaluationCriteria, Evaluation
+from .models import CustomUser, InternshipPlacement, WeeklyLog, EvaluationCriteria, Evaluation, Notification
 
 class CustomUserAdmin(UserAdmin):
     fieldsets = UserAdmin.fieldsets + (
@@ -20,8 +20,15 @@ class PlacementAdmin(admin.ModelAdmin):
     list_filter = ['status']
     search_fields = ['student__username', 'company_name']
 
+
+class NotificationAdmin(admin.ModelAdmin):
+    list_display = ['recipient', 'notification_type', 'title', 'is_read', 'created_at']
+    list_filter = ['notification_type', 'is_read']
+    search_fields = ['recipient__username', 'title', 'message']
+
 admin.site.register(CustomUser, CustomUserAdmin)
 admin.site.register(InternshipPlacement, PlacementAdmin)
 admin.site.register(WeeklyLog, WeeklyLogAdmin)
 admin.site.register(EvaluationCriteria)
 admin.site.register(Evaluation)
+admin.site.register(Notification, NotificationAdmin)

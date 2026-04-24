@@ -3,8 +3,21 @@
 # Endpoints: WeeklyLog, Placement, Evaluation, Auth, Profile, Supervisor Workflow
 from urllib import request
 
-from .models import CustomUser, InternshipPlacement, WeeklyLog, Evaluation, EvaluationCriteria
-from .serializers import CustomUserSerializer, InternshipPlacementSerializer, WeeklyLogSerializer, EvaluationSerializer, EvaluationCriteriaSerializer
+from .models import CustomUser, InternshipPlacement, Notification, WeeklyLog, Evaluation, EvaluationCriteria
+from .serializers import (
+    CustomUserSerializer,
+    InternshipPlacementSerializer,
+    WeeklyLogSerializer,
+    EvaluationSerializer,
+    EvaluationCriteriaSerializer,
+    NotificationSerializer,
+    UserSummarySerializer,
+)
+from .services import (
+    notify_log_submitted,
+    notify_placement_created,
+    notify_placement_status_updated,
+)
 from rest_framework import status
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
@@ -44,6 +57,7 @@ class WeeklyLogListView(APIView):
                 from django.utils import timezone
                 log.submitted_at = timezone.now()
                 log.save()
+                notify_log_submitted(log, actor=request.user)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
@@ -104,9 +118,13 @@ class WeeklyLogDetailView(APIView):
                 )
 
             status_value = serializer.validated_data.get('status', log.status)
+            previous_status = log.status
             serializer.save(
                 submitted_at=timezone.now() if status_value == 'submitted' else None
             )
+            if previous_status != 'submitted' and status_value == 'submitted':
+                log.refresh_from_db()
+                notify_log_submitted(log, actor=request.user)
             return Response(serializer.data)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -158,7 +176,8 @@ class InternshipPlacementListView(APIView):
             )
         serializer = InternshipPlacementSerializer(data=request.data)
         if serializer.is_valid():
-            serializer.save()
+            placement = serializer.save()
+            notify_placement_created(placement, actor=request.user)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
@@ -180,9 +199,12 @@ class InternshipPlacementDetailView(APIView):
             placement = InternshipPlacement.objects.get(pk=pk)
         except InternshipPlacement.DoesNotExist:
             return Response({'error': 'Placement not found'}, status=status.HTTP_404_NOT_FOUND)
+        previous_status = placement.status
         serializer = InternshipPlacementSerializer(placement, data=request.data)
         if serializer.is_valid():
-            serializer.save()
+            updated_placement = serializer.save()
+            if previous_status != updated_placement.status:
+                notify_placement_status_updated(updated_placement, previous_status, actor=request.user)
             return Response(serializer.data)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -279,6 +301,71 @@ class UserProfileView(APIView):
             serializer.save()
             return Response(serializer.data)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class UserListView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        if request.user.role != "admin":
+            return Response(
+                {"error": "Only admins can view users"},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        users = CustomUser.objects.all().order_by("role", "first_name", "username")
+        role_filter = request.query_params.get("role")
+
+        if role_filter:
+            users = users.filter(role=role_filter)
+
+        serializer = UserSummarySerializer(users, many=True)
+        return Response(serializer.data)
+
+
+class NotificationListView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        notifications = Notification.objects.filter(recipient=request.user)
+        unread_only = request.query_params.get("unread")
+        limit = request.query_params.get("limit")
+
+        if unread_only == "true":
+            notifications = notifications.filter(is_read=False)
+
+        if limit:
+            try:
+                notifications = notifications[: int(limit)]
+            except ValueError:
+                pass
+
+        serializer = NotificationSerializer(notifications, many=True)
+        return Response(serializer.data)
+
+
+class NotificationReadView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def put(self, request, pk):
+        try:
+            notification = Notification.objects.get(pk=pk, recipient=request.user)
+        except Notification.DoesNotExist:
+            return Response({"error": "Notification not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        notification.is_read = True
+        notification.save(update_fields=["is_read"])
+
+        serializer = NotificationSerializer(notification)
+        return Response(serializer.data)
+
+
+class NotificationMarkAllReadView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        Notification.objects.filter(recipient=request.user, is_read=False).update(is_read=True)
+        return Response({"message": "Notifications marked as read"}, status=status.HTTP_200_OK)
 
 class SupervisorReviewView(APIView):
     permission_classes = [IsAuthenticated]
@@ -467,6 +554,7 @@ class WeeklyLogSubmitView(APIView):
         log.status = 'submitted'
         log.submitted_at = timezone.now()
         log.save()
+        notify_log_submitted(log, actor=request.user)
 
         serializer = WeeklyLogSerializer(log)
         return Response(serializer.data)    

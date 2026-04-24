@@ -3,10 +3,25 @@ import { createRoot } from 'react-dom/client'
 import './index.css'
 import ILES from './ILES.jsx'
 import { BrowserRouter } from 'react-router-dom'
+import { ToastContainer } from 'react-toastify'
+import 'react-toastify/dist/ReactToastify.css'
 
 createRoot(document.getElementById('root')).render(
-  <BrowserRouter>
-    <ILES />
-  </BrowserRouter>
+  <StrictMode>
+    <BrowserRouter>
+      <ILES />
+      <ToastContainer
+        position="top-right"
+        autoClose={3000}
+        hideProgressBar={false}
+        newestOnTop
+        closeOnClick
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+        theme="light"
+      />
+    </BrowserRouter>
+  </StrictMode>
 
 )

@@ -8,6 +8,10 @@ from core.views import (
     InternshipPlacementDetailView,
     UserRegistrationView,
     UserProfileView,
+    UserListView,
+    NotificationListView,
+    NotificationReadView,
+    NotificationMarkAllReadView,
     EvaluationListView,
     SupervisorReviewView,
     SupervisorApproveView,
@@ -27,6 +31,10 @@ urlpatterns = [
     path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
     path('api/register/', UserRegistrationView.as_view(), name='register'),
     path('api/profile/', UserProfileView.as_view(), name='profile'),
+    path('api/users/', UserListView.as_view(), name='user-list'),
+    path('api/notifications/', NotificationListView.as_view(), name='notification-list'),
+    path('api/notifications/<int:pk>/read/', NotificationReadView.as_view(), name='notification-read'),
+    path('api/notifications/mark-all-read/', NotificationMarkAllReadView.as_view(), name='notification-mark-all-read'),
 
     # Weekly Logs
     path('api/logs/', WeeklyLogListView.as_view(), name='weekly-log-list'),
@@ -34,6 +42,7 @@ urlpatterns = [
 
     # Placements
     path('api/placements/', InternshipPlacementListView.as_view(), name='placement-list'),
+    path('api/placements/<int:pk>/', InternshipPlacementDetailView.as_view(), name='placement-detail'),
 
     # Evaluations
     path('api/evaluations/', EvaluationListView.as_view(), name='evaluation-list'),
