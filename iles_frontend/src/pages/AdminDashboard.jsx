@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import axios from 'axios'
+import { adminAPI } from '../api/api'
 
 function AdminDashboard() {
   const [stats, setStats] = useState(null)
@@ -8,21 +8,19 @@ function AdminDashboard() {
   const token = localStorage.getItem('access_token')
   const username = localStorage.getItem('username')
   const navigate = useNavigate()
-
+  
   useEffect(() => {
     fetchStats()
   }, [])
 
   const fetchStats = async () => {
     try {
-      const response = await axios.get('http://127.0.0.1:8000/api/admin/statistics/', {
-        headers: { Authorization: 'Bearer ' + token }
-      })
+      const response = await adminAPI.getStatistics()
       setStats(response.data)
-    } catch (error) {
-      console.log('Error fetching stats:', error)
-    }
-    setLoading(false)
+      } catch (error) {
+        console.log('Error fetching stats:')
+      }
+      setLoading(false)
   }
 
   const handleLogout = () => {
