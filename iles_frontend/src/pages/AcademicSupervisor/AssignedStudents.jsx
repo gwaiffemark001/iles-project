@@ -77,7 +77,10 @@ const filteredStudents = students.filter((s) => {
                     <div>{student.supervisor}</div>
                     <div>{student.logs}</div>
                     <div><span className={getStatusClass(student.status)}>{student.status}</span></div>
-                    
+                    <div className="action-btns">
+                        <button className="btn-view">View Logs</button>
+                        <button className="btn-evaluate">Evaluate</button>
+                    </div>
                 </div>
             ))}
         </div>
