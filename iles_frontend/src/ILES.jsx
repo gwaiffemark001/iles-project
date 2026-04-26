@@ -5,7 +5,7 @@ import ForgotPassword from './ForgotPassword';
 import StudentDash from './StudentDash';
 import WorkplaceSupervisorDashboard from "./pages/WorkplaceSupervisor/WorkplaceSupervisorDashboard";
 import AcademicSupervisorDashboard from "./pages/AcademicSupervisor/AcademicSupervisorDashboard";
-
+import AssignedStudents from "./pages/AcademicSupervisor/AssignedStudents";
 
 function ILES() {
     return (
@@ -17,6 +17,7 @@ function ILES() {
             <Route path='/studentdashboard' element={ <studentDashboard />}/>
             <Route path="/workplace-supervisor/dashboard" element={<WorkplaceSupervisorDashboard />} />
             <Route path="/academic-supervisor/dashboard" element={<AcademicSupervisorDashboard />} />
+            <Route path="/academic-supervisor/students" element={<AssignedStudents />} />
         </Routes>
        
         
