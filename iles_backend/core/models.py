@@ -90,3 +90,36 @@ class Evaluation(models.Model):
 
     def __str__(self):
         return f"{self.placement.student.username} - {self.evaluation_type}: {self.score}"
+
+
+class Notification(models.Model):
+    NOTIFICATION_TYPES = [
+        ("placement_created", "Placement Created"),
+        ("placement_status_updated", "Placement Status Updated"),
+        ("log_submitted", "Log Submitted"),
+    ]
+
+    recipient = models.ForeignKey(
+        CustomUser,
+        on_delete=models.CASCADE,
+        related_name="notifications",
+    )
+    actor = models.ForeignKey(
+        CustomUser,
+        on_delete=models.SET_NULL,
+        related_name="triggered_notifications",
+        null=True,
+        blank=True,
+    )
+    notification_type = models.CharField(max_length=40, choices=NOTIFICATION_TYPES)
+    title = models.CharField(max_length=200)
+    message = models.TextField()
+    data = models.JSONField(default=dict, blank=True)
+    is_read = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return f"{self.recipient.username} - {self.title}"

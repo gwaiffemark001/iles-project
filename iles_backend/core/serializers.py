@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from .models import CustomUser, Evaluation, EvaluationCriteria, InternshipPlacement, WeeklyLog
+from .models import CustomUser, Evaluation, EvaluationCriteria, InternshipPlacement, Notification, WeeklyLog
 
 
 class UserSummarySerializer(serializers.ModelSerializer):
@@ -89,6 +89,54 @@ class InternshipPlacementSerializer(serializers.ModelSerializer):
             "created_at",
         ]
 
+    def validate(self, attrs):
+        placement = getattr(self, "instance", None)
+        student = attrs.get("student") or getattr(placement, "student", None)
+        workplace_supervisor = attrs.get("workplace_supervisor") or getattr(placement, "workplace_supervisor", None)
+        academic_supervisor = attrs.get("academic_supervisor") or getattr(placement, "academic_supervisor", None)
+        start_date = attrs.get("start_date") or getattr(placement, "start_date", None)
+        end_date = attrs.get("end_date") or getattr(placement, "end_date", None)
+
+        required_fields = {
+            "student_id": student,
+            "workplace_supervisor_id": workplace_supervisor,
+            "academic_supervisor_id": academic_supervisor,
+            "company_name": attrs.get("company_name") or getattr(placement, "company_name", None),
+            "start_date": start_date,
+            "end_date": end_date,
+        }
+
+        missing_fields = [field_name for field_name, value in required_fields.items() if not value]
+        if missing_fields:
+            raise serializers.ValidationError(
+                {field_name: ["This field is required."] for field_name in missing_fields}
+            )
+
+        if start_date and end_date and end_date < start_date:
+            raise serializers.ValidationError(
+                {"end_date": ["End date must be on or after the start date."]}
+            )
+
+        if student:
+            active_placements = InternshipPlacement.objects.filter(
+                student=student,
+                status__in=["pending", "active"],
+            )
+
+            if placement:
+                active_placements = active_placements.exclude(pk=placement.pk)
+
+            if active_placements.exists():
+                raise serializers.ValidationError(
+                    {
+                        "student_id": [
+                            "This student already has a pending or active internship placement."
+                        ]
+                    }
+                )
+
+        return attrs
+
     def get_student_name(self, obj):
         return UserSummarySerializer(obj.student).data["full_name"]
 
@@ -162,4 +210,22 @@ class EvaluationSerializer(serializers.ModelSerializer):
 
     def get_evaluator_name(self, obj):
         return UserSummarySerializer(obj.evaluator).data["full_name"]
-                        
+
+
+class NotificationSerializer(serializers.ModelSerializer):
+    recipient = UserSummarySerializer(read_only=True)
+    actor = UserSummarySerializer(read_only=True)
+
+    class Meta:
+        model = Notification
+        fields = [
+            "id",
+            "recipient",
+            "actor",
+            "notification_type",
+            "title",
+            "message",
+            "data",
+            "is_read",
+            "created_at",
+        ]

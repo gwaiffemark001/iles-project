@@ -1,5 +1,6 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { useState } from 'react';
+import { useAuth } from '../../contexts/useAuth';
 import './Signup.css'
 import '../Login/Firstpage.css';
 
@@ -13,6 +14,7 @@ function Signup() {
     const [registrationNumber, setRegistrationNumber] = useState('');
 
     const navigate = useNavigate();
+    const { register } = useAuth();
     // student email domains are put here
     const universityDomains = ['@students.mak.ac.ug'];
 
@@ -34,51 +36,18 @@ function Signup() {
             const username = email.includes('@') ? email.split('@')[0] : email;
             let body = { username, email, password };
             if (extraFields) {
-                body.studentNumber = studentNumber;
-                body.registrationNumber = registrationNumber;
+                body.student_number = studentNumber;
             }
 
-            const response = await fetch('/api/register/', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(body),
-            });
+            const result = await register(body);
 
-            const data = await response.json();
-
-            if (!response.ok) {
-                setErrorMessage(data.message || 'Signup failed.');
+            if (!result.success) {
+                setErrorMessage(result.error || 'Signup failed.');
                 return;
             }
 
             setSuccessMessage('Account created successfully. Please log in.');
-
-            // Store JWT token in localStorage
-            localStorage.setItem('token', data.token);
-
-            // Get profile
-            const profileResponse = await fetch('/api/profile', {
-                method: 'GET',
-                headers: {
-                    'Authorization': `Bearer ${data.token}`,
-                },
-            });
-
-            const profileData = await profileResponse.json();
-            const role = profileData.role;
-
-            // Redirect based on role
-            if (role === 'admin') {
-                navigate('/admin-dashboard');
-            } else if (role === 'academic_supervisor') {
-                navigate('/academic_supervisor-dashboard');
-            } else if (role === 'workplace_supervisor') {
-                navigate('/workplace_supervisor-dashboard');
-            } else {
-                navigate('/student-dashboard'); // Default dashboard for other roles
-            }
+            navigate('/');
         } catch (error) {
             setErrorMessage('Unable to reach the server. Please try again later.');
         }

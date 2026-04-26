@@ -131,4 +131,15 @@ export const evaluationsAPI = {
   updateEvaluation: (id, data) => api.put(`/evaluations/${id}/`, data),
 };
 
+export const adminAPI = {
+  getStatistics: () => api.get('/admin/statistics/'),
+  getUsers: (params) => api.get('/users/', { params }),
+};
+
+export const notificationsAPI = {
+  getNotifications: (params) => api.get('/notifications/', { params }),
+  markAsRead: (id) => api.put(`/notifications/${id}/read/`),
+  markAllAsRead: () => api.post('/notifications/mark-all-read/'),
+};
+
 export default api;
