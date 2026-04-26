@@ -10,6 +10,7 @@ const WorkplaceSupervisorDashboard = () => {
   const [placements, setPlacements] = useState([]);
   const [selectedPlacement, setSelectedPlacement] = useState(null);
   const [logs, setLogs] = useState([]);
+  const [evaluations, setEvaluations] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [comment, setComment] = useState('');
@@ -19,13 +20,18 @@ const WorkplaceSupervisorDashboard = () => {
   useEffect(() => {
     fetchPlacements();
     fetchLogs();
+    fetchEvaluations();
   }, []);
 
   const fetchPlacements = async () => {
     try {
       setLoading(true);
       const response = await placementsAPI.getPlacements();
-      setPlacements(response.data);
+      // Filter placements where current user is the workplace_supervisor
+      const myPlacements = response.data.filter(
+        p => p.workplace_supervisor === user?.id || p.supervisor === user?.id
+      );
+      setPlacements(myPlacements);
     } catch (err) {
       setError(getErrorMessage(err));
     } finally {
@@ -42,26 +48,74 @@ const WorkplaceSupervisorDashboard = () => {
     }
   };
 
+  const fetchEvaluations = async () => {
+    try {
+      const response = await evaluationsAPI.getEvaluations();
+      setEvaluations(response.data);
+    } catch (err) {
+      // Evaluations may not be available for all users
+      console.log('Evaluations not available');
+    }
+  };
+
+  // Match backend model fields
   const getInternsData = () => {
     return placements.map((placement) => {
-      const internLogs = logs.filter(log => (log.placement?.id ?? log.placement_id) === placement.id);
-      const pendingLogs = internLogs.filter(log => log.status === 'submitted').length;
+      // Handle both possible field names from API
+      const placementId = placement.id;
+      const internLogs = logs.filter(log => 
+        (log.placement?.id ?? log.placement_id) === placementId
+      );
+      
+      // Count logs by status (matching WeeklyLog.STATUS_CHOICES)
+      const draftLogs = internLogs.filter(log => log.status === 'draft').length;
+      const submittedLogs = internLogs.filter(log => log.status === 'submitted').length;
+      const reviewedLogs = internLogs.filter(log => log.status === 'reviewed').length;
       const approvedLogs = internLogs.filter(log => log.status === 'approved').length;
       const totalLogs = internLogs.length;
 
+      // Get evaluation score for this placement
+      const placementEvaluations = evaluations.filter(e => 
+        (e.placement?.id ?? e.placement_id) === placementId
+      );
+      const supervisorEvaluation = placementEvaluations.find(e => 
+        e.evaluation_type === 'supervisor'
+      );
+
       return {
-        id: placement.student?.id || placement.id,
-        name: placement.student_name || placement.student?.full_name || placement.student?.username || "Unassigned Student",
-        email: placement.student?.email || 'N/A',
-        department: placement.student?.department || 'N/A',
-        company: placement.company_name,
+        id: placement.id,
+        // Student info - handle both nested and flat structures
+        studentId: placement.student?.id ?? placement.student,
+        studentName: placement.student?.full_name || 
+                     placement.student?.username || 
+                     placement.student_name || 
+                     "Unknown Student",
+        studentEmail: placement.student?.email || 'N/A',
+        studentDepartment: placement.student?.department || 
+                          placement.department || 
+                          'N/A',
+        studentNumber: placement.student?.student_number || 'N/A',
+        // Company info
+        companyName: placement.company_name,
+        companyAddress: placement.company_address || 'N/A',
+        // Dates
         startDate: placement.start_date,
         endDate: placement.end_date,
-        pendingLogs,
+        // Status (matching InternshipPlacement.STATUS_CHOICES)
+        status: placement.status || 'pending',
+        createdAt: placement.created_at,
+        // Log statistics
+        draftLogs,
+        submittedLogs,
+        reviewedLogs,
         approvedLogs,
         totalLogs,
-        status: placement.status,
-        statusLabel: pendingLogs > 0 ? 'Pending Review' : totalLogs > 0 ? 'Reviewed' : 'No Logs',
+        pendingLogs: submittedLogs, // For backward compatibility
+        // Evaluation
+        evaluationScore: supervisorEvaluation?.score || null,
+        evaluatedAt: supervisorEvaluation?.evaluated_at || null,
+        // Store full placement object
+        placement: placement,
       };
     });
   };
@@ -70,9 +124,10 @@ const WorkplaceSupervisorDashboard = () => {
     const interns = getInternsData();
     return {
       totalInterns: interns.length,
-      pendingReviews: interns.reduce((acc, i) => acc + i.pendingLogs, 0),
+      pendingReviews: interns.reduce((acc, i) => acc + i.submittedLogs, 0),
       approvedLogs: interns.reduce((acc, i) => acc + i.approvedLogs, 0),
       activePlacements: interns.filter(i => i.status === 'active').length,
+      completedPlacements: interns.filter(i => i.status === 'completed').length,
     };
   };
 
@@ -114,8 +169,25 @@ const WorkplaceSupervisorDashboard = () => {
     }
   };
 
+  const handleSubmitEvaluation = async (placementId, score) => {
+    try {
+      await evaluationsAPI.createEvaluation({
+        placement: placementId,
+        score: score,
+        evaluation_type: 'supervisor'
+      });
+      toast.success("Evaluation submitted successfully");
+      fetchEvaluations();
+    } catch (err) {
+      toast.error(getErrorMessage(err));
+    }
+  };
+
+  // Filter logs for selected placement
   const filteredLogs = selectedPlacement 
-    ? logs.filter(log => (log.placement?.id ?? log.placement_id) === selectedPlacement.id)
+    ? logs.filter(log => 
+        (log.placement?.id ?? log.placement_id) === selectedPlacement.id
+      )
     : [];
 
   const stats = getStats();
@@ -177,6 +249,12 @@ const WorkplaceSupervisorDashboard = () => {
         >
           Weekly Logs
         </button>
+        <button 
+          className={`tab ${activeTab === 'evaluations' ? 'active' : ''}`}
+          onClick={() => setActiveTab('evaluations')}
+        >
+          Evaluations
+        </button>
       </div>
 
       {/* Placements Tab */}
@@ -205,25 +283,28 @@ const WorkplaceSupervisorDashboard = () => {
                 onClick={() => handlePlacementSelect(intern.placement)}
               >
                 <div className="intern-header">
-                  <div className="intern-avatar">{intern.name.charAt(0)}</div>
+                  <div className="intern-avatar">{intern.studentName.charAt(0)}</div>
                   <div className="intern-info">
-                    <h3>{intern.name}</h3>
-                    <p className="intern-department">{intern.department}</p>
+                    <h3>{intern.studentName}</h3>
+                    <p className="intern-department">{intern.studentDepartment}</p>
                   </div>
                 </div>
                 <div className="intern-details">
-                  <p><strong>Company:</strong> {intern.company}</p>
+                  <p><strong>Company:</strong> {intern.companyName}</p>
                   <p><strong>Period:</strong> {intern.startDate} - {intern.endDate}</p>
                   <p><strong>Status:</strong> <span className={`status-badge ${intern.status}`}>{intern.status}</span></p>
+                  {intern.studentNumber && (
+                    <p><strong>Student No:</strong> {intern.studentNumber}</p>
+                  )}
                 </div>
                 <div className="intern-stats">
                   <div className="intern-stat">
                     <span className="stat-number">{intern.totalLogs}</span>
-                    <span className="stat-label">Total Logs</span>
+                    <span className="stat-label">Total</span>
                   </div>
                   <div className="intern-stat pending">
-                    <span className="stat-number">{intern.pendingLogs}</span>
-                    <span className="stat-label">Pending</span>
+                    <span className="stat-number">{intern.submittedLogs}</span>
+                    <span className="stat-label">Submitted</span>
                   </div>
                   <div className="intern-stat approved">
                     <span className="stat-number">{intern.approvedLogs}</span>
@@ -258,8 +339,9 @@ const WorkplaceSupervisorDashboard = () => {
           ) : (
             <div className="logs-container">
               <div className="selected-intern-header">
-                <h3>Logs for {selectedPlacement.student?.username || 'Intern'}</h3>
+                <h3>Logs for {selectedPlacement.student?.full_name || selectedPlacement.student?.username || 'Intern'}</h3>
                 <p>{selectedPlacement.company_name}</p>
+                <p className="log-period">Period: {selectedPlacement.start_date} - {selectedPlacement.end_date}</p>
               </div>
               
               {filteredLogs.length === 0 ? (
@@ -289,6 +371,18 @@ const WorkplaceSupervisorDashboard = () => {
                           <div className="log-field">
                             <strong>Learning:</strong>
                             <p>{log.learning}</p>
+                          </div>
+                        )}
+                        {log.deadline && (
+                          <div className="log-field">
+                            <strong>Deadline:</strong>
+                            <p>{log.deadline}</p>
+                          </div>
+                        )}
+                        {log.submitted_at && (
+                          <div className="log-field">
+                            <strong>Submitted:</strong>
+                            <p>{new Date(log.submitted_at).toLocaleString()}</p>
                           </div>
                         )}
                         {log.supervisor_comment && (
@@ -334,6 +428,51 @@ const WorkplaceSupervisorDashboard = () => {
               )}
             </div>
           )}
+        </div>
+      )}
+
+      {/* Evaluations Tab */}
+      {activeTab === 'evaluations' && (
+        <div className="evaluations-section">
+          <div className="section-header">
+            <h2>Intern Evaluations</h2>
+          </div>
+          <div className="evaluations-grid">
+            {getInternsData().map(intern => (
+              <div key={intern.id} className="evaluation-card">
+                <div className="evaluation-header">
+                  <h3>{intern.studentName}</h3>
+                  <span className={`status-badge ${intern.status}`}>{intern.status}</span>
+                </div>
+                <div className="evaluation-details">
+                  <p><strong>Company:</strong> {intern.companyName}</p>
+                  <p><strong>Period:</strong> {intern.startDate} - {intern.endDate}</p>
+                </div>
+                <div className="evaluation-score">
+                  <p><strong>Supervisor Evaluation:</strong></p>
+                  {intern.evaluationScore ? (
+                    <div className="score-display">
+                      <span className="score-value">{intern.evaluationScore}</span>
+                      <span className="score-date">
+                        Evaluated: {new Date(intern.evaluatedAt).toLocaleDateString()}
+                      </span>
+                    </div>
+                  ) : (
+                    <p className="no-evaluation">Not evaluated yet</p>
+                  )}
+                </div>
+                <div className="log-summary">
+                  <p><strong>Log Summary:</strong></p>
+                  <div className="log-stats">
+                    <span>Draft: {intern.draftLogs}</span>
+                    <span>Submitted: {intern.submittedLogs}</span>
+                    <span>Reviewed: {intern.reviewedLogs}</span>
+                    <span>Approved: {intern.approvedLogs}</span>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       )}
     </div>
