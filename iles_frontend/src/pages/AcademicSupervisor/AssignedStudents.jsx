@@ -6,6 +6,24 @@ const AssignedStudents = () => {
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState("All");
 
+  const students = [
+    {name: "Hope Mwelu", student_id: "2500703595", placement: "MTN Uganda", supervisor: "Mr. Kato", logs: 12, status: "Pending"},
+    {name: "Grace Ahurira", student_id: "2400702848", placement: "Stanbic Bank", supervisor: "Ms. Nankya", logs: 8, status: "Reviewed"},
+    {name: "Emma Michael", student_id: "2500715631", placement: "Airtel Uganda", supervisor: "Mr. Ssali", logs: 3, status: "Overdue"}
+  ];
+
+const getStatusClass = (status) => {
+    if (status === "Pending") return "status-pending";
+    if (status === "Reviewed") return "status-reviewed";
+    if (status === "Overdue") return "status-overdue";
+};
+
+const filteredStudents = students.filter((s) => {
+    const matchesSearch = s.name.toLowerCase().includes(search.toLowerCase());
+    const matchFilter = filter === "All" || s.status === filter;
+    return matchesSearch && matchFilter;
+});
+
   return (
     <Layout role="Academic Supervisor" userName="Dr. Susan">
 
@@ -51,6 +69,17 @@ const AssignedStudents = () => {
                 <div>Status</div>
                 <div>Action</div>
             </div>
+            {filteredStudents.map((student, index) => (
+                <div className="table-row" key={index}>
+                    <div>{student.name}</div>
+                    <div>{student.student_id}</div>
+                    <div>{student.placement}</div>
+                    <div>{student.supervisor}</div>
+                    <div>{student.logs}</div>
+                    <div><span className={getStatusClass(student.status)}>{student.status}</span></div>
+                    
+                </div>
+            ))}
         </div>
 
     </Layout>
