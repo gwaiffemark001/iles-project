@@ -39,6 +39,20 @@ const AssignedStudents = () => {
             </select>
         </div>
 
+        {/* Students Table */}
+        <div className="section-title">Students List</div>
+        <div className="students-table">
+            <div className="table-header">
+                <div>Student Name</div>
+                <div>Student ID</div>
+                <div>Place of Internship</div>
+                <div>Company Supervisor</div>
+                <div>Logs Submitted</div>
+                <div>Status</div>
+                <div>Action</div>
+            </div>
+        </div>
+
     </Layout>
 );
 };
