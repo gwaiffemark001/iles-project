@@ -81,7 +81,7 @@ const AcademicSupervisorDashboard = () => {
                                 <div>{student.logs}</div>
                                 <div><span className={getStatusClass(student.status)}>{student.status}</span></div>
                                 <div>
-                                    <button className="eval-btn">
+                                    <button className="eval-btn" onClick={() => navigate("/academic-supervisor/students")}>
                                         {student.status === "Reviewed" ? "View" : "Evaluate"}
                                     </button>
                                 </div>
