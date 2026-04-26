@@ -7,6 +7,7 @@ import Signup from "./pages/Signup/Signup";
 import AcademicSupervisorDashboard from "./pages/AcademicSupervisor/AcademicSupervisorDashboard";
 import StudentDashboard from "./pages/Student/StudentDashboard";
 import WorkplaceSupervisorDashboard from "./pages/WorkplaceSupervisor/WorkplaceSupervisorDashboard";
+import AdminDashboard from "./pages/AdminDashboard";
 
 const ProtectedRoute = ({ allowedRoles, children }) => {
   const { loading, user } = useAuth();
@@ -34,6 +35,10 @@ function App() {
         <Route path="/" element={<Firstpage />} />
         <Route path="/signup" element={<Signup />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/admin-dashboard" element={<Navigate to="/admin/dashboard" replace />} />
+        <Route path="/academic_supervisor-dashboard" element={<Navigate to="/academic-supervisor/dashboard" replace />} />
+        <Route path="/workplace_supervisor-dashboard" element={<Navigate to="/workplace-supervisor/dashboard" replace />} />
+        <Route path="/student-dashboard" element={<Navigate to="/student/dashboard" replace />} />
         <Route
           path="/workplace-supervisor/dashboard"
           element={
@@ -55,6 +60,14 @@ function App() {
           element={
             <ProtectedRoute allowedRoles={["student"]}>
               <StudentDashboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/dashboard"
+          element={
+            <ProtectedRoute allowedRoles={["admin"]}>
+              <AdminDashboard />
             </ProtectedRoute>
           }
         />
