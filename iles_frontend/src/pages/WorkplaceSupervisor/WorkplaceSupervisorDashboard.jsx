@@ -1,159 +1,123 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "../../contexts/useAuth";
-import { logsAPI, placementsAPI } from "@/api/api";
-import { getErrorMessage } from "@/api/api";
+import { logsAPI, placementsAPI, evaluationsAPI } from "../../api/api";
+import { getErrorMessage } from "../../api/api";
 import "./WorkplaceSupervisorDashboard.css";
 
-const getUserInitials = (user) => {
-  const firstInitial = user?.first_name?.[0] || "";
-  const lastInitial = user?.last_name?.[0] || "";
-  return `${firstInitial}${lastInitial}` || user?.username?.slice(0, 2)?.toUpperCase() || "IL";
-};
-
 const WorkplaceSupervisorDashboard = () => {
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
   const [placements, setPlacements] = useState([]);
+  const [selectedPlacement, setSelectedPlacement] = useState(null);
   const [logs, setLogs] = useState([]);
-  const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [comment, setComment] = useState('');
 
   useEffect(() => {
-    fetchData();
+    fetchPlacements();
+    fetchLogs();
   }, []);
 
-  const fetchData = async () => {
+  const fetchPlacements = async () => {
     try {
-      setError("");
-      const [placementsRes, logsRes] = await Promise.all([
-        placementsAPI.getPlacements(),
-        logsAPI.getLogs(),
-      ]);
-      setPlacements(placementsRes.data);
-      setLogs(logsRes.data);
-    } catch (error) {
-      setError(getErrorMessage(error, "Unable to load supervisor dashboard data."));
+      setLoading(true);
+      const response = await placementsAPI.getPlacements();
+      setPlacements(response.data);
+    } catch (err) {
+      setError(getErrorMessage(err));
     } finally {
       setLoading(false);
     }
   };
 
-  const getStatusClass = (status) => {
-    if (status === "pendingreview") return "badge pending";
-    if (status === "draft") return "badge draft";
-    if (status === "submitted") return "badge submitted";
-    if (status === "reviewed") return "badge reviewed";
-    if (status === "approved") return "badge approved";
-    return "badge";
+  const fetchLogs = async () => {
+    try {
+      const response = await logsAPI.getLogs();
+      setLogs(response.data);
+    } catch (err) {
+      setError(getErrorMessage(err));
+    }
   };
 
-  const getInternsData = () => {
-    return placements.map(placement => {
-      const internLogs = logs.filter(log => (log.placement?.id ?? log.placement_id) === placement.id);
-      const pendingLogs = internLogs.filter(log => log.status === 'submitted').length;
-      const totalLogs = internLogs.length;
+  const handlePlacementSelect = (placement) => {
+    setSelectedPlacement(placement);
+  };
 
-      return {
-        id: placement.student?.id || placement.id,
-        name: placement.student_name || placement.student?.full_name || placement.student?.username || "Unassigned Student",
-        department: placement.student?.department || 'N/A',
-        logs: totalLogs,
-        status: pendingLogs > 0 ? 'Pending Review' : totalLogs > 0 ? 'Reviewed' : 'No Logs',
-        placement: placement,
-      };
-    });
+  const handleReviewLog = async (logId, comment) => {
+    try {
+      await logsAPI.reviewLog(logId, { supervisor_comment: comment });
+      fetchLogs(); // Refresh logs
+    } catch (err) {
+      setError(getErrorMessage(err));
+    }
+  };
+
+  const handleApproveLog = async (logId) => {
+    try {
+      await logsAPI.approveLog(logId, {});
+      fetchLogs(); // Refresh logs
+    } catch (err) {
+      setError(getErrorMessage(err));
+    }
   };
 
   if (loading) return <div>Loading...</div>;
-
-  const interns = getInternsData();
-  const pendingReviews = logs.filter(log => log.status === 'submitted').length;
-  const completedEvaluations = logs.filter(log => log.status === 'approved').length;
+  if (error) return <div>Error: {error}</div>;
 
   return (
-    <div className="workplace-supervisor-dashboard">
+    <div className="dashboard">
+      <h1>Workplace Supervisor Dashboard</h1>
+      <p>Welcome, {user?.username}</p>
 
-      {/* Sidebar */}
-      <div className="sidebar">
-        <div className="sidebar-logo">ILES</div>
-        <div className="sidebar-role">Workplace Supervisor</div>
-        <div className="sidebar-divider" />
-        <nav className="sidebar-nav">
-          <button className="nav-item active">Dashboard</button>
-          <button className="nav-item">Assigned Interns</button>
-          <button className="nav-item">Evaluate Logs</button>
-          <button className="nav-item">Evaluation History</button>
-        </nav>
-        <div className="sidebar-bottom">
-          <button className="nav-item logout" onClick={logout}>
-            Logout
-          </button>
+      <div className="placements-section">
+        <h2>My Placements</h2>
+        <div className="placements-list">
+          {placements.map(placement => (
+            <div
+              key={placement.id}
+              className={`placement-card ${selectedPlacement?.id === placement.id ? 'selected' : ''}`}
+              onClick={() => handlePlacementSelect(placement)}
+            >
+              <h3>{placement.student.username}</h3>
+              <p>{placement.company_name}</p>
+              <p>Status: {placement.status}</p>
+              <p>{placement.start_date} - {placement.end_date}</p>
+            </div>
+          ))}
         </div>
       </div>
 
-      {/* Main Content */}
-      <div className="main">
+      {selectedPlacement && (
+        <div className="logs-section">
+          <h2>Weekly Logs for {selectedPlacement.student.username}</h2>
+          <div className="logs-list">
+            {logs.filter(log => log.placement.id === selectedPlacement.id).map(log => (
+              <div key={log.id} className="log-card">
+                <h3>Week {log.week_number}</h3>
+                <p><strong>Activities:</strong> {log.activities}</p>
+                {log.challenges && <p><strong>Challenges:</strong> {log.challenges}</p>}
+                {log.learning && <p><strong>Learning:</strong> {log.learning}</p>}
+                <p><strong>Status:</strong> {log.status}</p>
+                {log.supervisor_comment && <p><strong>Comment:</strong> {log.supervisor_comment}</p>}
 
-        {/* Top Bar */}
-        <div className="topbar">
-          <div>
-            <h1>Welcome back, {user?.first_name || user?.username}</h1>
-            <p>Workplace Supervisor — Internship Logging & Evaluation System</p>
-          </div>
-          <div className="avatar">{getUserInitials(user)}</div>
-        </div>
-
-        {error ? <div className="dashboard-alert">{error}</div> : null}
-
-        {/* Stats */}
-        <div className="stats">
-          <div className="stat-card">
-            <div className="stat-label">Assigned Interns</div>
-            <div className="stat-num blue">{interns.length}</div>
-          </div>
-          <div className="stat-card">
-            <div className="stat-label">Logs Pending Review</div>
-            <div className="stat-num amber">{pendingReviews}</div>
-          </div>
-          <div className="stat-card">
-            <div className="stat-label">Evaluations Done</div>
-            <div className="stat-num green">{completedEvaluations}</div>
-          </div>
-        </div>
-
-        {/* Interns Table */}
-        <div className="section-title">Assigned Interns</div>
-        <div className="intern-table">
-          <div className="table-header">
-            <div>Intern Name</div>
-            <div>Company</div>
-            <div>Department</div>
-            <div>Logs Submitted</div>
-            <div>Status</div>
-            <div>Action</div>
-          </div>
-          {interns.length ? (
-            interns.map((intern) => (
-              <div className="table-row" key={intern.id}>
-                <div>{intern.name}</div>
-                <div>{intern.placement.company_name}</div>
-                <div>{intern.department}</div>
-                <div>{intern.logs}</div>
-                <div><span className={getStatusClass(intern.status.toLowerCase().replace(' ', ''))}>{intern.status}</span></div>
-                <div>
-                  <button className="eval-btn">
-                    {intern.status === "Pending Review" ? "Review" : "View"}
-                  </button>
-                </div>
+                {log.status === 'submitted' && (
+                  <div className="log-actions">
+                    <textarea
+                      placeholder="Add comment"
+                      onChange={(e) => setComment(e.target.value)}
+                    />
+                    <button onClick={() => handleReviewLog(log.id, comment)}>Review</button>
+                    <button onClick={() => handleApproveLog(log.id)}>Approve</button>
+                  </div>
+                )}
               </div>
-            ))
-          ) : (
-            <div className="empty-row">No interns are currently assigned to you.</div>
-          )}
+            ))}
+          </div>
         </div>
-
-      </div>
+      )}
     </div>
   );
 };
 
 export default WorkplaceSupervisorDashboard;
+
