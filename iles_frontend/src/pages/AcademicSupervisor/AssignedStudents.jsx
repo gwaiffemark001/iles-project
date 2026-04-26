@@ -85,6 +85,12 @@ const filteredStudents = students.filter((s) => {
             ))}
         </div>
 
+        {/* Pagination */}
+        <div className="pagination">
+            <button className="page-btn"> ← Previous </button>
+            <span className="page-info">Page 1 of 1</span>
+            <button className="page-btn"> Next → </button>
+        </div>
     </Layout>
 );
 };
