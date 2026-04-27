@@ -12,6 +12,7 @@ from .serializers import (
     EvaluationCriteriaSerializer,
     NotificationSerializer,
     UserSummarySerializer,
+    UserProfileSerializer,
 )
 from .services import (
     notify_log_submitted,
@@ -294,13 +295,36 @@ class UserProfileView(APIView):
         return Response(serializer.data)
 
     def put(self, request):
+        profile_data = request.data.get("profile", {})
+        if not isinstance(profile_data, dict):
+            profile_data = {}
+
+        flat_profile_fields = {"bio", "avatar_url", "location", "date_of_birth"}
+        if not profile_data:
+            profile_data = {
+                key: request.data.get(key)
+                for key in flat_profile_fields
+                if key in request.data
+            }
+
         serializer = CustomUserSerializer(request.user, data=request.data, partial=True)
-        if serializer.is_valid():
-            if 'password' in serializer.validated_data:
-                serializer.validated_data.pop('password')
-            serializer.save()
-            return Response(serializer.data)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        profile_serializer = UserProfileSerializer(
+            request.user.profile,
+            data=profile_data,
+            partial=True,
+        )
+        if not profile_serializer.is_valid():
+            return Response(profile_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        if 'password' in serializer.validated_data:
+            serializer.validated_data.pop('password')
+
+        serializer.save()
+        profile_serializer.save()
+        return Response(CustomUserSerializer(request.user).data)
 
 
 class UserListView(APIView):
