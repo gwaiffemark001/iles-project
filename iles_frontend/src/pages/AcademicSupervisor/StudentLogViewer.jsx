@@ -49,6 +49,23 @@ const StudentLogViewer = () => {
         </div>
       </div>
 
+      {/* Logs Section */}
+      <div className="logs-section">
+        <div className="logs-header">
+          <div className="section-title">Submitted Logs</div>
+        </div>
+        <div className="logs-table">
+          <div className="table-header">
+            <div>Log #</div>
+            <div>Date</div>
+            <div>Activity Summary</div>
+            <div>Hours</div>
+            <div>Status</div>
+            <div>Action</div>
+          </div>
+        </div>
+      </div>
+
     </Layout>
   );
 };
