@@ -3,7 +3,12 @@ import { Navigate, Route, Routes } from 'react-router-dom'
 import Firstpage from '../Firstpage'
 import ForgotPassword from '../ForgotPassword'
 import Signup from '../Signup'
-import StudentDash from '../StudentDash'
+import StudentDashboard from '../pages/Student/StudentDashboard'
+import PlacementsList from '../pages/Student/PlacementsList'
+import PlacementDetail from '../pages/Student/PlacementDetail'
+import Applications from '../pages/Student/Applications'
+import LogbookList from '../pages/Student/LogbookList'
+import LogbookEditor from '../pages/Student/LogbookEditor'
 import AcademicSupervisorDashboard from '../pages/AcademicSupervisor/AcademicSupervisorDashboard'
 import AssignedStudents from '../pages/AcademicSupervisor/AssignedStudents'
 import WorkplaceSupervisorDashboard from '../pages/WorkplaceSupervisor/WorkplaceSupervisorDashboard'
@@ -33,8 +38,13 @@ export default function AppRoutes() {
         <Route index element={<AppLanding />} />
 
         <Route path="student" element={<RoleRoute allow={['student']} />}>
-          <Route index element={<StudentDash />} />
-          <Route path="dashboard" element={<StudentDash />} />
+          <Route index element={<StudentDashboard />} />
+          <Route path="dashboard" element={<StudentDashboard />} />
+          <Route path="placements" element={<PlacementsList />} />
+          <Route path="placements/:id" element={<PlacementDetail />} />
+          <Route path="applications" element={<Applications />} />
+          <Route path="logbook" element={<LogbookList />} />
+          <Route path="logbook/:id" element={<LogbookEditor />} />
         </Route>
 
         <Route path="workplace" element={<RoleRoute allow={['workplace_supervisor']} />}>
