@@ -2,6 +2,8 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useState } from 'react';
 import './Signup.css';
 import './ILES.css';
+import { useAuth } from './auth/useAuth'
+import { roleToHomePath } from './routes/roleRedirect'
 
 function Signup() {
     const [email, setEmail] = useState('');
@@ -11,8 +13,10 @@ function Signup() {
     const [successMessage, setSuccessMessage] = useState('');
     const [studentNumber, setStudentNumber] = useState('');
     const [registrationNumber, setRegistrationNumber] = useState('');
+    const [submitting, setSubmitting] = useState(false)
 
     const navigate = useNavigate();
+    const { register } = useAuth()
     // student email domains are put here
     const universityDomains = ['@students.mak.ac.ug'];
 
@@ -29,58 +33,26 @@ function Signup() {
         e.preventDefault();
         setErrorMessage('');
         setSuccessMessage('');
+        setSubmitting(true)
 
         try {
-            const username = email.includes('@') ? email.split('@')[0] : email;
-            let body = { username, email, password };
-            if (extraFields) {
-                body.studentNumber = studentNumber;
-                body.registrationNumber = registrationNumber;
-            }
+            const profile = await register({
+                email,
+                password,
+                ...(extraFields
+                    ? {
+                        student_number: studentNumber,
+                        registration_number: registrationNumber,
+                    }
+                    : {}),
+            })
 
-            const response = await fetch('/api/register/', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(body),
-            });
-
-            const data = await response.json();
-
-            if (!response.ok) {
-                setErrorMessage(data.message || 'Signup failed.');
-                return;
-            }
-
-            setSuccessMessage('Account created successfully. Please log in.');
-
-            // Store JWT token in localStorage
-            localStorage.setItem('token', data.token);
-
-            // Get profile
-            const profileResponse = await fetch('/api/profile', {
-                method: 'GET',
-                headers: {
-                    'Authorization': `Bearer ${data.token}`,
-                },
-            });
-
-            const profileData = await profileResponse.json();
-            const role = profileData.role;
-
-            // Redirect based on role
-            if (role === 'admin') {
-                navigate('/admin-dashboard');
-            } else if (role === 'academic_supervisor') {
-                navigate('/academic_supervisor-dashboard');
-            } else if (role === 'workplace_supervisor') {
-                navigate('/workplace_supervisor-dashboard');
-            } else {
-                navigate('/student-dashboard'); // Default dashboard for other roles
-            }
+            setSuccessMessage('Account created successfully.')
+            navigate(roleToHomePath(profile?.role), { replace: true })
         } catch (error) {
-            setErrorMessage('Unable to reach the server. Please try again later.');
+            setErrorMessage(error?.message || 'Unable to reach the server. Please try again later.');
+        } finally {
+            setSubmitting(false)
         }
     };
 
@@ -130,8 +102,8 @@ function Signup() {
                         </div>
                     )}
 
-                    <button type="submit" className="login-btn">
-                        Create an Account
+                    <button type="submit" className="login-btn" disabled={submitting}>
+                        {submitting ? 'Creating...' : 'Create an Account'}
                     </button>
                 </form>
 

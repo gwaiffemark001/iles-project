@@ -13,6 +13,7 @@ class CustomUser(AbstractUser):
     department = models.CharField(max_length=100, blank=True, null=True)
     staff_number= models.CharField(max_length=20, blank=True, null=True)
     student_number=models.CharField(max_length=20, blank=True, null=True)
+    registration_number = models.CharField(max_length=30, blank=True, null=True)
 
     def __str__(self):
         return (f"{self.username},({self.role})")
