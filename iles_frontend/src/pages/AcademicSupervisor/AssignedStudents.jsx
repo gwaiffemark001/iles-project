@@ -1,6 +1,6 @@
 import { useState } from "react";
 import Layout from "../../components/Layout";
-import "./AssignedStudents.cc";
+import "./AssignedStudents.css";
 
 const AssignedStudents = () => {
   const [search, setSearch] = useState("");
