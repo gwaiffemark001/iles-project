@@ -7,6 +7,15 @@ const StudentLogViewer = () => {
   const navigate = useNavigate();
   const [selectedLog, setSelectedLog] = useState(null);
 
+  const [search, setSearch] = useState("");
+  const [filter, setFilter] = useState("All");
+
+  const filteredLogs = logs.filter((log) => {
+    const matchSearch = log.summary.toLowerCase().includes(search.toLowerCase());
+    const matchFilter = filter === "All" || log.status === filter;
+    return matchSearch && matchFilter;
+  });
+
   const logs = [
     { id: 1, date: "2026-01-06", summary: "Attended orientation and met the team", hours: 8, status: "Reviewed", comments: "Good start! Keep it up." },
     { id: 2, date: "2026-01-07", summary: "Worked on database design with senior developer", hours: 8, status: "Reviewed", comments: "Great work on the ER diagram." },
@@ -68,6 +77,25 @@ const StudentLogViewer = () => {
       <div className="logs-section">
         <div className="logs-header">
           <div className="section-title">Submitted Logs</div>
+          <div className="logs-filters">
+            <input
+              type="text"
+              placeholder="Search logs..."
+              className="search-input"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+            <select
+              className="filter-select"
+              value={filter}
+              onChange={(e) => setFilter(e.target.value)}
+            >
+              <option value="All">All Status</option>
+              <option value="Pending">Pending</option>
+              <option value="Reviewed">Reviewed</option>
+              <option value="Overdue">Overdue</option>
+            </select>
+          </div>
         </div>
         <div className="logs-table">
           <div className="table-header">
@@ -79,7 +107,7 @@ const StudentLogViewer = () => {
             <div>Action</div>
           </div>
 
-          {logs.map((log) => (
+          {filteredLogs.map((log) => (
             <div className="table-row" key={log.id}>
               <div>#{log.id}</div>
               <div>{log.date}</div>
