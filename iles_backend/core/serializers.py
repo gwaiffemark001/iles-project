@@ -4,7 +4,20 @@ class CustomUserSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True) 
     class Meta:
         model = CustomUser
-        fields =['id', 'username', 'email', 'first_name', 'last_name', 'role', 'phone','password']
+        fields =[
+            'id',
+            'username',
+            'email',
+            'first_name',
+            'last_name',
+            'role',
+            'phone',
+            'department',
+            'staff_number',
+            'student_number',
+            'registration_number',
+            'password',
+        ]
 class InternshipPlacementSerializer(serializers.ModelSerializer):
     class Meta:
         model = InternshipPlacement

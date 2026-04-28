@@ -139,6 +139,13 @@ class UserRegistrationView(APIView):
             email = serializer.validated_data.get('email',''),
             password = serializer.validated_data['password'],
             role = serializer.validated_data.get('role', 'student'),
+            first_name = serializer.validated_data.get('first_name', ''),
+            last_name = serializer.validated_data.get('last_name', ''),
+            phone = serializer.validated_data.get('phone', None),
+            department = serializer.validated_data.get('department', None),
+            staff_number = serializer.validated_data.get('staff_number', None),
+            student_number = serializer.validated_data.get('student_number', None),
+            registration_number = serializer.validated_data.get('registration_number', None),
           
         )
         return Response({
