@@ -83,6 +83,24 @@ body { font-family: 'Inter', sans-serif; }
   margin-top: auto;
 }
 
+.dashboard-logout {
+  position: fixed;
+  left: 20px;
+  bottom: 20px;
+  width: 180px;
+  z-index: 100;
+}
+
+.dashboard-logout .nav-item.logout {
+  background: rgba(26, 35, 64, 0.95);
+  border-radius: 8px;
+  color: #f09595;
+}
+
+.dashboard-logout .nav-item.logout:hover {
+  background: rgba(240, 149, 149, 0.15);
+}
+
 .sidebar-user {
   color: #85b7eb;
   font-size: 12px;
@@ -599,6 +617,13 @@ body { font-family: 'Inter', sans-serif; }
 @media (max-width: 768px) {
   .dashboard {
     padding: 16px;
+  }
+
+  .dashboard-logout {
+    left: 16px;
+    right: 16px;
+    bottom: 16px;
+    width: auto;
   }
 
   .stats-grid {

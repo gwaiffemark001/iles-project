@@ -6,7 +6,7 @@ import { toast } from "react-toastify";
 import "./WorkplaceSupervisorDashboard.css";
 
 const WorkplaceSupervisorDashboard = () => {
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   const [placements, setPlacements] = useState([]);
   const [selectedPlacement, setSelectedPlacement] = useState(null);
   const [logs, setLogs] = useState([]);
@@ -473,6 +473,12 @@ const WorkplaceSupervisorDashboard = () => {
           </div>
         </div>
       )}
+
+      <div className="dashboard-logout">
+        <button className="nav-item logout" onClick={logout}>
+          Logout
+        </button>
+      </div>
     </div>
   );
 };
