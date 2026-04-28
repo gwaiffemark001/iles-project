@@ -2,7 +2,6 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useState } from 'react';
 import { useAuth } from '../../contexts/useAuth';
 import './Signup.css'
-import '../Login/Firstpage.css';
 
 function Signup() {
     const [email, setEmail] = useState('');
