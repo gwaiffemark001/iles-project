@@ -1,6 +1,20 @@
 from rest_framework import serializers
 
-from .models import CustomUser, Evaluation, EvaluationCriteria, InternshipPlacement, Notification, WeeklyLog
+from .models import CustomUser, Evaluation, EvaluationCriteria, InternshipPlacement, Notification, UserProfile, WeeklyLog
+
+
+class UserProfileSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = UserProfile
+        fields = [
+            "id",
+            "bio",
+            "avatar_url",
+            "location",
+            "date_of_birth",
+            "created_at",
+            "updated_at",
+        ]
 
 
 class UserSummarySerializer(serializers.ModelSerializer):
@@ -30,11 +44,24 @@ class UserSummarySerializer(serializers.ModelSerializer):
 class CustomUserSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, required=False)
     full_name = serializers.SerializerMethodField(read_only=True)
+    profile = UserProfileSerializer(read_only=True)
 
     class Meta:
         model = CustomUser
         fields = [
-            "id", "username", "email", "first_name", "last_name", "full_name", "role", "phone", "department", "staff_number", "student_number", "password", 
+            "id",
+            "username",
+            "email",
+            "first_name",
+            "last_name",
+            "full_name",
+            "role",
+            "phone",
+            "department",
+            "staff_number",
+            "student_number",
+            "profile",
+            "password",
             ]
 
     def get_full_name(self, obj):
