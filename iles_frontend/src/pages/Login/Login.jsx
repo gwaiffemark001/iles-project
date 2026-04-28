@@ -1,10 +1,9 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { useState } from 'react';
 import { useAuth } from '../../contexts/useAuth';
-import './Firstpage.css';
 import '../../ILES.css'; 
 
-function Firstpage() {
+function Login() {
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
     const [errorMessage, setErrorMessage] = useState('');
@@ -77,4 +76,4 @@ function Firstpage() {
     );
 }
 
-export default Firstpage
+export default Login
