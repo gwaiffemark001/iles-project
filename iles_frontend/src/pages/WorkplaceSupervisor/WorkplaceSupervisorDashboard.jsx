@@ -27,11 +27,9 @@ const WorkplaceSupervisorDashboard = () => {
     try {
       setLoading(true);
       const response = await placementsAPI.getPlacements();
-      // Filter placements where current user is the workplace_supervisor
-      const myPlacements = response.data.filter(
-        p => p.workplace_supervisor === user?.id || p.supervisor === user?.id
-      );
-      setPlacements(myPlacements);
+      // Backend already filters by logged-in user based on role
+      // Just use the data directly without additional filtering
+      setPlacements(response.data);
     } catch (err) {
       setError(getErrorMessage(err));
     } finally {
