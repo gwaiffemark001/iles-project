@@ -5,6 +5,21 @@ import "./StudentLogViewer.css";
 
 const StudentLogViewer = () => {
   const navigate = useNavigate();
+  const [selectedLog, setSelectedLog] = useState(null);
+
+  const logs = [
+    { id: 1, date: "2026-01-06", summary: "Attended orientation and met the team", hours: 8, status: "Reviewed", comments: "Good start! Keep it up." },
+    { id: 2, date: "2026-01-07", summary: "Worked on database design with senior developer", hours: 8, status: "Reviewed", comments: "Great work on the ER diagram." },
+    { id: 3, date: "2026-01-08", summary: "Attended team standup and worked on UI mockups", hours: 7, status: "Pending", comments: "" },
+    { id: 4, date: "2026-01-09", summary: "Fixed bugs in the frontend codebase", hours: 8, status: "Pending", comments: "" },
+    { id: 5, date: "2026-01-10", summary: "Wrote unit tests for the API endpoints", hours: 6, status: "Overdue", comments: "" },
+  ];
+
+  const getStatusClass = (status) => {
+    if (status === "Reviewed") return "badge reviewed";
+    if (status === "Pending") return "badge pending";
+    if (status === "Overdue") return "badge overdue";
+  };
 
   return (
     <Layout role="Academic Supervisor" userName="Dr. Susan">
@@ -29,7 +44,7 @@ const StudentLogViewer = () => {
           <div className="student-avatar">HM</div>
           <div>
             <h2 className="student-name">Hope Mwelu</h2>
-            <p className="student-detail">Student ID: 2100700123</p>
+            <p className="student-detail">Student ID:2500703595</p>
             <p className="student-detail">Department: Computer Science</p>
           </div>
         </div>
@@ -63,6 +78,17 @@ const StudentLogViewer = () => {
             <div>Status</div>
             <div>Action</div>
           </div>
+          
+          {logs.map((log) => (
+            <div className="table-row" key={log.id}>
+              <div>#{log.id}</div>
+              <div>{log.date}</div>
+              <div className="log-summary">{log.summary}</div>
+              <div>{log.hours}hrs</div>
+              <div><span className={getStatusClass(log.status)}>{log.status}</span></div>
+              <div></div>
+            </div>
+          ))}
         </div>
       </div>
 
