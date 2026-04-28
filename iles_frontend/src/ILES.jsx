@@ -14,7 +14,7 @@ function ILES() {
             <Route path="/" element={<Firstpage />} />
             <Route path="/signup" element={<Signup />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />
-            <Route path='/studentdashboard' element={ <studentDashboard />}/>
+            <Route path='/studentdashboard' element={ <StudentDash />}/>
             <Route path="/workplace-supervisor/dashboard" element={<WorkplaceSupervisorDashboard />} />
             <Route path="/academic-supervisor/dashboard" element={<AcademicSupervisorDashboard />} />
             <Route path="/academic-supervisor/students" element={<AssignedStudents />} />
