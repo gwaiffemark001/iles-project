@@ -73,6 +73,26 @@ const StudentLogViewer = () => {
         </div>
       </div>
 
+      {/* Log Statistics */}
+      <div className="log-stats">
+        <div className="log-stat-card">
+          <div className="stat-label">Total Logs</div>
+          <div className="stat-num blue">5</div>
+        </div>
+        <div className="log-stat-card">
+          <div className="stat-label">Reviewed</div>
+          <div className="stat-num green">2</div>
+        </div>
+        <div className="log-stat-card">
+          <div className="stat-label">Pending</div>
+          <div className="stat-num amber">2</div>
+        </div>
+        <div className="log-stat-card">
+          <div className="stat-label">Overdue</div>
+          <div className="stat-num red">1</div>
+        </div>
+      </div>
+
       {/* Logs Section */}
       <div className="logs-section">
         <div className="logs-header">
