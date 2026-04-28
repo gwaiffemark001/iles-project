@@ -13,6 +13,7 @@ class CustomUser(AbstractUser):
     department = models.CharField(max_length=100, blank=True, null=True)
     staff_number= models.CharField(max_length=20, blank=True, null=True)
     student_number=models.CharField(max_length=20, blank=True, null=True)
+    registration_number = models.CharField(max_length=30, blank=True, null=True)
 
     def __str__(self):
         return (f"{self.username},({self.role})")
@@ -23,7 +24,15 @@ class InternshipPlacement(models.Model):
         ('active' ,'Active'),
         ('completed', 'Completed'),       
     ]    
-    student =models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='placements', limit_choices_to={'role':'student'})
+    # When student is null, treat this as an "available" placement/posting.
+    student =models.ForeignKey(
+        CustomUser,
+        on_delete=models.CASCADE,
+        related_name='placements',
+        limit_choices_to={'role':'student'},
+        blank=True,
+        null=True,
+    )
     workplace_supervisor = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='supervised_placements',limit_choices_to ={'role':'workplace_supervisor'})
     academic_supervisor = models.ForeignKey(CustomUser, on_delete= models.CASCADE, related_name='academic_placements', limit_choices_to={'role':'academic_supervisor'})
     company_name =models.CharField(max_length=200)
@@ -35,6 +44,37 @@ class InternshipPlacement(models.Model):
 
     def __str__(self):
         return (f"{self.student.username} at {self.company_name}")
+
+
+class PlacementApplication(models.Model):
+    STATUS_CHOICES = [
+        ('pending', 'Pending'),
+        ('approved', 'Approved'),
+        ('rejected', 'Rejected'),
+        ('withdrawn', 'Withdrawn'),
+    ]
+
+    placement = models.ForeignKey(
+        InternshipPlacement,
+        on_delete=models.CASCADE,
+        related_name='applications',
+    )
+    student = models.ForeignKey(
+        CustomUser,
+        on_delete=models.CASCADE,
+        related_name='placement_applications',
+        limit_choices_to={'role': 'student'},
+    )
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
+    note = models.TextField(blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    decided_at = models.DateTimeField(blank=True, null=True)
+
+    class Meta:
+        unique_together = [['placement', 'student']]
+
+    def __str__(self):
+        return f"{self.student.username} -> {self.placement.company_name} ({self.status})"
 
 class WeeklyLog(models.Model):
     STATUS_CHOICES =[
