@@ -114,7 +114,22 @@ const StudentLogViewer = () => {
               <div className="log-summary">{log.summary}</div>
               <div>{log.hours}hrs</div>
               <div><span className={getStatusClass(log.status)}>{log.status}</span></div>
-              <div></div>
+              <div className="action-btns">
+                <button
+                  className="btn-view"
+                  onClick={() => setSelectedLog(log)}
+                >
+                  View
+                </button>
+                {log.status !== "Reviewed" && (
+                  <button
+                    className="btn-evaluate"
+                    onClick={() => navigate("/academic-supervisor/evaluate")}
+                  >
+                    Evaluate
+                  </button>
+                )}
+              </div>
             </div>
           ))}
         </div>
