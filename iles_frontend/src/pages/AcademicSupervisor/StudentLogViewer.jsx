@@ -78,7 +78,7 @@ const StudentLogViewer = () => {
             <div>Status</div>
             <div>Action</div>
           </div>
-          
+
           {logs.map((log) => (
             <div className="table-row" key={log.id}>
               <div>#{log.id}</div>
@@ -91,6 +91,38 @@ const StudentLogViewer = () => {
           ))}
         </div>
       </div>
+
+      {/* Log Detail Modal */}
+      {selectedLog && (
+        <div className="log-modal-overlay" onClick={() => setSelectedLog(null)}>
+          <div className="log-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3>Log #{selectedLog.id} — {selectedLog.date}</h3>
+              <button className="modal-close" onClick={() => setSelectedLog(null)}>✕</button>
+            </div>
+            <div className="modal-body">
+              <div className="modal-section">
+                <span className="modal-label">Activity Summary</span>
+                <p className="modal-value">{selectedLog.summary}</p>
+              </div>
+              <div className="modal-section">
+                <span className="modal-label">Hours Worked</span>
+                <p className="modal-value">{selectedLog.hours} hours</p>
+              </div>
+              <div className="modal-section">
+                <span className="modal-label">Status</span>
+                <span className={getStatusClass(selectedLog.status)}>{selectedLog.status}</span>
+              </div>
+              {selectedLog.comments && (
+                <div className="modal-section">
+                  <span className="modal-label">Supervisor Comments</span>
+                  <p className="modal-value">{selectedLog.comments}</p>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
     </Layout>
   );
