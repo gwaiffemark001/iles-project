@@ -1,0 +1,192 @@
+/* Shared app styles used across pages */
+
+:root {
+  --iles-bg: #0b1220;
+  --iles-surface: #111a2e;
+  --iles-surface-2: #0f172a;
+  --iles-border: rgba(255, 255, 255, 0.08);
+  --iles-text: rgba(255, 255, 255, 0.92);
+  --iles-muted: rgba(255, 255, 255, 0.68);
+  --iles-primary: #5b8cff;
+  --iles-danger: #ff5b5b;
+  --iles-success: #26c281;
+  --iles-warning: #ffb020;
+}
+
+.iles-page {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 24px 18px 48px;
+  color: var(--iles-text);
+}
+
+.iles-header {
+  margin-bottom: 16px;
+}
+
+.iles-title {
+  margin: 0;
+  font-size: 28px;
+  letter-spacing: 0.3px;
+}
+
+.iles-subtitle {
+  margin: 6px 0 0;
+  color: var(--iles-muted);
+}
+
+.iles-grid {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.iles-card {
+  grid-column: span 12;
+  background: linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.02));
+  border: 1px solid var(--iles-border);
+  border-radius: 14px;
+  padding: 14px;
+}
+
+@media (min-width: 900px) {
+  .iles-card {
+    grid-column: span 6;
+  }
+}
+
+.iles-card.link-card {
+  text-decoration: none;
+  color: inherit;
+  transition: transform 120ms ease, border-color 120ms ease;
+}
+
+.iles-card.link-card:hover {
+  transform: translateY(-1px);
+  border-color: rgba(91, 140, 255, 0.35);
+}
+
+.iles-card-title {
+  margin: 0 0 10px;
+  font-size: 16px;
+}
+
+.iles-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  justify-content: space-between;
+}
+
+.iles-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.iles-strong {
+  font-weight: 700;
+}
+
+.iles-muted {
+  color: var(--iles-muted);
+}
+
+.iles-input,
+.iles-textarea {
+  width: 100%;
+  border-radius: 10px;
+  border: 1px solid var(--iles-border);
+  background: rgba(15, 23, 42, 0.6);
+  color: var(--iles-text);
+  padding: 10px 12px;
+  outline: none;
+}
+
+.iles-textarea {
+  resize: vertical;
+}
+
+.iles-label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  color: var(--iles-muted);
+  font-size: 13px;
+}
+
+.iles-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(91, 140, 255, 0.45);
+  background: rgba(91, 140, 255, 0.18);
+  color: var(--iles-text);
+  padding: 10px 12px;
+  border-radius: 10px;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.iles-button.secondary {
+  border-color: var(--iles-border);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.iles-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.iles-link {
+  color: rgba(91, 140, 255, 0.95);
+  text-decoration: none;
+}
+
+.iles-link:hover {
+  text-decoration: underline;
+}
+
+.iles-badge {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 4px 10px;
+  border: 1px solid var(--iles-border);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--iles-muted);
+  font-size: 12px;
+  text-transform: capitalize;
+}
+
+.iles-badge.approved,
+.iles-badge.active {
+  border-color: rgba(38, 194, 129, 0.45);
+  background: rgba(38, 194, 129, 0.12);
+  color: rgba(225, 255, 245, 0.92);
+}
+
+.iles-badge.rejected {
+  border-color: rgba(255, 91, 91, 0.45);
+  background: rgba(255, 91, 91, 0.12);
+  color: rgba(255, 235, 235, 0.92);
+}
+
+.iles-badge.pending,
+.iles-badge.submitted,
+.iles-badge.reviewed {
+  border-color: rgba(255, 176, 32, 0.45);
+  background: rgba(255, 176, 32, 0.10);
+  color: rgba(255, 245, 230, 0.92);
+}
+
+.error-message {
+  color: rgba(255, 91, 91, 0.95);
+  margin: 8px 0 0;
+}
+
+.success-message {
+  color: rgba(38, 194, 129, 0.95);
+  margin: 8px 0 0;
+}
+

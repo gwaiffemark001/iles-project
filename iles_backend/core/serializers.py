@@ -1,13 +1,32 @@
 from rest_framework import serializers
-from .models import CustomUser, InternshipPlacement, WeeklyLog, EvaluationCriteria, Evaluation
+from .models import CustomUser, InternshipPlacement, WeeklyLog, EvaluationCriteria, Evaluation, PlacementApplication
 class CustomUserSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True) 
     class Meta:
         model = CustomUser
-        fields =['id', 'username', 'email', 'first_name', 'last_name', 'role', 'phone','password']
+        fields =[
+            'id',
+            'username',
+            'email',
+            'first_name',
+            'last_name',
+            'role',
+            'phone',
+            'department',
+            'staff_number',
+            'student_number',
+            'registration_number',
+            'password',
+        ]
 class InternshipPlacementSerializer(serializers.ModelSerializer):
     class Meta:
         model = InternshipPlacement
+        fields = '__all__'
+
+
+class PlacementApplicationSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = PlacementApplication
         fields = '__all__'
 class WeeklyLogSerializer(serializers.ModelSerializer):
     class Meta:
