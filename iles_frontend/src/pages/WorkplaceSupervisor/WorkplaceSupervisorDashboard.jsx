@@ -477,37 +477,37 @@ const WorkplaceSupervisorDashboard = () => {
 
       {/* Evaluations Tab */}
       {activeTab === 'evaluations' && (
-        <div className="evaluations-section">
-          <div className="section-header">
+        <div className="workplace-evaluations-section">
+          <div className="workplace-section-header">
             <h2>Intern Evaluations</h2>
           </div>
-          <div className="evaluations-grid">
+          <div className="workplace-evaluations-grid">
             {getInternsData().map(intern => (
-              <div key={intern.id} className="evaluation-card">
-                <div className="evaluation-header">
+              <div key={intern.id} className="workplace-evaluation-card">
+                <div className="workplace-evaluation-header">
                   <h3>{intern.studentName}</h3>
-                  <span className={`status-badge ${intern.status}`}>{intern.status}</span>
+                  <span className={`workplace-status-badge ${intern.status}`}>{intern.status}</span>
                 </div>
-                <div className="evaluation-details">
+                <div className="workplace-evaluation-details">
                   <p><strong>Company:</strong> {intern.companyName}</p>
                   <p><strong>Period:</strong> {intern.startDate} - {intern.endDate}</p>
                 </div>
-                <div className="evaluation-score">
+                <div className="workplace-evaluation-score">
                   <p><strong>Supervisor Evaluation:</strong></p>
                   {intern.evaluationScore ? (
-                    <div className="score-display">
-                      <span className="score-value">{intern.evaluationScore}</span>
-                      <span className="score-date">
+                    <div className="workplace-score-display">
+                      <span className="workplace-score-value">{intern.evaluationScore}</span>
+                      <span className="workplace-score-date">
                         Evaluated: {new Date(intern.evaluatedAt).toLocaleDateString()}
                       </span>
                     </div>
                   ) : (
-                    <p className="no-evaluation">Not evaluated yet</p>
+                    <p className="workplace-no-evaluation">Not evaluated yet</p>
                   )}
                 </div>
-                <div className="log-summary">
+                <div className="workplace-log-summary">
                   <p><strong>Log Summary:</strong></p>
-                  <div className="log-stats">
+                  <div className="workplace-log-stats">
                     <span>Draft: {intern.draftLogs}</span>
                     <span>Submitted: {intern.submittedLogs}</span>
                     <span>Reviewed: {intern.reviewedLogs}</span>
@@ -519,12 +519,6 @@ const WorkplaceSupervisorDashboard = () => {
           </div>
         </div>
       )}
-
-      <div className="dashboard-logout">
-        <button className="nav-item logout" onClick={logout}>
-          Logout
-        </button>
-      </div>
     </div>
   );
 };
