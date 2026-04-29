@@ -20,11 +20,24 @@ from .services import (
     notify_placement_status_updated,
 )
 from rest_framework import status
+<<<<<<< HEAD
+from rest_framework.permissions import IsAuthenticated, AllowAny
+from django.utils import timezone
+from .models import CustomUser, InternshipPlacement, WeeklyLog, Evaluation, PlacementApplication
+from .serializers import (
+    CustomUserSerializer,
+    InternshipPlacementSerializer,
+    WeeklyLogSerializer,
+    EvaluationSerializer,
+    PlacementApplicationSerializer,
+)
+=======
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from django.utils import timezone
 from django.db.models import Count, Avg
+>>>>>>> main
 
 class WeeklyLogListView(APIView):
     """
@@ -192,6 +205,85 @@ class InternshipPlacementListView(APIView):
             notify_placement_created(placement, actor=request.user)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class AvailablePlacementListView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        if request.user.role != 'student':
+            return Response(
+                {'error': 'Only students can browse available placements'},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+        placements = InternshipPlacement.objects.filter(student__isnull=True, status='pending')
+        serializer = InternshipPlacementSerializer(placements, many=True)
+        return Response(serializer.data)
+
+
+class PlacementApplicationListCreateView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        if request.user.role == 'admin':
+            apps = PlacementApplication.objects.all().order_by('-created_at')
+        elif request.user.role == 'student':
+            apps = PlacementApplication.objects.filter(student=request.user).order_by('-created_at')
+        else:
+            return Response({'error': 'Not allowed'}, status=status.HTTP_403_FORBIDDEN)
+        serializer = PlacementApplicationSerializer(apps, many=True)
+        return Response(serializer.data)
+
+    def post(self, request):
+        if request.user.role != 'student':
+            return Response({'error': 'Only students can apply'}, status=status.HTTP_403_FORBIDDEN)
+
+        data = dict(request.data)
+        data['student'] = request.user.id
+        serializer = PlacementApplicationSerializer(data=data)
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        placement = serializer.validated_data['placement']
+        if placement.student_id is not None:
+            return Response({'error': 'Placement is no longer available'}, status=status.HTTP_400_BAD_REQUEST)
+
+        app = serializer.save()
+        return Response(PlacementApplicationSerializer(app).data, status=status.HTTP_201_CREATED)
+
+
+class PlacementApplicationDecisionView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, pk):
+        if request.user.role != 'admin':
+            return Response({'error': 'Only admins can decide applications'}, status=status.HTTP_403_FORBIDDEN)
+
+        try:
+            app = PlacementApplication.objects.get(pk=pk)
+        except PlacementApplication.DoesNotExist:
+            return Response({'error': 'Application not found'}, status=status.HTTP_404_NOT_FOUND)
+
+        next_status = request.data.get('status')
+        if next_status not in ['approved', 'rejected']:
+            return Response({'error': 'status must be approved or rejected'}, status=status.HTTP_400_BAD_REQUEST)
+
+        if next_status == 'approved':
+            placement = app.placement
+            if placement.student_id is not None and placement.student_id != app.student_id:
+                return Response({'error': 'Placement already assigned'}, status=status.HTTP_400_BAD_REQUEST)
+            placement.student = app.student
+            placement.status = 'active'
+            placement.save()
+            PlacementApplication.objects.filter(
+                placement=placement,
+            ).exclude(pk=app.pk).update(status='rejected', decided_at=timezone.now())
+
+        app.status = next_status
+        app.decided_at = timezone.now()
+        app.save()
+
+        return Response(PlacementApplicationSerializer(app).data, status=status.HTTP_200_OK)
     
 class InternshipPlacementDetailView(APIView):
     permission_classes = [IsAuthenticated]
@@ -246,12 +338,23 @@ class UserRegistrationView(APIView):
             email = serializer.validated_data.get('email',''),
             password = serializer.validated_data['password'],
             role = serializer.validated_data.get('role', 'student'),
+<<<<<<< HEAD
+            first_name = serializer.validated_data.get('first_name', ''),
+            last_name = serializer.validated_data.get('last_name', ''),
+            phone = serializer.validated_data.get('phone', None),
+            department = serializer.validated_data.get('department', None),
+            staff_number = serializer.validated_data.get('staff_number', None),
+            student_number = serializer.validated_data.get('student_number', None),
+            registration_number = serializer.validated_data.get('registration_number', None),
+          
+=======
             first_name=serializer.validated_data.get('first_name', ''),
             last_name=serializer.validated_data.get('last_name', ''),
             phone=serializer.validated_data.get('phone', ''),
             department=serializer.validated_data.get('department', ''),
             staff_number=serializer.validated_data.get('staff_number', ''),
             student_number=serializer.validated_data.get('student_number', ''),
+>>>>>>> main
         )
         return Response({
             'message': 'User created successfully',

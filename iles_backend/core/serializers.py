@@ -1,4 +1,25 @@
 from rest_framework import serializers
+<<<<<<< HEAD
+from .models import CustomUser, InternshipPlacement, WeeklyLog, EvaluationCriteria, Evaluation, PlacementApplication
+class CustomUserSerializer(serializers.ModelSerializer):
+    password = serializers.CharField(write_only=True) 
+    class Meta:
+        model = CustomUser
+        fields =[
+            'id',
+            'username',
+            'email',
+            'first_name',
+            'last_name',
+            'role',
+            'phone',
+            'department',
+            'staff_number',
+            'student_number',
+            'registration_number',
+            'password',
+        ]
+=======
 
 from .models import CustomUser, Evaluation, EvaluationCriteria, InternshipPlacement, Notification, UserProfile, WeeklyLog
 
@@ -69,6 +90,7 @@ class CustomUserSerializer(serializers.ModelSerializer):
         return full_name or obj.username
 
 
+>>>>>>> main
 class InternshipPlacementSerializer(serializers.ModelSerializer):
     student = UserSummarySerializer(read_only=True)
     workplace_supervisor = UserSummarySerializer(read_only=True)
@@ -97,6 +119,15 @@ class InternshipPlacementSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = InternshipPlacement
+<<<<<<< HEAD
+        fields = '__all__'
+
+
+class PlacementApplicationSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = PlacementApplication
+        fields = '__all__'
+=======
         fields = [
             "id",
             "student",
@@ -174,6 +205,7 @@ class InternshipPlacementSerializer(serializers.ModelSerializer):
         return UserSummarySerializer(obj.academic_supervisor).data["full_name"]
 
 
+>>>>>>> main
 class WeeklyLogSerializer(serializers.ModelSerializer):
     placement = InternshipPlacementSerializer(read_only=True)
     placement_id = serializers.PrimaryKeyRelatedField(
