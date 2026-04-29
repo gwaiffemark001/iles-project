@@ -3,8 +3,8 @@ import { createApiClient } from '../api/client'
 
 const AuthContext = createContext(null)
 
-const ACCESS_KEY = 'token'
-const REFRESH_KEY = 'refreshToken'
+const ACCESS_KEY = 'access_token'
+const REFRESH_KEY = 'refresh_token'
 const ROLE_KEY = 'role'
 
 function getStoredAccess() {
@@ -23,6 +23,8 @@ function setStoredTokens({ access, refresh }) {
 function clearStoredTokens() {
   localStorage.removeItem(ACCESS_KEY)
   localStorage.removeItem(REFRESH_KEY)
+  localStorage.removeItem('token')
+  localStorage.removeItem('refreshToken')
   localStorage.removeItem(ROLE_KEY)
 }
 
@@ -85,9 +87,20 @@ export function AuthProvider({ children }) {
       }
 
       setTokens({ access, refresh })
-      return await fetchProfile()
+      const authenticatedApi = createApiClient({
+        baseUrl,
+        getAccessToken: () => access,
+        getRefreshToken: () => refresh,
+        setTokens,
+        clearTokens: logout,
+      })
+      const profile = await authenticatedApi.get('api/profile/')
+      setUser(profile)
+      if (profile?.role) localStorage.setItem(ROLE_KEY, profile.role)
+
+      return { success: true, user: profile, ...profile }
     },
-    [api, setTokens, fetchProfile],
+    [baseUrl, logout, setTokens],
   )
 
   const register = useCallback(

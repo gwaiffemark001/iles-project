@@ -1,43 +1,38 @@
 # ILES Backend API Views
 # Built by Mugabe Gideon
 # Endpoints: WeeklyLog, Placement, Evaluation, Auth, Profile, Supervisor Workflow
-from urllib import request
+from django.db.models import Avg, Count
+from django.utils import timezone
+from rest_framework import status
+from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.response import Response
+from rest_framework.views import APIView
 
-from .models import CustomUser, InternshipPlacement, Notification, WeeklyLog, Evaluation, EvaluationCriteria
+from .models import (
+    CustomUser,
+    Evaluation,
+    EvaluationCriteria,
+    InternshipPlacement,
+    Notification,
+    PlacementApplication,
+    WeeklyLog,
+)
 from .serializers import (
     CustomUserSerializer,
-    InternshipPlacementSerializer,
-    WeeklyLogSerializer,
-    EvaluationSerializer,
     EvaluationCriteriaSerializer,
+    EvaluationSerializer,
+    InternshipPlacementSerializer,
     NotificationSerializer,
-    UserSummarySerializer,
+    PlacementApplicationSerializer,
     UserProfileSerializer,
+    UserSummarySerializer,
+    WeeklyLogSerializer,
 )
 from .services import (
     notify_log_submitted,
     notify_placement_created,
     notify_placement_status_updated,
 )
-from rest_framework import status
-<<<<<<< HEAD
-from rest_framework.permissions import IsAuthenticated, AllowAny
-from django.utils import timezone
-from .models import CustomUser, InternshipPlacement, WeeklyLog, Evaluation, PlacementApplication
-from .serializers import (
-    CustomUserSerializer,
-    InternshipPlacementSerializer,
-    WeeklyLogSerializer,
-    EvaluationSerializer,
-    PlacementApplicationSerializer,
-)
-=======
-from rest_framework.permissions import AllowAny, IsAuthenticated
-from rest_framework.response import Response
-from rest_framework.views import APIView
-from django.utils import timezone
-from django.db.models import Count, Avg
->>>>>>> main
 
 class WeeklyLogListView(APIView):
     """
@@ -338,7 +333,6 @@ class UserRegistrationView(APIView):
             email = serializer.validated_data.get('email',''),
             password = serializer.validated_data['password'],
             role = serializer.validated_data.get('role', 'student'),
-<<<<<<< HEAD
             first_name = serializer.validated_data.get('first_name', ''),
             last_name = serializer.validated_data.get('last_name', ''),
             phone = serializer.validated_data.get('phone', None),
@@ -346,15 +340,6 @@ class UserRegistrationView(APIView):
             staff_number = serializer.validated_data.get('staff_number', None),
             student_number = serializer.validated_data.get('student_number', None),
             registration_number = serializer.validated_data.get('registration_number', None),
-          
-=======
-            first_name=serializer.validated_data.get('first_name', ''),
-            last_name=serializer.validated_data.get('last_name', ''),
-            phone=serializer.validated_data.get('phone', ''),
-            department=serializer.validated_data.get('department', ''),
-            staff_number=serializer.validated_data.get('staff_number', ''),
-            student_number=serializer.validated_data.get('student_number', ''),
->>>>>>> main
         )
         return Response({
             'message': 'User created successfully',
