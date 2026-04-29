@@ -68,7 +68,7 @@ export default function PlacementsList() {
               <div className="iles-strong">{p.company_name}</div>
               <div className="iles-muted">{p.company_address || 'Address not set'}</div>
               <div className="iles-row">
-                <span className={`iles-badge ${p.status || ''}`}>{p.status}</span>
+                <span className={`iles-badge ${p.status || ''}`}>{p.status === 'pending' ? 'Available' : p.status}</span>
                 <span className="iles-muted">
                   {p.start_date} → {p.end_date}
                 </span>
