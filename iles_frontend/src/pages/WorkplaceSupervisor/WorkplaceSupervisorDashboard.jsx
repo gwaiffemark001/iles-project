@@ -190,8 +190,8 @@ const WorkplaceSupervisorDashboard = () => {
 
   const stats = getStats();
 
-  if (loading) return <div className="dashboard"><div className="loading">Loading...</div></div>;
-  if (error) return <div className="dashboard"><div className="error">Error: {error}</div></div>;
+  if (loading) return <div className="workplace-dashboard"><div className="workplace-loading">Loading...</div></div>;
+  if (error) return <div className="workplace-dashboard"><div className="workplace-error">Error: {error}</div></div>;
 
   return (
     <div className="workplace-dashboard">
