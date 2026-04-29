@@ -1,7 +1,6 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { createApiClient } from '../api/client'
-
-const AuthContext = createContext(null)
+import AuthContext from './AuthContext'
 
 const ACCESS_KEY = 'access_token'
 const REFRESH_KEY = 'refresh_token'
@@ -70,13 +69,13 @@ export function AuthProvider({ children }) {
   }, [api])
 
   const login = useCallback(
-    async ({ usernameOrEmail, password }) => {
-      const raw = (usernameOrEmail || '').trim()
-      const username = raw.includes('@') ? raw.split('@')[0] : raw
+    async ({ usernameOrEmail, username, password }) => {
+      const raw = (usernameOrEmail || username || '').trim()
+      const loginName = raw.includes('@') ? raw.split('@')[0] : raw
 
       const tokenPayload = await api.post(
         'api/token/',
-        { username, password },
+        { username: loginName, password },
         { auth: false },
       )
 
@@ -100,7 +99,7 @@ export function AuthProvider({ children }) {
 
       return { success: true, user: profile, ...profile }
     },
-    [baseUrl, logout, setTokens],
+    [api, baseUrl, logout, setTokens],
   )
 
   const register = useCallback(
@@ -187,9 +186,5 @@ export function AuthProvider({ children }) {
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
 }
 
-export function useAuth() {
-  const ctx = useContext(AuthContext)
-  if (!ctx) throw new Error('useAuth must be used within AuthProvider')
-  return ctx
-}
+
 

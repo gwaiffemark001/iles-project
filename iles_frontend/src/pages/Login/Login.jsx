@@ -18,7 +18,7 @@ function Login() {
         setIsLoading(true);
 
         try {
-            const result = await login({ username, password });
+            const result = await login({ usernameOrEmail: username, password });
 
             if (!result.success) {
                 setErrorMessage(result.error || 'Login failed. Please try again.');
@@ -37,7 +37,7 @@ function Login() {
                 navigate('/student/dashboard');
             }
         } catch (error) {
-            setErrorMessage('Unable to reach the server. Please try again later.');
+            setErrorMessage(error?.message || 'Login failed. Please try again.');
         } finally {
             setIsLoading(false);
         }
