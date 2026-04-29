@@ -6,6 +6,7 @@ import StudentDash from './StudentDash';
 import WorkplaceSupervisorDashboard from "./pages/WorkplaceSupervisor/WorkplaceSupervisorDashboard";
 import AcademicSupervisorDashboard from "./pages/AcademicSupervisor/AcademicSupervisorDashboard";
 import AssignedStudents from "./pages/AcademicSupervisor/AssignedStudents";
+import StudentLogViewer from "./pages/AcademicSupervisor/StudentLogViewer";
 
 function ILES() {
     return (
@@ -18,6 +19,7 @@ function ILES() {
             <Route path="/workplace-supervisor/dashboard" element={<WorkplaceSupervisorDashboard />} />
             <Route path="/academic-supervisor/dashboard" element={<AcademicSupervisorDashboard />} />
             <Route path="/academic-supervisor/students" element={<AssignedStudents />} />
+            <Route path="/academic-supervisor/student-logs" element={<StudentLogViewer />} />
         </Routes>
        
         
