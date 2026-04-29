@@ -10,6 +10,24 @@ function badgeClass(status) {
   return 'pending'
 }
 
+function formatDate(value) {
+  if (!value) return ''
+  try {
+    return new Date(value).toLocaleDateString()
+  } catch {
+    return ''
+  }
+}
+
+function placementLabel(app) {
+  const placement = app?.placement
+  if (placement && typeof placement === 'object') {
+    return placement.company_name || `Placement #${placement.id || ''}`.trim()
+  }
+  if (placement) return `Placement #${placement}`
+  return 'Placement not set'
+}
+
 export default function Applications() {
   const { api } = useAuth()
   const [apps, setApps] = useState([])
@@ -55,10 +73,10 @@ export default function Applications() {
           <div key={a.id} className="iles-card">
             <div className="iles-row">
               <span className={`iles-badge ${badgeClass(a.status)}`}>{a.status}</span>
-              <span className="iles-muted">{a.created_at ? new Date(a.created_at).toLocaleString() : ''}</span>
+              <span className="iles-muted">{formatDate(a.created_at)}</span>
             </div>
             <div className="iles-stack">
-              <div className="iles-strong">Placement #{a.placement}</div>
+              <div className="iles-strong">{placementLabel(a)}</div>
               {a.note ? <div className="iles-muted">{a.note}</div> : <div className="iles-muted">No note</div>}
             </div>
           </div>
