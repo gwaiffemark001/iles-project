@@ -15,8 +15,10 @@ export default function StudentDashboard() {
       setError('')
       try {
         const placements = await api.get('api/placements/')
-        const first = Array.isArray(placements) ? placements[0] : null
-        if (!cancelled) setPlacement(first)
+        const nextPlacements = Array.isArray(placements) ? placements : []
+        const activePlacement =
+          nextPlacements.find((p) => p?.status === 'active') || nextPlacements[0] || null
+        if (!cancelled) setPlacement(activePlacement)
       } catch (e) {
         if (!cancelled) setError(e?.message || 'Failed to load dashboard.')
       } finally {
