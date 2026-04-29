@@ -10,6 +10,15 @@ function badgeClass(status) {
   return 'pending'
 }
 
+function statusLabel(status) {
+  const s = (status || '').toLowerCase()
+  if (s === 'pending') return 'Pending review'
+  if (s === 'approved') return 'Approved'
+  if (s === 'rejected') return 'Rejected'
+  if (s === 'withdrawn') return 'Withdrawn'
+  return status || 'Pending'
+}
+
 function formatDate(value) {
   if (!value) return ''
   try {
@@ -72,7 +81,7 @@ export default function Applications() {
         {apps.map((a) => (
           <div key={a.id} className="iles-card">
             <div className="iles-row">
-              <span className={`iles-badge ${badgeClass(a.status)}`}>{a.status}</span>
+              <span className={`iles-badge ${badgeClass(a.status)}`}>{statusLabel(a.status)}</span>
               <span className="iles-muted">{formatDate(a.created_at)}</span>
             </div>
             <div className="iles-stack">
