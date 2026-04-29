@@ -41,13 +41,24 @@ from django.db.models import Count, Avg
 
 class WeeklyLogListView(APIView):
     """
-    GET /api/logs/ - list all logs for logged in student
+    GET /api/logs/ - list logs for logged in user (role-based)
     POST /api/logs/ - Create a new weekly log
     """
     permission_classes =[IsAuthenticated]   
 
     def get(self, request):
-        logs = WeeklyLog.objects.filter(placement__student=request.user)
+        if request.user.role == 'admin':
+            logs = WeeklyLog.objects.all()
+        elif request.user.role == 'workplace_supervisor':
+            logs = WeeklyLog.objects.filter(
+                placement__workplace_supervisor=request.user
+            )
+        elif request.user.role == 'academic_supervisor':
+            logs = WeeklyLog.objects.filter(
+                placement__academic_supervisor=request.user
+            )
+        else:
+            logs = WeeklyLog.objects.filter(placement__student=request.user)
 
         # Allow filtering by status: /api/logs/?status=submitted
         status_filter = request.query_params.get('status')
