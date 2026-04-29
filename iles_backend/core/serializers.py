@@ -1,27 +1,15 @@
 from rest_framework import serializers
-<<<<<<< HEAD
-from .models import CustomUser, InternshipPlacement, WeeklyLog, EvaluationCriteria, Evaluation, PlacementApplication
-class CustomUserSerializer(serializers.ModelSerializer):
-    password = serializers.CharField(write_only=True) 
-    class Meta:
-        model = CustomUser
-        fields =[
-            'id',
-            'username',
-            'email',
-            'first_name',
-            'last_name',
-            'role',
-            'phone',
-            'department',
-            'staff_number',
-            'student_number',
-            'registration_number',
-            'password',
-        ]
-=======
 
-from .models import CustomUser, Evaluation, EvaluationCriteria, InternshipPlacement, Notification, UserProfile, WeeklyLog
+from .models import (
+    CustomUser,
+    Evaluation,
+    EvaluationCriteria,
+    InternshipPlacement,
+    Notification,
+    PlacementApplication,
+    UserProfile,
+    WeeklyLog,
+)
 
 
 class UserProfileSerializer(serializers.ModelSerializer):
@@ -55,6 +43,7 @@ class UserSummarySerializer(serializers.ModelSerializer):
             "department",
             "staff_number",
             "student_number",
+            "registration_number",
         ]
 
     def get_full_name(self, obj):
@@ -81,16 +70,16 @@ class CustomUserSerializer(serializers.ModelSerializer):
             "department",
             "staff_number",
             "student_number",
+            "registration_number",
             "profile",
             "password",
-            ]
+        ]
 
     def get_full_name(self, obj):
         full_name = f"{obj.first_name} {obj.last_name}".strip()
         return full_name or obj.username
 
 
->>>>>>> main
 class InternshipPlacementSerializer(serializers.ModelSerializer):
     student = UserSummarySerializer(read_only=True)
     workplace_supervisor = UserSummarySerializer(read_only=True)
@@ -119,15 +108,6 @@ class InternshipPlacementSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = InternshipPlacement
-<<<<<<< HEAD
-        fields = '__all__'
-
-
-class PlacementApplicationSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = PlacementApplication
-        fields = '__all__'
-=======
         fields = [
             "id",
             "student",
@@ -171,9 +151,7 @@ class PlacementApplicationSerializer(serializers.ModelSerializer):
             )
 
         if start_date and end_date and end_date < start_date:
-            raise serializers.ValidationError(
-                {"end_date": ["End date must be on or after the start date."]}
-            )
+            raise serializers.ValidationError({"end_date": ["End date must be on or after the start date."]})
 
         if student:
             active_placements = InternshipPlacement.objects.filter(
@@ -205,7 +183,21 @@ class PlacementApplicationSerializer(serializers.ModelSerializer):
         return UserSummarySerializer(obj.academic_supervisor).data["full_name"]
 
 
->>>>>>> main
+class PlacementApplicationSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = PlacementApplication
+        fields = [
+            "id",
+            "placement",
+            "student",
+            "status",
+            "note",
+            "created_at",
+            "decided_at",
+        ]
+        read_only_fields = ["status", "created_at", "decided_at"]
+
+
 class WeeklyLogSerializer(serializers.ModelSerializer):
     placement = InternshipPlacementSerializer(read_only=True)
     placement_id = serializers.PrimaryKeyRelatedField(
@@ -264,7 +256,16 @@ class EvaluationSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Evaluation
-        fields = ["id", "placement", "placement_id", "evaluator", "evaluator_id", "evaluator_name", "score", "evaluation_type", "evaluated_at",
+        fields = [
+            "id",
+            "placement",
+            "placement_id",
+            "evaluator",
+            "evaluator_id",
+            "evaluator_name",
+            "score",
+            "evaluation_type",
+            "evaluated_at",
         ]
 
     def get_evaluator_name(self, obj):
