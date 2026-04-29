@@ -10,6 +10,7 @@ export default function PlacementDetail() {
   const [placement, setPlacement] = useState(null)
   const [note, setNote] = useState('')
   const [loading, setLoading] = useState(true)
+  const [alreadyApplied, setAlreadyApplied] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
@@ -20,8 +21,18 @@ export default function PlacementDetail() {
       setLoading(true)
       setError('')
       try {
-        const data = await api.get(`api/placements/${id}/`)
-        if (!cancelled) setPlacement(data)
+        const [data, apps] = await Promise.all([
+          api.get(`api/placements/${id}/`),
+          api.get('api/applications/'),
+        ])
+        if (!cancelled) {
+          setPlacement(data)
+          const nextApps = Array.isArray(apps) ? apps : []
+          const applied = nextApps.some(
+            (a) => Number(a?.placement) === placementIdNum && ['pending', 'approved'].includes((a?.status || '').toLowerCase()),
+          )
+          setAlreadyApplied(applied)
+        }
       } catch (e) {
         if (!cancelled) setError(e?.message || 'Failed to load placement.')
       } finally {
@@ -94,9 +105,14 @@ export default function PlacementDetail() {
                 onChange={(e) => setNote(e.target.value)}
                 rows={5}
               />
-              <button className="iles-button" onClick={apply} disabled={submitting || !Number.isFinite(placementIdNum)}>
+              <button
+                className="iles-button"
+                onClick={apply}
+                disabled={submitting || !Number.isFinite(placementIdNum) || alreadyApplied}
+              >
                 {submitting ? 'Submitting...' : 'Submit application'}
               </button>
+              {alreadyApplied ? <p className="iles-muted">You already applied for this placement.</p> : null}
               {success ? <p className="success-message">{success}</p> : null}
             </div>
           </section>
