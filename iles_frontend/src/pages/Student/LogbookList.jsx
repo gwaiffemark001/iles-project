@@ -70,6 +70,11 @@ export default function LogbookList() {
               ) : (
                 <div className="iles-muted">No supervisor comment</div>
               )}
+              {l.submitted_at ? (
+                <div className="iles-muted">Submitted: {formatDate(l.submitted_at)}</div>
+              ) : (
+                <div className="iles-muted">Not submitted yet</div>
+              )}
             </div>
           </Link>
         ))}
