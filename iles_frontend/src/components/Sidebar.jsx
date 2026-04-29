@@ -29,20 +29,20 @@ const menuItems = {
 };
 
 const Sidebar = ({ role, userName }) => {
-    const navigate = useNaviagate();
-    const location = useLocation();
-    const items = menuItems[role] || [];
+    const navigate = useNavigate()
+    const location = useLocation()
+    const items = menuItems[role] || []
 
     return (
         <div className="sidebar">
             <div className="sidebar-logo">ILES</div>
-            <div className="sidebar-role">{role}
+            <div className="sidebar-role">{role}</div>
             <div className="sidebar-divider"></div>
             <nav className="sidebar-nav">
                 {items.map((item) => (
                     <button
                         key={item.path}
-                        className={`sidebar-nav-item ${location.pathname === item.path ? "active" : ""}`}
+                        className={`sidebar-nav-item ${location.pathname === item.path ? 'active' : ''}`}
                         onClick={() => navigate(item.path)}
                     >
                         {item.label}
@@ -50,12 +50,11 @@ const Sidebar = ({ role, userName }) => {
                 ))}
             </nav>
             <div className="sidebar-bottom">
-                <div className ="sidebar-username">{userName}</div>
-                <button className="nav-item logout" onClick={() => navigate("/")}>Logout</button>
-            </div>
+                <div className="sidebar-username">{userName}</div>
+                <button className="nav-item logout" onClick={() => navigate('/')}>Logout</button>
             </div>
         </div>
-    );
-};
+    )
+}
 
 export default Sidebar;
