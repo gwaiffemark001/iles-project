@@ -8,6 +8,10 @@ from core.views import (
     InternshipPlacementDetailView,
     UserRegistrationView,
     UserProfileView,
+    UserListView,
+    NotificationListView,
+    NotificationReadView,
+    NotificationMarkAllReadView,
     EvaluationListView,
     SupervisorReviewView,
     SupervisorApproveView,
@@ -16,6 +20,10 @@ from core.views import (
     AvailablePlacementListView,
     PlacementApplicationListCreateView,
     PlacementApplicationDecisionView,
+    EvaluationCriteriaListView, 
+    LogRevisionView, 
+    WeeklyLogSubmitView,
+    AdminStatisticsView,
 )
 
 urlpatterns = [
@@ -26,6 +34,10 @@ urlpatterns = [
     path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
     path('api/register/', UserRegistrationView.as_view(), name='register'),
     path('api/profile/', UserProfileView.as_view(), name='profile'),
+    path('api/users/', UserListView.as_view(), name='user-list'),
+    path('api/notifications/', NotificationListView.as_view(), name='notification-list'),
+    path('api/notifications/<int:pk>/read/', NotificationReadView.as_view(), name='notification-read'),
+    path('api/notifications/mark-all-read/', NotificationMarkAllReadView.as_view(), name='notification-mark-all-read'),
 
     # Weekly Logs
     path('api/logs/', WeeklyLogListView.as_view(), name='weekly-log-list'),
@@ -34,6 +46,7 @@ urlpatterns = [
     # Placements
     path('api/placements/', InternshipPlacementListView.as_view(), name='placement-list'),
     path('api/placements/<int:pk>/', InternshipPlacementDetailView.as_view(), name='placement-detail'),
+
     path('api/placements/available/', AvailablePlacementListView.as_view(), name='placement-available-list'),
 
     # Applications
@@ -52,5 +65,17 @@ urlpatterns = [
 
     # EvaluationDetailView
     path('api/evaluations/<int:pk>/', EvaluationDetailView.as_view(), name='evaluation-detail'),
+
+    # EvaluationCriteria
+    path('api/criteria/', EvaluationCriteriaListView.as_view(), name='criteria-list'),
+
+    # Log Revison
+    path('api/logs/<int:pk>/revise/', LogRevisionView.as_view(), name='log-revise'),
+
+    # Weekly Log Submission
+    path('api/logs/<int:pk>/submit/', WeeklyLogSubmitView.as_view(), name='log-submit'),
+
+    # Admin Statistics
+    path('api/admin/statistics/', AdminStatisticsView.as_view(), name='admin-statistics'),
 
 ]

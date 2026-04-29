@@ -18,6 +18,19 @@ class CustomUser(AbstractUser):
     def __str__(self):
         return (f"{self.username},({self.role})")
 
+
+class UserProfile(models.Model):
+    user = models.OneToOneField(CustomUser, on_delete=models.CASCADE, related_name='profile')
+    bio = models.TextField(blank=True, null=True)
+    avatar_url = models.URLField(blank=True, null=True)
+    location = models.CharField(max_length=120, blank=True, null=True)
+    date_of_birth = models.DateField(blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.user.username}'s profile"
+
 class InternshipPlacement(models.Model):
     STATUS_CHOICES = [
         ('pending', 'Pending'),
@@ -97,6 +110,7 @@ class WeeklyLog(models.Model):
     
     class Meta:
         unique_together =[['placement', 'week_number']]
+        ordering = ['week_number']
 
     def __str__(self):
         return (f"Week {self.week_number}-{self.placement.student.username} ({self.status})")
@@ -108,36 +122,57 @@ class EvaluationCriteria(models.Model):
     weight_percent=models.DecimalField(max_digits=5, decimal_places=2)
 
     def __str__(self):
-        return (f"{self.name} ({self.weight_percent}%)")
+        return f"{self.name} - {self.weight_percent}% weight"
     
 class Evaluation(models.Model):
-    placement =models.ForeignKey(InternshipPlacement, on_delete=models.CASCADE, related_name='evaluations')
-    evaluator = models.ForeignKey(CustomUser, on_delete=models.CASCADE,related_name='given_evaluations')
-    #supervisor_score = models.DecimalField(max_digits=5, decimal_places=2, default=0)
-    #academic_score= models.DecimalField(max_digits=5, decimal_places=2)
-    #logbook_score = models.DecimalField(max_digits=5, decimal_places=2)
-    #total_score = models.DecimalField(max_digits=5, decimal_places=2, blank=True, null=True)
-    score = models.DecimalField(max_digits=5, decimal_places=2, default=0) # type: ignore
-    evaluation_type = models.CharField(max_length=20, choices=[
-        ('supervisor', 'Supervisor Assessment'),    
-        ('academic', 'Academic Assessment'),        
-        ('logbook', 'Logbook Assessment'),       
-    ], default='supervisor')
+    EVALUATION_TYPES = [
+        ('supervisor', 'Supervisor Assessment'),
+        ('academic', 'Academic Assessment'),
+        ('logbook', 'Logbook Assessment'),
+    ]
+
+    placement = models.ForeignKey(InternshipPlacement, on_delete=models.CASCADE, related_name='evaluations')
+    evaluator = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='given_evaluations')
+    score = models.DecimalField(max_digits=5, decimal_places=2, default=0)
+    evaluation_type = models.CharField(max_length=20, choices=EVALUATION_TYPES, default='supervisor')
+    evaluated_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        unique_together = [['placement', 'evaluation_type']]  
-    evaluated_at =models.DateTimeField(auto_now_add=True)
-
-    #class Meta:
-        #unique_together =[['placement', 'evaluator']]
-
-    #def save(self, *args, **kwargs):
-    #    self.total_score =(
-    #       (self.supervisor_score * 40 /100) +
-    #       (self.academic_score * 30 /100) +
-    #       (self.logbook_score * 30 / 100)
-    #)       
-    #    super ().save(*args, **kwargs)
+        unique_together = [['placement', 'evaluation_type']]
+        ordering = ['-evaluated_at']
 
     def __str__(self):
-        return (f"{self.placement.student.username} - Total: {self.score}")      
+        return f"{self.placement.student.username} - {self.evaluation_type}: {self.score}"
+
+
+class Notification(models.Model):
+    NOTIFICATION_TYPES = [
+        ("placement_created", "Placement Created"),
+        ("placement_status_updated", "Placement Status Updated"),
+        ("log_submitted", "Log Submitted"),
+    ]
+
+    recipient = models.ForeignKey(
+        CustomUser,
+        on_delete=models.CASCADE,
+        related_name="notifications",
+    )
+    actor = models.ForeignKey(
+        CustomUser,
+        on_delete=models.SET_NULL,
+        related_name="triggered_notifications",
+        null=True,
+        blank=True,
+    )
+    notification_type = models.CharField(max_length=40, choices=NOTIFICATION_TYPES)
+    title = models.CharField(max_length=200)
+    message = models.TextField()
+    data = models.JSONField(default=dict, blank=True)
+    is_read = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return f"{self.recipient.username} - {self.title}"

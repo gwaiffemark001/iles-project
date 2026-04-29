@@ -53,6 +53,7 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
+
 ROOT_URLCONF = 'iles_backend.urls'
 
 TEMPLATES = [
@@ -72,7 +73,6 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'iles_backend.wsgi.application'
 
-
 # Database
 # https://docs.djangoproject.com/en/6.0/ref/settings/#databases
 
@@ -80,18 +80,17 @@ import os
 from dotenv import load_dotenv
 
 load_dotenv()
-
+# set environment variables in .env file for DB connection
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
         'NAME': os.getenv('DB_NAME', 'iles_db'),
         'USER': os.getenv('DB_USER', 'postgres'),
-        'PASSWORD': os.getenv('DB_PASSWORD', ''),
+        'PASSWORD': os.getenv('DB_PASSWORD', 'internship'),
         'HOST': os.getenv('DB_HOST', 'localhost'),
         'PORT': os.getenv('DB_PORT', '5432'),
     }
 }
-
 
 # Password validation
 # https://docs.djangoproject.com/en/6.0/ref/settings/#auth-password-validators
@@ -131,5 +130,13 @@ STATIC_URL = 'static/'
 
 CORS_ALLOW_ALL_ORIGINS = True
 REST_FRAMEWORK = {
-    'DEFAULT_AUTHENTICATION_CLASSES':('rest_framework_simplejwt.authentication.JWTAuthentication',), 
+    'DEFAULT_AUTHENTICATION_CLASSES':['rest_framework_simplejwt.authentication.JWTAuthentication',], 
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.IsAuthenticated',
+    ],
 }
+
+# === CORS (important for dev) ===
+#CORS_ALLOWED_ORIGINS = [
+   # "http://localhost:5173",   # Vite default port
+
