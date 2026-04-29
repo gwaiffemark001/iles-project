@@ -1,10 +1,12 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import Layout from "../../components/Layout";
 import "./AssignedStudents.css";
 
 const AssignedStudents = () => {
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState("All");
+  const navigate = useNavigate();
 
   const students = [
     {name: "Hope Mwelu", student_id: "2500703595", placement: "MTN Uganda", supervisor: "Mr. Kato", logs: 12, status: "Pending"},
@@ -78,7 +80,9 @@ const filteredStudents = students.filter((s) => {
                     <div>{student.logs}</div>
                     <div><span className={getStatusClass(student.status)}>{student.status}</span></div>
                     <div className="action-btns">
-                        <button className="btn-view">View Logs</button>
+                        <button className="btn-view" onClick={() => navigate("/academic-supervisor/student-logs")}>
+                            View Logs
+                        </button>
                         <button className="btn-evaluate">Evaluate</button>
                     </div>
                 </div>
