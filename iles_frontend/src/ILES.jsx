@@ -30,7 +30,7 @@ function ILES() {
 import { Navigate, Route, Routes } from "react-router-dom";
 import { AuthProvider } from "./contexts/AuthContext";
 import { useAuth } from "./contexts/useAuth";
-import Firstpage from "./pages/Login/Firstpage";
+import Login from "./pages/Login/Login";
 import ForgotPassword from "./pages/Login/ForgotPassword";
 import Signup from "./pages/Signup/Signup";
 import AcademicSupervisorDashboard from "./pages/AcademicSupervisor/AcademicSupervisorDashboard";
@@ -61,7 +61,7 @@ function App() {
     <AuthProvider>
       
       <Routes>
-        <Route path="/" element={<Firstpage />} />
+        <Route path="/" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/admin-dashboard" element={<Navigate to="/admin/dashboard" replace />} />
