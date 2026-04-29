@@ -29,6 +29,9 @@ export default function AppRoutes() {
       {/* Legacy paths (keep until Signup/Login are refactored) */}
       <Route path="/studentdashboard" element={<Navigate to="/app/student" replace />} />
       <Route path="/student-dashboard" element={<Navigate to="/app/student" replace />} />
+      <Route path="/student/log-entry" element={<Navigate to="/app/student/logbook/new" replace />} />
+      <Route path="/student/my-logs" element={<Navigate to="/app/student/logbook" replace />} />
+      <Route path="/student/evaluations" element={<Navigate to="/app/student" replace />} />
       <Route path="/workplace_supervisor-dashboard" element={<Navigate to="/app/workplace" replace />} />
       <Route path="/academic_supervisor-dashboard" element={<Navigate to="/app/academic" replace />} />
       <Route path="/admin-dashboard" element={<Navigate to="/app/admin" replace />} />
