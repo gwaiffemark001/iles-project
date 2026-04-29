@@ -1,9 +1,10 @@
-# ILES Backend API Views
-# Built by Mugabe Gideon
-# Endpoints: WeeklyLog, Placement, Evaluation, Auth, Profile, Supervisor Workflow
-from urllib import request
-
-from .models import CustomUser, InternshipPlacement, Notification, WeeklyLog, Evaluation, EvaluationCriteria
+from rest_framework import status
+from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.response import Response
+from rest_framework.views import APIView
+from django.utils import timezone
+from django.db.models import Count, Avg
+from .models import CustomUser, InternshipPlacement, Notification, WeeklyLog, Evaluation, EvaluationCriteria, PlacementApplication
 from .serializers import (
     CustomUserSerializer,
     InternshipPlacementSerializer,
@@ -11,33 +12,14 @@ from .serializers import (
     EvaluationSerializer,
     EvaluationCriteriaSerializer,
     NotificationSerializer,
-    UserSummarySerializer,
     UserProfileSerializer,
+    PlacementApplicationSerializer,
 )
 from .services import (
     notify_log_submitted,
     notify_placement_created,
     notify_placement_status_updated,
 )
-from rest_framework import status
-<<<<<<< HEAD
-from rest_framework.permissions import IsAuthenticated, AllowAny
-from django.utils import timezone
-from .models import CustomUser, InternshipPlacement, WeeklyLog, Evaluation, PlacementApplication
-from .serializers import (
-    CustomUserSerializer,
-    InternshipPlacementSerializer,
-    WeeklyLogSerializer,
-    EvaluationSerializer,
-    PlacementApplicationSerializer,
-)
-=======
-from rest_framework.permissions import AllowAny, IsAuthenticated
-from rest_framework.response import Response
-from rest_framework.views import APIView
-from django.utils import timezone
-from django.db.models import Count, Avg
->>>>>>> main
 
 class WeeklyLogListView(APIView):
     """
@@ -235,16 +217,21 @@ class PlacementApplicationListCreateView(APIView):
         return Response(serializer.data)
 
     def post(self, request):
+
         if request.user.role != 'student':
             return Response({'error': 'Only students can apply'}, status=status.HTTP_403_FORBIDDEN)
 
-        data = dict(request.data)
+        data = request.data.copy()
         data['student'] = request.user.id
+
         serializer = PlacementApplicationSerializer(data=data)
         if not serializer.is_valid():
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-        placement = serializer.validated_data['placement']
+        placement = serializer.validated_data.get('placement')
+        if not placement:
+            return Response({'error': 'Placement is required'}, status=status.HTTP_400_BAD_REQUEST)
+        
         if placement.student_id is not None:
             return Response({'error': 'Placement is no longer available'}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -326,7 +313,7 @@ class UserRegistrationView(APIView):
     permission_classes = [AllowAny]
 
     def post(self, request):
-        serializer = CustomUserSerializer(data=request.data)            
+        serializer = UserProfileSerializer(data=request.data)            
         if not serializer.is_valid():
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         username = request.data.get('username')
@@ -338,7 +325,6 @@ class UserRegistrationView(APIView):
             email = serializer.validated_data.get('email',''),
             password = serializer.validated_data['password'],
             role = serializer.validated_data.get('role', 'student'),
-<<<<<<< HEAD
             first_name = serializer.validated_data.get('first_name', ''),
             last_name = serializer.validated_data.get('last_name', ''),
             phone = serializer.validated_data.get('phone', None),
@@ -346,15 +332,6 @@ class UserRegistrationView(APIView):
             staff_number = serializer.validated_data.get('staff_number', None),
             student_number = serializer.validated_data.get('student_number', None),
             registration_number = serializer.validated_data.get('registration_number', None),
-          
-=======
-            first_name=serializer.validated_data.get('first_name', ''),
-            last_name=serializer.validated_data.get('last_name', ''),
-            phone=serializer.validated_data.get('phone', ''),
-            department=serializer.validated_data.get('department', ''),
-            staff_number=serializer.validated_data.get('staff_number', ''),
-            student_number=serializer.validated_data.get('student_number', ''),
->>>>>>> main
         )
         return Response({
             'message': 'User created successfully',
@@ -405,7 +382,7 @@ class UserProfileView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        serializer = CustomUserSerializer(request.user)
+        serializer = UserProfileSerializer(request.user)
         return Response(serializer.data)
 
     def put(self, request):
@@ -421,15 +398,15 @@ class UserProfileView(APIView):
                 if key in request.data
             }
 
-        serializer = CustomUserSerializer(request.user, data=request.data, partial=True)
+        serializer = UserProfileSerializer(request.user, data=request.data, partial=True)
         if not serializer.is_valid():
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
         profile_serializer = UserProfileSerializer(
-            request.user.profile,
+            request.user,
             data=profile_data,
             partial=True,
-        )
+            )
         if not profile_serializer.is_valid():
             return Response(profile_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -457,7 +434,7 @@ class UserListView(APIView):
         if role_filter:
             users = users.filter(role=role_filter)
 
-        serializer = UserSummarySerializer(users, many=True)
+        serializer = UserProfileSerializer(users, many=True)
         return Response(serializer.data)
 
 
@@ -697,8 +674,6 @@ class WeeklyLogSubmitView(APIView):
         serializer = WeeklyLogSerializer(log)
         return Response(serializer.data)    
 
-from django.db.models import Count, Avg
-
 class AdminStatisticsView(APIView):
     """
     GET /api/admin/statistics/ - System-wide stats for admin dashboard
@@ -726,3 +701,11 @@ class AdminStatisticsView(APIView):
             ),
         }
         return Response(stats)
+
+class UserSummaryView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, pk):
+        user = CustomUser.objects.get(pk=pk)
+        serializer = UserProfileSerializer(user)
+        return Response(serializer.data)
