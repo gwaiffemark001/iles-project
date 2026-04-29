@@ -1,6 +1,5 @@
 from rest_framework import serializers
-<<<<<<< HEAD
-from .models import CustomUser, InternshipPlacement, WeeklyLog, EvaluationCriteria, Evaluation, PlacementApplication
+from .models import CustomUser, InternshipPlacement, WeeklyLog, EvaluationCriteria, Evaluation, PlacementApplication, Notification
 class CustomUserSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True) 
     class Meta:
@@ -19,82 +18,15 @@ class CustomUserSerializer(serializers.ModelSerializer):
             'registration_number',
             'password',
         ]
-=======
+        full_name = serializers.SerializerMethodField()
 
-from .models import CustomUser, Evaluation, EvaluationCriteria, InternshipPlacement, Notification, UserProfile, WeeklyLog
+def get_full_name(self, obj):
+    return f"{obj.first_name} {obj.last_name}"
 
-
-class UserProfileSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = UserProfile
-        fields = [
-            "id",
-            "bio",
-            "avatar_url",
-            "location",
-            "date_of_birth",
-            "created_at",
-            "updated_at",
-        ]
-
-
-class UserSummarySerializer(serializers.ModelSerializer):
-    full_name = serializers.SerializerMethodField()
-
-    class Meta:
-        model = CustomUser
-        fields = [
-            "id",
-            "username",
-            "email",
-            "first_name",
-            "last_name",
-            "full_name",
-            "role",
-            "phone",
-            "department",
-            "staff_number",
-            "student_number",
-        ]
-
-    def get_full_name(self, obj):
-        full_name = f"{obj.first_name} {obj.last_name}".strip()
-        return full_name or obj.username
-
-
-class CustomUserSerializer(serializers.ModelSerializer):
-    password = serializers.CharField(write_only=True, required=False)
-    full_name = serializers.SerializerMethodField(read_only=True)
-    profile = UserProfileSerializer(read_only=True)
-
-    class Meta:
-        model = CustomUser
-        fields = [
-            "id",
-            "username",
-            "email",
-            "first_name",
-            "last_name",
-            "full_name",
-            "role",
-            "phone",
-            "department",
-            "staff_number",
-            "student_number",
-            "profile",
-            "password",
-            ]
-
-    def get_full_name(self, obj):
-        full_name = f"{obj.first_name} {obj.last_name}".strip()
-        return full_name or obj.username
-
-
->>>>>>> main
 class InternshipPlacementSerializer(serializers.ModelSerializer):
-    student = UserSummarySerializer(read_only=True)
-    workplace_supervisor = UserSummarySerializer(read_only=True)
-    academic_supervisor = UserSummarySerializer(read_only=True)
+    student = CustomUserSerializer(read_only=True)
+    workplace_supervisor = CustomUserSerializer(read_only=True)
+    academic_supervisor = CustomUserSerializer(read_only=True)
     student_id = serializers.PrimaryKeyRelatedField(
         source="student",
         queryset=CustomUser.objects.filter(role="student"),
@@ -119,15 +51,14 @@ class InternshipPlacementSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = InternshipPlacement
-<<<<<<< HEAD
         fields = '__all__'
-
 
 class PlacementApplicationSerializer(serializers.ModelSerializer):
+    student_name = serializers.SerializerMethodField(read_only=True)
+    workplace_supervisor_name = serializers.SerializerMethodField(read_only=True)
+    academic_supervisor_name = serializers.SerializerMethodField(read_only=True)
     class Meta:
         model = PlacementApplication
-        fields = '__all__'
-=======
         fields = [
             "id",
             "student",
@@ -196,16 +127,14 @@ class PlacementApplicationSerializer(serializers.ModelSerializer):
         return attrs
 
     def get_student_name(self, obj):
-        return UserSummarySerializer(obj.student).data["full_name"]
+        return CustomUserSerializer(obj.student).data["full_name"]
 
     def get_workplace_supervisor_name(self, obj):
-        return UserSummarySerializer(obj.workplace_supervisor).data["full_name"]
+        return CustomUserSerializer(obj.workplace_supervisor).data["full_name"]
 
     def get_academic_supervisor_name(self, obj):
-        return UserSummarySerializer(obj.academic_supervisor).data["full_name"]
+        return CustomUserSerializer(obj.academic_supervisor).data["full_name"]
 
-
->>>>>>> main
 class WeeklyLogSerializer(serializers.ModelSerializer):
     placement = InternshipPlacementSerializer(read_only=True)
     placement_id = serializers.PrimaryKeyRelatedField(
@@ -236,7 +165,7 @@ class WeeklyLogSerializer(serializers.ModelSerializer):
         ]
 
     def get_student_name(self, obj):
-        return UserSummarySerializer(obj.placement.student).data["full_name"]
+        return CustomUserSerializer(obj.placement.student).data["full_name"]
 
 
 class EvaluationCriteriaSerializer(serializers.ModelSerializer):
@@ -253,7 +182,7 @@ class EvaluationSerializer(serializers.ModelSerializer):
         write_only=True,
         required=False,
     )
-    evaluator = UserSummarySerializer(read_only=True)
+    evaluator = CustomUserSerializer(read_only=True) 
     evaluator_id = serializers.PrimaryKeyRelatedField(
         source="evaluator",
         queryset=CustomUser.objects.all(),
@@ -268,12 +197,12 @@ class EvaluationSerializer(serializers.ModelSerializer):
         ]
 
     def get_evaluator_name(self, obj):
-        return UserSummarySerializer(obj.evaluator).data["full_name"]
+        return CustomUserSerializer(obj.evaluator).data["full_name"]
 
 
 class NotificationSerializer(serializers.ModelSerializer):
-    recipient = UserSummarySerializer(read_only=True)
-    actor = UserSummarySerializer(read_only=True)
+    recipient = CustomUserSerializer(read_only=True)
+    actor = CustomUserSerializer(read_only=True)
 
     class Meta:
         model = Notification
@@ -288,3 +217,8 @@ class NotificationSerializer(serializers.ModelSerializer):
             "is_read",
             "created_at",
         ]
+
+class UserProfileSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CustomUser
+        fields = '__all__'

@@ -24,6 +24,7 @@ from core.views import (
     LogRevisionView, 
     WeeklyLogSubmitView,
     AdminStatisticsView,
+    UserSummaryView,
 )
 
 urlpatterns = [
@@ -78,4 +79,6 @@ urlpatterns = [
     # Admin Statistics
     path('api/admin/statistics/', AdminStatisticsView.as_view(), name='admin-statistics'),
 
+    #User Summary 
+    path('api/users/<int:pk>/summary/', UserSummaryView.as_view()),
 ]
