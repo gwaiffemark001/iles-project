@@ -8,6 +8,15 @@ export default function LogbookList() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
+  function formatDate(value) {
+    if (!value) return 'Not set'
+    try {
+      return new Date(value).toLocaleDateString()
+    } catch {
+      return 'Not set'
+    }
+  }
+
   useEffect(() => {
     let cancelled = false
     async function run() {
@@ -55,7 +64,7 @@ export default function LogbookList() {
                 <div className="iles-strong">Week {l.week_number}</div>
                 <span className={`iles-badge ${l.status || ''}`}>{l.status}</span>
               </div>
-              <div className="iles-muted">Deadline: {l.deadline}</div>
+              <div className="iles-muted">Deadline: {formatDate(l.deadline)}</div>
               {l.supervisor_comment ? (
                 <div className="iles-muted">Comment: {l.supervisor_comment}</div>
               ) : (
