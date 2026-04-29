@@ -6,6 +6,7 @@ export default function PlacementDetail() {
   const { id } = useParams()
   const navigate = useNavigate()
   const { api } = useAuth()
+  const placementIdNum = Number(id)
   const [placement, setPlacement] = useState(null)
   const [note, setNote] = useState('')
   const [loading, setLoading] = useState(true)
@@ -38,7 +39,10 @@ export default function PlacementDetail() {
     setError('')
     setSuccess('')
     try {
-      await api.post('api/applications/', { placement: Number(id), note })
+      if (!Number.isFinite(placementIdNum)) {
+        throw new Error('Invalid placement id.')
+      }
+      await api.post('api/applications/', { placement: placementIdNum, note })
       setSuccess('Application submitted.')
       setTimeout(() => navigate('/app/student/applications'), 500)
     } catch (e) {
@@ -90,7 +94,7 @@ export default function PlacementDetail() {
                 onChange={(e) => setNote(e.target.value)}
                 rows={5}
               />
-              <button className="iles-button" onClick={apply} disabled={submitting}>
+              <button className="iles-button" onClick={apply} disabled={submitting || !Number.isFinite(placementIdNum)}>
                 {submitting ? 'Submitting...' : 'Submit application'}
               </button>
               {success ? <p className="success-message">{success}</p> : null}
