@@ -106,7 +106,7 @@ function Signup() {
                 {errorMessage && <p className="error-message">{errorMessage}</p>}
                 {successMessage && <p className="success-message">{successMessage}</p>}
                 <div >
-                    <section className="failed_login" style={{width: "400px"}}>
+                    <section className="failed_login">
                         <p className="signup">
                             <Link to="/">Back to Login</Link>
                         </p>

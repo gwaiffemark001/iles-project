@@ -28,13 +28,13 @@ function Login() {
             const role = result.user?.role;
 
             if (role === 'admin') {
-                navigate('/admin/dashboard');
+                navigate('/AdminDashboard');
             } else if (role === 'academic_supervisor') {
-                navigate('/academic-supervisor/dashboard');
+                navigate('/AcademicSupervisorDashboard');
             } else if (role === 'workplace_supervisor') {
-                navigate('/workplace-supervisor/dashboard');
+                navigate('/WorkplaceSupervisorDashboard');
             } else {
-                navigate('/student/dashboard');
+                navigate('/StudentDashboard');
             }
         } catch (error) {
             setErrorMessage('Unable to reach the server. Please try again later.');

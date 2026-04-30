@@ -12,14 +12,14 @@
     overflow: hidden;
 }
 
-.page_1::before {
+/*.page_1::before {
     content: '';
     position: absolute;
     inset: 0 auto 0 0;
     width: min(34vw, 360px);
     background: #111f36;
     pointer-events: none;
-}
+}*/
 
 .centre_logins {
     position: relative;

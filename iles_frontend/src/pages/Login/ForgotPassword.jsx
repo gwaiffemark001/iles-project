@@ -16,7 +16,7 @@ function ForgotPassword() {
                         <input type="email" placeholder="Enter your email"></input>
                         <button type='submit' className="login-btn">Send Reset Link</button>
                     </form>
-                    <section className='failed_login' style={{width: "400px"}}>
+                    <section className='failed_login'>
                         <p className="signup"><Link to="/">Back to Login</Link></p>
                         <p className="signup"><Link to="/signup">Sign up</Link></p>
                     </section>
