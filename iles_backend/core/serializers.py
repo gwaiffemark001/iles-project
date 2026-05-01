@@ -1,10 +1,12 @@
 from rest_framework import serializers
 from .models import CustomUser, InternshipPlacement, WeeklyLog, EvaluationCriteria, Evaluation, PlacementApplication, Notification
 class CustomUserSerializer(serializers.ModelSerializer):
-    password = serializers.CharField(write_only=True) 
+    password = serializers.CharField(write_only=True)
+    full_name = serializers.SerializerMethodField()
+
     class Meta:
         model = CustomUser
-        fields =[
+        fields = [
             'id',
             'username',
             'email',
@@ -17,11 +19,11 @@ class CustomUserSerializer(serializers.ModelSerializer):
             'student_number',
             'registration_number',
             'password',
+            'full_name',
         ]
-        full_name = serializers.SerializerMethodField()
 
-def get_full_name(self, obj):
-    return f"{obj.first_name} {obj.last_name}"
+    def get_full_name(self, obj):
+        return f"{obj.first_name} {obj.last_name}".strip() or obj.username
 
 class InternshipPlacementSerializer(serializers.ModelSerializer):
     student = CustomUserSerializer(read_only=True)
@@ -52,6 +54,51 @@ class InternshipPlacementSerializer(serializers.ModelSerializer):
     class Meta:
         model = InternshipPlacement
         fields = '__all__'
+
+    def validate(self, attrs):
+        placement = getattr(self, "instance", None)
+        student = attrs.get("student") or getattr(placement, "student", None)
+        start_date = attrs.get("start_date") or getattr(placement, "start_date", None)
+        end_date = attrs.get("end_date") or getattr(placement, "end_date", None)
+
+        if start_date and end_date and end_date < start_date:
+            raise serializers.ValidationError(
+                {"end_date": ["End date must be on or after the start date."]}
+            )
+
+        if student:
+            active_placements = InternshipPlacement.objects.filter(
+                student=student,
+                status__in=["pending", "active"],
+            )
+            if placement:
+                active_placements = active_placements.exclude(pk=placement.pk)
+
+            if active_placements.exists():
+                raise serializers.ValidationError(
+                    {
+                        "student_id": [
+                            "This student already has a pending or active internship placement."
+                        ]
+                    }
+                )
+
+        return attrs
+
+    def get_student_name(self, obj):
+        if not obj.student:
+            return ""
+        return CustomUserSerializer(obj.student).data["full_name"]
+
+    def get_workplace_supervisor_name(self, obj):
+        if not obj.workplace_supervisor:
+            return ""
+        return CustomUserSerializer(obj.workplace_supervisor).data["full_name"]
+
+    def get_academic_supervisor_name(self, obj):
+        if not obj.academic_supervisor:
+            return ""
+        return CustomUserSerializer(obj.academic_supervisor).data["full_name"]
 
 class PlacementApplicationSerializer(serializers.ModelSerializer):
     student_name = serializers.SerializerMethodField(read_only=True)
