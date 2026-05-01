@@ -313,33 +313,81 @@ class UserRegistrationView(APIView):
     permission_classes = [AllowAny]
 
     def post(self, request):
-        serializer = UserProfileSerializer(data=request.data)            
-        if not serializer.is_valid():
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         username = request.data.get('username')
+        password = request.data.get('password')
+        confirm_password = request.data.get('confirm_password')
+        email = request.data.get('email', '')
+
         if not username:
             return Response({'username': ['This field is required.']}, status=status.HTTP_400_BAD_REQUEST)
-        
+        if not password:
+            return Response({'password': ['This field is required.']}, status=status.HTTP_400_BAD_REQUEST)
+        if confirm_password is not None and password != confirm_password:
+            return Response({'confirm_password': ['Passwords do not match.']}, status=status.HTTP_400_BAD_REQUEST)
+        if CustomUser.objects.filter(username=username).exists():
+            return Response({'username': ['Username already exists.']}, status=status.HTTP_400_BAD_REQUEST)
+        if email and CustomUser.objects.filter(email=email).exists():
+            return Response({'email': ['Email already exists.']}, status=status.HTTP_400_BAD_REQUEST)
+
         user = CustomUser.objects.create_user(
-            username = serializer.validated_data['username'],
-            email = serializer.validated_data.get('email',''),
-            password = serializer.validated_data['password'],
-            role = serializer.validated_data.get('role', 'student'),
-            first_name = serializer.validated_data.get('first_name', ''),
-            last_name = serializer.validated_data.get('last_name', ''),
-            phone = serializer.validated_data.get('phone', None),
-            department = serializer.validated_data.get('department', None),
-            staff_number = serializer.validated_data.get('staff_number', None),
-            student_number = serializer.validated_data.get('student_number', None),
-            registration_number = serializer.validated_data.get('registration_number', None),
+            username=username,
+            email=email,
+            password=password,
+            role=request.data.get('role', 'student'),
+            first_name=request.data.get('first_name', ''),
+            last_name=request.data.get('last_name', ''),
+            phone=request.data.get('phone'),
+            department=request.data.get('department'),
+            staff_number=request.data.get('staff_number'),
+            student_number=request.data.get('student_number'),
+            registration_number=request.data.get('registration_number'),
         )
         return Response({
             'message': 'User created successfully',
             'username': user.username,
             'role': user.role,
         }, status=status.HTTP_201_CREATED)
-    
-    
+
+
+class ForgotPasswordView(APIView):
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        identifier = request.data.get('identifier')
+        username = request.data.get('username')
+        email = request.data.get('email')
+        new_password = request.data.get('new_password')
+        confirm_password = request.data.get('confirm_password')
+
+        if not identifier and not username and not email:
+            return Response(
+                {'identifier': ['Provide username or email.']},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        if not new_password:
+            return Response({'new_password': ['This field is required.']}, status=status.HTTP_400_BAD_REQUEST)
+        if new_password != confirm_password:
+            return Response({'confirm_password': ['Passwords do not match.']}, status=status.HTTP_400_BAD_REQUEST)
+
+        user = None
+        lookup_value = identifier or username
+        if lookup_value:
+            user = CustomUser.objects.filter(username=lookup_value).first()
+            if not user:
+                user = CustomUser.objects.filter(email=lookup_value).first()
+        if not user and email:
+            user = CustomUser.objects.filter(email=email).first()
+        if not user:
+            return Response({'identifier': ['User not found.']}, status=status.HTTP_404_NOT_FOUND)
+
+        if email and user.email and user.email.lower() != str(email).lower():
+            return Response({'email': ['Email does not match this account.']}, status=status.HTTP_400_BAD_REQUEST)
+
+        user.set_password(new_password)
+        user.save(update_fields=['password'])
+        return Response({'message': 'Password reset successful.'}, status=status.HTTP_200_OK)
+
+
 class EvaluationListView(APIView):
     permission_classes = [IsAuthenticated]
 
