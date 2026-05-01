@@ -27,6 +27,12 @@ async function readJsonSafely(response) {
 function normalizeErrorPayload(payload) {
   if (!payload) return { message: 'Request failed.' }
   if (typeof payload === 'string') return { message: payload }
+  if (typeof payload.detail === 'string' && payload.detail.includes('<!DOCTYPE html>')) {
+    return {
+      message: 'Server error. Check backend server and database connection.',
+      details: payload,
+    }
+  }
   if (payload.message) return { message: payload.message, details: payload }
   if (payload.detail) return { message: payload.detail, details: payload }
   const firstKey = Object.keys(payload)[0]
