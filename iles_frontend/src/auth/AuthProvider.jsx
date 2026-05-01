@@ -1,10 +1,9 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { createApiClient } from '../api/client'
+import AuthContext from './AuthContext'
 
-const AuthContext = createContext(null)
-
-const ACCESS_KEY = 'token'
-const REFRESH_KEY = 'refreshToken'
+const ACCESS_KEY = 'access_token'
+const REFRESH_KEY = 'refresh_token'
 const ROLE_KEY = 'role'
 
 function getStoredAccess() {
@@ -23,6 +22,8 @@ function setStoredTokens({ access, refresh }) {
 function clearStoredTokens() {
   localStorage.removeItem(ACCESS_KEY)
   localStorage.removeItem(REFRESH_KEY)
+  localStorage.removeItem('token')
+  localStorage.removeItem('refreshToken')
   localStorage.removeItem(ROLE_KEY)
 }
 
@@ -68,13 +69,13 @@ export function AuthProvider({ children }) {
   }, [api])
 
   const login = useCallback(
-    async ({ usernameOrEmail, password }) => {
-      const raw = (usernameOrEmail || '').trim()
-      const username = raw.includes('@') ? raw.split('@')[0] : raw
+    async ({ usernameOrEmail, username, password }) => {
+      const raw = (usernameOrEmail || username || '').trim()
+      const loginName = raw.includes('@') ? raw.split('@')[0] : raw
 
       const tokenPayload = await api.post(
         'api/token/',
-        { username, password },
+        { username: loginName, password },
         { auth: false },
       )
 
@@ -85,9 +86,20 @@ export function AuthProvider({ children }) {
       }
 
       setTokens({ access, refresh })
-      return await fetchProfile()
+      const authenticatedApi = createApiClient({
+        baseUrl,
+        getAccessToken: () => access,
+        getRefreshToken: () => refresh,
+        setTokens,
+        clearTokens: logout,
+      })
+      const profile = await authenticatedApi.get('api/profile/')
+      setUser(profile)
+      if (profile?.role) localStorage.setItem(ROLE_KEY, profile.role)
+
+      return { success: true, user: profile, ...profile }
     },
-    [api, setTokens, fetchProfile],
+    [api, baseUrl, logout, setTokens],
   )
 
   const register = useCallback(
@@ -174,9 +186,5 @@ export function AuthProvider({ children }) {
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
 }
 
-export function useAuth() {
-  const ctx = useContext(AuthContext)
-  if (!ctx) throw new Error('useAuth must be used within AuthProvider')
-  return ctx
-}
+
 

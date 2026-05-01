@@ -4,17 +4,20 @@ from .models import CustomUser, InternshipPlacement, WeeklyLog, EvaluationCriter
 
 class CustomUserAdmin(UserAdmin):
     fieldsets = UserAdmin.fieldsets + (
-    ('Role & Contact', {
-        'fields': (
-            'role',
-            'phone',
-            'department',
-            'staff_number',
-            'student_number',
-            'registration_number',
-        )
-    }),
-)
+        ('Role & Contact', {
+            'fields': (
+                'role',
+                'phone',
+                'department',
+                'staff_number',
+                'student_number',
+                'registration_number',
+            )
+        }),
+    )
+    list_display = ['username', 'email', 'role', 'is_staff']
+    list_filter = ['role', 'is_staff']
+    search_fields = ['username', 'email']
 
 class WeeklyLogAdmin(admin.ModelAdmin):
     list_display = ['placement', 'week_number', 'status', 'deadline']
