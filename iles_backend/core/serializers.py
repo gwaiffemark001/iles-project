@@ -26,27 +26,11 @@ class CustomUserSerializer(serializers.ModelSerializer):
 
 
 class UserSummarySerializer(serializers.ModelSerializer):
->>>>>>> b32a542b9577844056e014ac6e7e79c36470e350
     full_name = serializers.SerializerMethodField()
 
     class Meta:
         model = CustomUser
         fields = [
-<<<<<<< HEAD
-            'id',
-            'username',
-            'email',
-            'first_name',
-            'last_name',
-            'role',
-            'phone',
-            'department',
-            'staff_number',
-            'student_number',
-            'registration_number',
-            'password',
-            'full_name',
-=======
             "id",
             "username",
             "email",
@@ -59,19 +43,14 @@ class UserSummarySerializer(serializers.ModelSerializer):
             "staff_number",
             "student_number",
             "registration_number",
->>>>>>> b32a542b9577844056e014ac6e7e79c36470e350
         ]
 
     def get_full_name(self, obj):
         return f"{obj.first_name} {obj.last_name}".strip() or obj.username
 
-<<<<<<< HEAD
-=======
-
 class CustomUserSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, required=False)
     full_name = serializers.SerializerMethodField(read_only=True)
-    profile = UserProfileSerializer(read_only=True)
 
     class Meta:
         model = CustomUser
@@ -88,7 +67,6 @@ class CustomUserSerializer(serializers.ModelSerializer):
             "staff_number",
             "student_number",
             "registration_number",
-            "profile",
             "password",
         ]
 
@@ -96,8 +74,6 @@ class CustomUserSerializer(serializers.ModelSerializer):
         full_name = f"{obj.first_name} {obj.last_name}".strip()
         return full_name or obj.username
 
-
->>>>>>> b32a542b9577844056e014ac6e7e79c36470e350
 class InternshipPlacementSerializer(serializers.ModelSerializer):
     student = CustomUserSerializer(read_only=True)
     workplace_supervisor = CustomUserSerializer(read_only=True)
@@ -126,7 +102,6 @@ class InternshipPlacementSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = InternshipPlacement
-<<<<<<< HEAD
         fields = '__all__'
 
     def validate(self, attrs):
@@ -180,8 +155,6 @@ class PlacementApplicationSerializer(serializers.ModelSerializer):
     academic_supervisor_name = serializers.SerializerMethodField(read_only=True)
     class Meta:
         model = PlacementApplication
-=======
->>>>>>> b32a542b9577844056e014ac6e7e79c36470e350
         fields = [
             "id",
             "student",
@@ -256,25 +229,6 @@ class PlacementApplicationSerializer(serializers.ModelSerializer):
     def get_academic_supervisor_name(self, obj):
         return CustomUserSerializer(obj.academic_supervisor).data["full_name"]
 
-<<<<<<< HEAD
-=======
-
-class PlacementApplicationSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = PlacementApplication
-        fields = [
-            "id",
-            "placement",
-            "student",
-            "status",
-            "note",
-            "created_at",
-            "decided_at",
-        ]
-        read_only_fields = ["status", "created_at", "decided_at"]
-
-
->>>>>>> b32a542b9577844056e014ac6e7e79c36470e350
 class WeeklyLogSerializer(serializers.ModelSerializer):
     placement = InternshipPlacementSerializer(read_only=True)
     placement_id = serializers.PrimaryKeyRelatedField(
