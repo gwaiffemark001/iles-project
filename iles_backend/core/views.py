@@ -342,7 +342,6 @@ class UserRegistrationView(APIView):
             return Response({'email': ['Email already exists.']}, status=status.HTTP_400_BAD_REQUEST)
 
         user = CustomUser.objects.create_user(
-<<<<<<< HEAD
             username=username,
             email=email,
             password=password,
@@ -354,19 +353,6 @@ class UserRegistrationView(APIView):
             staff_number=request.data.get('staff_number'),
             student_number=request.data.get('student_number'),
             registration_number=request.data.get('registration_number'),
-=======
-            username = serializer.validated_data['username'],
-            email = serializer.validated_data.get('email',''),
-            password = serializer.validated_data['password'],
-            role = serializer.validated_data.get('role', 'student'),
-            first_name = serializer.validated_data.get('first_name', ''),
-            last_name = serializer.validated_data.get('last_name', ''),
-            phone = serializer.validated_data.get('phone', None),
-            department = serializer.validated_data.get('department', None),
-            staff_number = serializer.validated_data.get('staff_number', None),
-            student_number = serializer.validated_data.get('student_number', None),
-            registration_number = serializer.validated_data.get('registration_number', None),
->>>>>>> b32a542b9577844056e014ac6e7e79c36470e350
         )
         return Response({
             'message': 'User created successfully',
