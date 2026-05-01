@@ -32,7 +32,7 @@ function emptyRegister() {
   }
 }
 
-export default function ILES() {
+export function ILES() {
   const initial = useMemo(() => getStoredSession(), [])
   const [session, setSession] = useState(initial)
   const [activeForm, setActiveForm] = useState(FORM_LOGIN)
@@ -400,89 +400,3 @@ export default function ILES() {
     </main>
   )
 }
-=======
-import { Navigate, Route, Routes } from 'react-router-dom'
-import { AuthProvider } from './auth/AuthProvider'
-import { useAuth } from './auth/useAuth'
-import Login from './pages/Login/Login'
-import ForgotPassword from './pages/Login/ForgotPassword'
-import Signup from './pages/Signup/Signup'
-import AcademicSupervisorDashboard from './pages/AcademicSupervisor/AcademicSupervisorDashboard'
-import StudentDashboard from './pages/Student/StudentDashboard'
-import WorkplaceSupervisorDashboard from './pages/WorkplaceSupervisor/WorkplaceSupervisorDashboard'
-import AdminDashboard from './pages/AdminDashboard'
-
-const ProtectedRoute = ({ allowedRoles, children }) => {
-  const { loading, user } = useAuth()
-
-  if (loading) {
-    return <div>Loading...</div>
-  }
-
-  if (!user) {
-    return <Navigate to="/" replace />
-  }
-
-  if (allowedRoles && !allowedRoles.includes(user.role)) {
-    return <Navigate to="/" replace />
-  }
-
-  return children
-}
-
-function ILES() {
-  return (
-    <AuthProvider>
-      <Routes>
-        <Route path="/" element={<Login />} />
-        <Route path="/signup" element={<Signup />} />
-        <Route path="/forgot-password" element={<ForgotPassword />} />
-        <Route path="/admin-dashboard" element={<Navigate to="/admin/dashboard" replace />} />
-        <Route path="/academic_supervisor-dashboard" element={<Navigate to="/academic-supervisor/dashboard" replace />} />
-        <Route path="/workplace_supervisor-dashboard" element={<Navigate to="/workplace-supervisor/dashboard" replace />} />
-        <Route path="/student-dashboard" element={<Navigate to="/student/dashboard" replace />} />
-        <Route path="/studentdashboard" element={<Navigate to="/student/dashboard" replace />} />
-        <Route path="/app/admin" element={<Navigate to="/admin/dashboard" replace />} />
-        <Route path="/app/academic" element={<Navigate to="/academic-supervisor/dashboard" replace />} />
-        <Route path="/app/workplace" element={<Navigate to="/workplace-supervisor/dashboard" replace />} />
-        <Route path="/app/student" element={<Navigate to="/student/dashboard" replace />} />
-        <Route
-          path="/workplace-supervisor/dashboard"
-          element={
-            <ProtectedRoute allowedRoles={['workplace_supervisor']}>
-              <WorkplaceSupervisorDashboard />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/academic-supervisor/dashboard"
-          element={
-            <ProtectedRoute allowedRoles={['academic_supervisor']}>
-              <AcademicSupervisorDashboard />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/student/dashboard"
-          element={
-            <ProtectedRoute allowedRoles={['student']}>
-              <StudentDashboard />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/admin/dashboard"
-          element={
-            <ProtectedRoute allowedRoles={['admin']}>
-              <AdminDashboard />
-            </ProtectedRoute>
-          }
-        />
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
-    </AuthProvider>
-  )
-}
-
-export default ILES
->>>>>>> b32a542b9577844056e014ac6e7e79c36470e350
