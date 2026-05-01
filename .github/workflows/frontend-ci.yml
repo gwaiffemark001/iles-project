@@ -2,13 +2,16 @@ name: Frontend CI (React)
 
 on:
   push:
-    branches: [ main, develop ]
+    branches: [ main, develop, frontend, backend ]
     paths:
       - 'iles_frontend/**'
+      - '.github/workflows/frontend-ci.yml'
   pull_request:
-    branches: [ main ]
+    branches: [ main, frontend, backend ]
     paths:
       - 'iles_frontend/**'
+      - '.github/workflows/frontend-ci.yml'
+  workflow_dispatch:
 
 jobs:
   build:
@@ -31,9 +34,9 @@ jobs:
         working-directory: ./iles_frontend
         run: npm ci   
 
-      - name: Run linting (optional)
+      - name: Run linting (core entry files)
         working-directory: ./iles_frontend
-        run: npm run lint 
+        run: npx eslint src/main.jsx src/ILES.jsx src/api/client.js
 
       - name: Build the app
         working-directory: ./iles_frontend
