@@ -25,6 +25,7 @@ from core.views import (
     WeeklyLogSubmitView,
     AdminStatisticsView,
     UserSummaryView,
+    ForgotPasswordView,
 )
 
 urlpatterns = [
@@ -34,6 +35,7 @@ urlpatterns = [
     path('api/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
     path('api/register/', UserRegistrationView.as_view(), name='register'),
+    path('api/forgot-password/', ForgotPasswordView.as_view(), name='forgot-password'),
     path('api/profile/', UserProfileView.as_view(), name='profile'),
     path('api/users/', UserListView.as_view(), name='user-list'),
     path('api/notifications/', NotificationListView.as_view(), name='notification-list'),
