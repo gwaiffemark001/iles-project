@@ -12,7 +12,7 @@ import LogbookEditor from '../pages/Student/LogbookEditor'
 import AcademicSupervisorDashboard from '../pages/AcademicSupervisor/AcademicSupervisorDashboard'
 import AssignedStudents from '../pages/AcademicSupervisor/AssignedStudents'
 import WorkplaceSupervisorDashboard from '../pages/WorkplaceSupervisor/WorkplaceSupervisorDashboard'
-import AdminDashboard from '../pages/Admin/AdminDashboard'
+import AdminDashboard from '../pages/AdminDashboard'
 
 import ProtectedRoute from './ProtectedRoute'
 import RoleRoute from './RoleRoute'
