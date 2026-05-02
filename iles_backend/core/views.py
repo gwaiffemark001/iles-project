@@ -597,6 +597,19 @@ class LogRevisionView(APIView):
         log.supervisor_comment = request.data.get('comment', 'Please revise and resubmit')
         log.save()
 
+        # Trigger notification for log revision
+        from .notification_service import NotificationService
+        NotificationService.create_and_send_notification(
+            recipient=log.placement.student,
+            title="Log Revision Requested",
+            message=f"Your Week {log.week_number} log needs revision: {log.supervisor_comment}",
+            notification_type="log_revision_requested",
+            actor=request.user,
+            data={"log_id": log.id},
+            send_email=True,
+            send_sms=False
+        )
+
         serializer = WeeklyLogSerializer(log)
         return Response(serializer.data)   
 
