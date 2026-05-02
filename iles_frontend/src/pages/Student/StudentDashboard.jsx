@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/useAuth';
 import { logsAPI, placementsAPI, evaluationsAPI } from '@/api/api';
 import { getErrorMessage } from '@/api/api';
@@ -30,6 +31,7 @@ const getUserInitials = (user) => {
 };
 
 const StudentDashboard = () => {
+  const navigate = useNavigate();
   const { user, logout } = useAuth();
   const [logs, setLogs] = useState([]);
   const [placements, setPlacements] = useState([]);
