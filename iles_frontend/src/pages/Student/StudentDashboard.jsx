@@ -374,7 +374,7 @@ const StudentDashboard = () => {
                       <div className="log-card-header">
                         <div>
                           <h3>Week {log.week_number}</h3>
-                          <p className="log-company">{log.placement?.company_name || 'Placement not available'}</p>
+                          <p className="log-company">{log.placement?.company_name || 'Company information not available'}</p>
                         </div>
                         <span className={`status ${log.status}`}>{log.status}</span>
                       </div>

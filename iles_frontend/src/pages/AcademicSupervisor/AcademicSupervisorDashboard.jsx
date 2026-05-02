@@ -67,7 +67,7 @@ const AcademicSupervisorDashboard = () => {
               placement.student_name || 
               "Unknown Student",
         placement: placement.company_name,
-        companyAddress: placement.company_address || 'N/A',
+        companyAddress: placement.company_address || 'Not provided',
         startDate: placement.start_date,
         endDate: placement.end_date,
         logs: totalLogs,
