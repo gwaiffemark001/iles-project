@@ -38,6 +38,7 @@ urlpatterns = [
     path('api/forgot-password/', ForgotPasswordView.as_view(), name='forgot-password'),
     path('api/profile/', UserProfileView.as_view(), name='profile'),
     path('api/users/', UserListView.as_view(), name='user-list'),
+    path('api/users/<int:pk>/', UserListView.as_view(), name='user-detail'),
     path('api/notifications/', NotificationListView.as_view(), name='notification-list'),
     path('api/notifications/<int:pk>/read/', NotificationReadView.as_view(), name='notification-read'),
     path('api/notifications/mark-all-read/', NotificationMarkAllReadView.as_view(), name='notification-mark-all-read'),
