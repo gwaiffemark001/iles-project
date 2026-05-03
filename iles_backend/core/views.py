@@ -782,3 +782,21 @@ class UserSummaryView(APIView):
         user = CustomUser.objects.get(pk=pk)
         serializer = UserProfileSerializer(user)
         return Response(serializer.data)
+
+class UserListView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        users = CustomUser.objects.all()
+        serializer = CustomUserSerializer(users, many=True)
+        return Response(serializer.data)
+    
+    def delete(self, request, pk):
+        try:
+            user = CustomUser.objects.get(pk=pk)
+            user.delete()
+            return Response({'message': 'User deleted successfully'}, status=status.HTTP_204_NO_CONTENT)
+        except CustomUser.DoesNotExist:
+            return Response({'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
