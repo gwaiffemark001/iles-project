@@ -1,8 +1,8 @@
 import { Navigate, Route, Routes } from 'react-router-dom'
 
 import Firstpage from '../Firstpage'
-import ForgotPassword from '../ForgotPassword'
-import Signup from '../Signup'
+import ForgotPassword from '../pages/Login/ForgotPassword'
+import Signup from '../pages/Signup/Signup'
 import StudentDashboard from '../pages/Student/StudentDashboard'
 import PlacementsList from '../pages/Student/PlacementsList'
 import PlacementDetail from '../pages/Student/PlacementDetail'
