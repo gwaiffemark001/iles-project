@@ -1,784 +1,571 @@
-import { useEffect, useMemo, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { toast } from "react-toastify";
-import api, { adminAPI, evaluationsAPI, getErrorMessage, placementsAPI } from "../api/api";
-import { useAuth } from "../contexts/useAuth";
-import "./AdminDashboard.css";
-
-const navItems = [
-  { id: "overview", label: "Overview" },
-  { id: "placements", label: "Placements" },
-  { id: "evaluations", label: "Evaluations" },
-  { id: "criteria", label: "Criteria" },
-];
-
-const initialPlacementForm = {
-  student_id: "",
-  workplace_supervisor_id: "",
-  academic_supervisor_id: "",
-  company_name: "",
-  company_address: "",
-  start_date: "",
-  end_date: "",
-  status: "pending",
-};
-
-const getUserInitials = (user) => {
-  const firstInitial = user?.first_name?.[0] || "";
-  const lastInitial = user?.last_name?.[0] || "";
-  return `${firstInitial}${lastInitial}` || user?.username?.slice(0, 2)?.toUpperCase() || "AD";
-};
-
-const getFullName = (user) =>
-  user?.full_name || [user?.first_name, user?.last_name].filter(Boolean).join(" ") || user?.username || "Unknown";
-
-const titleCase = (value) =>
-  value?.replace(/_/g, " ").replace(/\b\w/g, (char) => char.toUpperCase()) || "Unknown";
-
-const formatDate = (value) => {
-  if (!value) {
-    return "Not available";
-  }
-
-  return new Intl.DateTimeFormat("en-UG", {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-  }).format(new Date(value));
-};
+import { useState, useEffect } from 'react'
+import axios from 'axios'
+import { useAuth } from '../auth/useAuth'
 
 function AdminDashboard() {
-  const navigate = useNavigate();
-  const { user, logout } = useAuth();
-  const profileMenuRef = useRef(null);
-  const [stats, setStats] = useState(null);
-  const [placements, setPlacements] = useState([]);
-  const [evaluations, setEvaluations] = useState([]);
-  const [criteria, setCriteria] = useState([]);
-  const [users, setUsers] = useState([]);
-  const [placementForm, setPlacementForm] = useState(initialPlacementForm);
-  const [activeSection, setActiveSection] = useState("overview");
-  const [profileMenuOpen, setProfileMenuOpen] = useState(false);
-  const [error, setError] = useState("");
-  const [loading, setLoading] = useState(true);
-  const [submittingPlacement, setSubmittingPlacement] = useState(false);
+  const { user, logout } = useAuth()
+  const token = localStorage.getItem('access_token')
+  const [stats, setStats] = useState(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
+  const [activeSection, setActiveSection] = useState('overview')
+  const [placements, setPlacements] = useState([])
+  const [users, setUsers] = useState([])
+  const [evaluations, setEvaluations] = useState([])
+  const [searchTerm, setSearchTerm] = useState('')
+  const [filterRole, setFilterRole] = useState('all')
+  const [editingUser, setEditingUser] = useState(null)
+  const [editingPlacement, setEditingPlacement] = useState(null)
 
-  useEffect(() => {
-    fetchDashboardData();
-  }, []);
+  const authHeaders = { headers: { Authorization: `Bearer ${token}` } }
 
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (!profileMenuRef.current?.contains(event.target)) {
-        setProfileMenuOpen(false);
-      }
-    };
+  const handleEditUser = (user) => {
+    setEditingUser(user)
+  }
 
-    document.addEventListener("mousedown", handleClickOutside);
-
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
-  }, []);
-
-  const fetchDashboardData = async ({ notifySuccess = false, notifyError = false } = {}) => {
+  const handleUpdateUser = async () => {
+    if (!editingUser) return
+    
     try {
-      setError("");
-      setLoading(true);
+      const response = await axios.put(
+        `http://127.0.0.1:8000/api/users/${editingUser.id}/`,
+        {
+          username: editingUser.username,
+          email: editingUser.email,
+          first_name: editingUser.first_name,
+          last_name: editingUser.last_name,
+          role: editingUser.role,
+          phone: editingUser.phone,
+          department: editingUser.department,
+          student_number: editingUser.student_number,
+          staff_number: editingUser.staff_number,
+          registration_number: editingUser.registration_number
+        },
+        authHeaders
+      )
+      
+      setUsers(users.map(u => u.id === editingUser.id ? response.data : u))
+      setEditingUser(null)
+      alert('User updated successfully')
+    } catch (error) {
+      console.error('Error updating user:', error)
+      alert('Error updating user: ' + (error.response?.data?.message || error.message))
+    }
+  }
 
-      const [statsResponse, placementsResponse, evaluationsResponse, criteriaResponse, usersResponse] =
+  const handleDeleteUser = async (userId) => {
+    console.log('Attempting to delete user:', userId)
+    if (window.confirm('Are you sure you want to delete this user?')) {
+      try {
+        console.log('Making DELETE request to:', `http://127.0.0.1:8000/api/users/${userId}/`)
+        console.log('Auth headers:', authHeaders)
+        const response = await axios.delete(`http://127.0.0.1:8000/api/users/${userId}/`, authHeaders)
+        console.log('Delete response:', response)
+        setUsers(users.filter(user => user.id !== userId))
+        alert('User deleted successfully')
+      } catch (error) {
+        console.error('Error deleting user:', error)
+        console.error('Error response:', error.response)
+        alert('Error deleting user: ' + (error.response?.data?.message || error.message))
+      }
+    }
+  }
+
+  const handleEditPlacement = (placement) => {
+    setEditingPlacement(placement)
+  }
+
+  const handleUpdatePlacement = async () => {
+    if (!editingPlacement) return
+    
+    try {
+      const response = await axios.put(
+        `http://127.0.0.1:8000/api/placements/${editingPlacement.id}/`,
+        {
+          company_name: editingPlacement.company_name,
+          student: editingPlacement.student?.id,
+          workplace_supervisor: editingPlacement.workplace_supervisor?.id,
+          academic_supervisor: editingPlacement.academic_supervisor?.id,
+          start_date: editingPlacement.start_date,
+          end_date: editingPlacement.end_date,
+          status: editingPlacement.status,
+          description: editingPlacement.description
+        },
+        authHeaders
+      )
+      
+      setPlacements(placements.map(p => p.id === editingPlacement.id ? response.data : p))
+      setEditingPlacement(null)
+      alert('Placement updated successfully')
+    } catch (error) {
+      console.error('Error updating placement:', error)
+      alert('Error updating placement: ' + (error.response?.data?.message || error.message))
+    }
+  }
+
+  const handleDeletePlacement = async (placementId) => {
+    if (window.confirm('Are you sure you want to delete this placement?')) {
+      try {
+        await axios.delete(`http://127.0.0.1:8000/api/placements/${placementId}/`, authHeaders)
+        setPlacements(placements.filter(p => p.id !== placementId))
+        alert('Placement deleted successfully')
+      } catch (error) {
+        console.error('Error deleting placement:', error)
+        alert('Error deleting placement: ' + (error.response?.data?.message || error.message))
+      }
+    }
+  }
+
+  const filteredUsers = users.filter(user => {
+    const matchesSearch = user.username?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         user.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         getFullName(user).toLowerCase().includes(searchTerm.toLowerCase())
+    const matchesRole = filterRole === 'all' || user.role === filterRole
+    return matchesSearch && matchesRole
+  })
+
+  useEffect(() => {
+    fetchDashboardData()
+  }, [])
+
+  const fetchDashboardData = async () => {
+    try {
+      setLoading(true)
+      setError(null)
+
+      const [statsResponse, placementsResponse, evaluationsResponse, usersResponse] =
         await Promise.all([
-          adminAPI.getStatistics(),
-          placementsAPI.getPlacements(),
-          evaluationsAPI.getEvaluations(),
-          api.get("/criteria/"),
-          adminAPI.getUsers(),
-        ]);
+          axios.get('http://127.0.0.1:8000/api/admin/statistics/', authHeaders),
+          axios.get('http://127.0.0.1:8000/api/placements/', authHeaders),
+          axios.get('http://127.0.0.1:8000/api/evaluations/', authHeaders),
+          axios.get('http://127.0.0.1:8000/api/users/', authHeaders),
+        ])
 
-      setStats(statsResponse.data);
-      setPlacements(placementsResponse.data);
-      setEvaluations(Array.isArray(evaluationsResponse.data) ? evaluationsResponse.data : []);
-      setCriteria(Array.isArray(criteriaResponse.data) ? criteriaResponse.data : []);
-      setUsers(Array.isArray(usersResponse.data) ? usersResponse.data : []);
+      setStats(statsResponse.data)
+      setPlacements(Array.isArray(placementsResponse.data) ? placementsResponse.data : [])
+      setEvaluations(Array.isArray(evaluationsResponse.data) ? evaluationsResponse.data : [])
+      setUsers(Array.isArray(usersResponse.data) ? usersResponse.data : [])
 
-      if (notifySuccess) {
-        toast.success("Dashboard refreshed successfully.");
-      }
+      console.log('Dashboard data loaded successfully')
     } catch (requestError) {
-      const message = getErrorMessage(requestError, "Unable to load admin dashboard data.");
-      setError(message);
-
-      if (notifyError) {
-        toast.error(message);
-      }
+      const message = requestError?.response?.data?.message || requestError?.message || 'Unable to load admin dashboard data.'
+      setError(message)
+      console.error('Dashboard error:', requestError)
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
-  };
+  }
 
-  const handleLogout = () => {
-    setProfileMenuOpen(false);
-    logout();
-    navigate("/");
-  };
-
-  const handlePlacementFieldChange = (event) => {
-    const { name, value } = event.target;
-    setPlacementForm((current) => ({
-      ...current,
-      [name]: value,
-    }));
-  };
-
-  const students = useMemo(() => users.filter((systemUser) => systemUser.role === "student"), [users]);
-  const workplaceSupervisors = useMemo(
-    () => users.filter((systemUser) => systemUser.role === "workplace_supervisor"),
-    [users]
-  );
-  const academicSupervisors = useMemo(
-    () => users.filter((systemUser) => systemUser.role === "academic_supervisor"),
-    [users]
-  );
-
-  const latestPlacementByStudent = useMemo(() => {
-    const sortedPlacements = [...placements].sort(
-      (first, second) => new Date(second.created_at || 0) - new Date(first.created_at || 0)
-    );
-
-    return sortedPlacements.reduce((map, placement) => {
-      const studentId = placement.student?.id;
-      if (studentId && !map.has(studentId)) {
-        map.set(studentId, placement);
-      }
-      return map;
-    }, new Map());
-  }, [placements]);
-
-  const currentPlacementByStudent = useMemo(() => {
-    return placements.reduce((map, placement) => {
-      const studentId = placement.student?.id;
-      if (studentId && ["pending", "active"].includes(placement.status)) {
-        map.set(studentId, placement);
-      }
-      return map;
-    }, new Map());
-  }, [placements]);
-
-  const studentsAwaitingPlacement = students.filter((student) => !currentPlacementByStudent.has(student.id));
-
-  const startAssignmentForStudent = (student) => {
-    const openPlacement = currentPlacementByStudent.get(student.id);
-
-    if (openPlacement) {
-      toast.info(`${getFullName(student)} already has a ${titleCase(openPlacement.status).toLowerCase()} placement.`);
-      return;
-    }
-
-    setActiveSection("placements");
-    setPlacementForm((current) => ({
-      ...current,
-      student_id: String(student.id),
-    }));
-  };
-
-  const handleCreatePlacement = async (event) => {
-    event.preventDefault();
-    setSubmittingPlacement(true);
-
-    try {
-      const payload = {
-        ...placementForm,
-        student_id: Number(placementForm.student_id),
-        workplace_supervisor_id: Number(placementForm.workplace_supervisor_id),
-        academic_supervisor_id: Number(placementForm.academic_supervisor_id),
-      };
-
-      const response = await placementsAPI.createPlacement(payload);
-      const studentName = response.data?.student_name || getFullName(
-        students.find((student) => student.id === payload.student_id)
-      );
-
-      toast.success(`Placement assigned successfully for ${studentName}.`);
-      setPlacementForm(initialPlacementForm);
-      await fetchDashboardData();
-    } catch (requestError) {
-      const message = getErrorMessage(requestError, "Unable to assign placement.");
-      setError(message);
-      toast.error(message);
-    } finally {
-      setSubmittingPlacement(false);
-    }
-  };
-
-  const displayName =
+  const getFullName = (user) =>
     user?.full_name ||
-    [user?.first_name, user?.last_name].filter(Boolean).join(" ") ||
+    [user?.first_name, user?.last_name].filter(Boolean).join(' ') ||
     user?.username ||
-    "Administrator";
+    'Unknown'
 
-  const statusBreakdown = stats?.logs_by_status || [];
-  const activePlacements = placements.filter((placement) => placement.status === "active").length;
-  const completedPlacements = placements.filter((placement) => placement.status === "completed").length;
-  const pendingPlacements = placements.filter((placement) => placement.status === "pending").length;
-  const averageEvaluationScore = evaluations.length
-    ? (
-        evaluations.reduce((sum, evaluation) => sum + Number(evaluation.score || 0), 0) /
-        evaluations.length
-      ).toFixed(1)
-    : "0.0";
-  const recentEvaluations = [...evaluations]
-    .sort((first, second) => new Date(second.evaluated_at) - new Date(first.evaluated_at))
-    .slice(0, 6);
-  const dashboardCards = [
-    {
-      label: "Students In System",
-      value: students.length || stats?.total_students || 0,
-      hint: "All registered student interns",
-      tone: "blue",
-      target: "placements",
-    },
-    {
-      label: "Awaiting Placement",
-      value: studentsAwaitingPlacement.length,
-      hint: "Students who still need assignment",
-      tone: "amber",
-      target: "placements",
-    },
-    {
-      label: "Active Placements",
-      value: stats?.active_placements ?? activePlacements,
-      hint: "Placements currently running",
-      tone: "green",
-      target: "placements",
-    },
-    {
-      label: "Pending Reviews",
-      value: stats?.pending_logs ?? 0,
-      hint: "Submitted logs awaiting review",
-      tone: "violet",
-      target: "overview",
-    },
-  ];
+  const formatDate = (value) => {
+    if (!value) return 'Not available'
+    return new Intl.DateTimeFormat('en-UG', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+    }).format(new Date(value))
+  }
+
+  if (loading) {
+    return <p style={{ margin: '40px', textAlign: 'center' }}>Loading dashboard data...</p>
+  }
+
+  if (error) {
+    return (
+      <div style={{ maxWidth: '900px', margin: '40px auto', padding: '20px', textAlign: 'center' }}>
+        <h3 style={{ color: '#E74C3C' }}>Unable to load dashboard</h3>
+        <p>{error}</p>
+        <button 
+          onClick={fetchDashboardData}
+          style={{ padding: '8px 16px', backgroundColor: '#3498DB', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
+        >
+          Try Again
+        </button>
+      </div>
+    )
+  }
 
   return (
-    <div className="admin-dashboard">
-      <aside className="admin-sidebar">
-        <div>
-          <div className="admin-brand">ILES System</div>
-          <div className="admin-role">Administrator</div>
+    <div style={{ display: 'flex', minHeight: '100vh', backgroundColor: '#f5f5f5' }}>
+      {/* Sidebar */}
+      <div style={{ width: '250px', backgroundColor: '#2c3e50', color: 'white', padding: '20px' }}>
+        <div style={{ marginBottom: '30px' }}>
+          <h2 style={{ margin: '0 0 10px 0' }}>ILES</h2>
+          <p style={{ margin: '0', fontSize: '14px', opacity: 0.8 }}>{user?.username || 'Admin'}</p>
+          <p style={{ margin: '0', fontSize: '12px', opacity: 0.6 }}>Administrator</p>
         </div>
-
-        <div className="admin-sidebar-divider" />
-
-        <nav className="admin-sidebar-nav">
-          {navItems.map((item) => (
-            <button
-              key={item.id}
-              type="button"
-              className={`admin-nav-item ${activeSection === item.id ? "active" : ""}`}
-              onClick={() => setActiveSection(item.id)}
-            >
-              {item.label}
-            </button>
-          ))}
-        </nav>
-
-        <div className="admin-sidebar-bottom">
-          <button
-            type="button"
-            className="admin-nav-item"
-            onClick={() => fetchDashboardData({ notifySuccess: true, notifyError: true })}
+        
+        <nav style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+          <button 
+            onClick={() => setActiveSection('overview')}
+            style={{ 
+              padding: '10px', 
+              backgroundColor: activeSection === 'overview' ? '#34495e' : 'transparent',
+              color: 'white', 
+              border: 'none', 
+              borderRadius: '4px', 
+              cursor: 'pointer',
+              textAlign: 'left'
+            }}
           >
-            Refresh Data
+            📊 Overview
+          </button>
+          <button 
+            onClick={() => setActiveSection('users')}
+            style={{ 
+              padding: '10px', 
+              backgroundColor: activeSection === 'users' ? '#34495e' : 'transparent',
+              color: 'white', 
+              border: 'none', 
+              borderRadius: '4px', 
+              cursor: 'pointer',
+              textAlign: 'left'
+            }}
+          >
+            👥 Users
+          </button>
+          <button 
+            onClick={() => setActiveSection('placements')}
+            style={{ 
+              padding: '10px', 
+              backgroundColor: activeSection === 'placements' ? '#34495e' : 'transparent',
+              color: 'white', 
+              border: 'none', 
+              borderRadius: '4px', 
+              cursor: 'pointer',
+              textAlign: 'left'
+            }}
+          >
+            🏢 Placements
+          </button>
+          <button 
+            onClick={() => setActiveSection('evaluations')}
+            style={{ 
+              padding: '10px', 
+              backgroundColor: activeSection === 'evaluations' ? '#34495e' : 'transparent',
+              color: 'white', 
+              border: 'none', 
+              borderRadius: '4px', 
+              cursor: 'pointer',
+              textAlign: 'left'
+            }}
+          >
+            ⭐ Evaluations
+          </button>
+          <button 
+            onClick={fetchDashboardData}
+            style={{ 
+              padding: '10px', 
+              backgroundColor: 'transparent',
+              color: 'white', 
+              border: 'none', 
+              borderRadius: '4px', 
+              cursor: 'pointer',
+              textAlign: 'left'
+            }}
+          >
+            🔄 Refresh
+          </button>
+        </nav>
+        
+        <div style={{ marginTop: 'auto' }}>
+          <button 
+            onClick={logout}
+            style={{ 
+              padding: '10px', 
+              backgroundColor: '#E74C3C',
+              color: 'white', 
+              border: 'none', 
+              borderRadius: '4px', 
+              cursor: 'pointer',
+              width: '100%'
+            }}
+          >
+            🚪 Logout
           </button>
         </div>
-      </aside>
+      </div>
 
-      <main className="admin-main">
-        <header className="admin-topbar">
-          <div>
-            <p className="admin-kicker">Internship placement administration</p>
-            <h1>Admin dashboard</h1>
-            <p className="admin-subtitle">
-              View students in the system, assign placements, and track internship progress from one workspace.
-            </p>
-          </div>
-          <div className="admin-profile" ref={profileMenuRef}>
-            <button
-              type="button"
-              className="admin-profile-trigger"
-              onClick={() => setProfileMenuOpen((current) => !current)}
-            >
-              <div className="admin-profile-copy">
-                <strong>{displayName}</strong>
-                <span>{user?.email || "Administrator"}</span>
-              </div>
-              <div className="admin-avatar">{getUserInitials(user)}</div>
-            </button>
+      {/* Main Content */}
+      <div style={{ flex: 1, padding: '20px' }}>
+        <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
+          <h1 style={{ color: '#2c3e50', marginBottom: '10px' }}>Admin Dashboard</h1>
+          <p style={{ color: '#7f8c8d', marginBottom: '30px' }}>Manage your ILES system from one central location</p>
 
-            {profileMenuOpen ? (
-              <div className="admin-profile-menu">
-                <button
-                  type="button"
-                  onClick={() => fetchDashboardData({ notifySuccess: true, notifyError: true })}
+          {activeSection === 'overview' && (
+            <div>
+              <h2 style={{ color: '#2c3e50', marginBottom: '20px' }}>System Overview</h2>
+              <div style={{ display: 'flex', gap: '15px', flexWrap: 'wrap', marginBottom: '30px' }}>
+                <div 
+                  onClick={() => setActiveSection('users')}
+                  style={{ 
+                    flex: '1', 
+                    minWidth: '200px', 
+                    padding: '20px', 
+                    backgroundColor: '#3498DB', 
+                    borderRadius: '8px', 
+                    color: 'white', 
+                    textAlign: 'center',
+                    cursor: 'pointer',
+                    transition: 'all 0.3s ease',
+                    border: '2px solid transparent'
+                  }}
+                  onMouseEnter={(e) => e.target.style.border = '2px solid #fff'}
+                  onMouseLeave={(e) => e.target.style.border = '2px solid transparent'}
                 >
-                  Refresh dashboard
-                </button>
-                <button type="button" onClick={handleLogout}>
-                  Logout
-                </button>
-              </div>
-            ) : null}
-          </div>
-        </header>
-
-        {error ? <div className="admin-alert">{error}</div> : null}
-
-        {loading ? (
-          <div className="admin-loading-card">Loading dashboard data...</div>
-        ) : (
-          <>
-            <section className="admin-hero-panel">
-              <div>
-                <p className="admin-kicker">Placement workflow</p>
-                <h2>Assign students to workplace and academic supervisors.</h2>
-                <p className="admin-hero-copy">
-                  The administrator should be able to see students, check who is still waiting,
-                  and create placement records with immediate feedback after each action.
-                </p>
-              </div>
-              <div className="admin-hero-actions">
-                <button type="button" className="admin-primary-btn" onClick={() => setActiveSection("placements")}>
-                  Assign placements
-                </button>
-                <button
-                  type="button"
-                  className="admin-secondary-btn"
-                  onClick={() => fetchDashboardData({ notifySuccess: true, notifyError: true })}
-                >
-                  Refresh data
-                </button>
-              </div>
-            </section>
-
-            <section className="admin-stat-grid">
-              {dashboardCards.map((card) => (
-                <button
-                  key={card.label}
-                  type="button"
-                  className={`admin-stat-card ${card.tone}`}
-                  onClick={() => setActiveSection(card.target)}
-                >
-                  <span className="admin-stat-label">{card.label}</span>
-                  <strong className="admin-stat-value">{card.value}</strong>
-                  <span className="admin-stat-hint">{card.hint}</span>
-                </button>
-              ))}
-            </section>
-
-            {activeSection === "overview" ? (
-              <section className="admin-content-grid">
-                <article className="admin-panel">
-                  <div className="admin-panel-header">
-                    <div>
-                      <p className="admin-panel-kicker">Placement operations</p>
-                      <h3>Internship summary</h3>
-                    </div>
-                  </div>
-
-                  <div className="admin-highlight-grid">
-                    <div className="admin-highlight">
-                      <span>Students awaiting placement</span>
-                      <strong>{studentsAwaitingPlacement.length}</strong>
-                    </div>
-                    <div className="admin-highlight">
-                      <span>Active placements</span>
-                      <strong>{activePlacements}</strong>
-                    </div>
-                    <div className="admin-highlight">
-                      <span>Average evaluation score recorded</span>
-                      <strong>{averageEvaluationScore}</strong>
-                    </div>
-                    <div className="admin-highlight">
-                      <span>Evaluation criteria available</span>
-                      <strong>{criteria.length}</strong>
-                    </div>
-                  </div>
-                </article>
-
-                <article className="admin-panel">
-                  <div className="admin-panel-header">
-                    <div>
-                      <p className="admin-panel-kicker">Logbook monitoring</p>
-                      <h3>Submission status</h3>
-                    </div>
-                  </div>
-
-                  {statusBreakdown.length ? (
-                    <div className="admin-status-list">
-                      {statusBreakdown.map((item) => (
-                        <div className="admin-status-row" key={item.status}>
-                          <span className={`admin-badge ${item.status}`}>{titleCase(item.status)}</span>
-                          <strong>{item.count}</strong>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="admin-empty">No student logbooks have been submitted yet.</div>
-                  )}
-                </article>
-              </section>
-            ) : null}
-
-            {activeSection === "placements" ? (
-              <section className="admin-panel">
-                <div className="admin-panel-header">
-                  <div>
-                    <p className="admin-panel-kicker">Placement management</p>
-                    <h3>Student assignment workspace</h3>
-                  </div>
-                  <div className="admin-mini-stats">
-                    <span>Students: {students.length}</span>
-                    <span>Awaiting placement: {studentsAwaitingPlacement.length}</span>
-                    <span>Workplace supervisors: {workplaceSupervisors.length}</span>
-                    <span>Academic supervisors: {academicSupervisors.length}</span>
-                  </div>
+                  <div style={{ fontSize: '32px', fontWeight: 'bold' }}>{stats?.total_students || 0}</div>
+                  <div style={{ fontSize: '14px', marginTop: '5px' }}>Total Students</div>
+                  <div style={{ fontSize: '12px', marginTop: '5px', opacity: 0.8 }}>Click to manage →</div>
                 </div>
+                <div 
+                  onClick={() => setActiveSection('placements')}
+                  style={{ 
+                    flex: '1', 
+                    minWidth: '200px', 
+                    padding: '20px', 
+                    backgroundColor: '#27AE60', 
+                    borderRadius: '8px', 
+                    color: 'white', 
+                    textAlign: 'center',
+                    cursor: 'pointer',
+                    transition: 'all 0.3s ease',
+                    border: '2px solid transparent'
+                  }}
+                  onMouseEnter={(e) => e.target.style.border = '2px solid #fff'}
+                  onMouseLeave={(e) => e.target.style.border = '2px solid transparent'}
+                >
+                  <div style={{ fontSize: '32px', fontWeight: 'bold' }}>{stats?.active_placements || 0}</div>
+                  <div style={{ fontSize: '14px', marginTop: '5px' }}>Active Placements</div>
+                  <div style={{ fontSize: '12px', marginTop: '5px', opacity: 0.8 }}>Click to manage →</div>
+                </div>
+                <div 
+                  onClick={() => setActiveSection('evaluations')}
+                  style={{ 
+                    flex: '1', 
+                    minWidth: '200px', 
+                    padding: '20px', 
+                    backgroundColor: '#E67E22', 
+                    borderRadius: '8px', 
+                    color: 'white', 
+                    textAlign: 'center',
+                    cursor: 'pointer',
+                    transition: 'all 0.3s ease',
+                    border: '2px solid transparent'
+                  }}
+                  onMouseEnter={(e) => e.target.style.border = '2px solid #fff'}
+                  onMouseLeave={(e) => e.target.style.border = '2px solid transparent'}
+                >
+                  <div style={{ fontSize: '32px', fontWeight: 'bold' }}>{stats?.total_logs || 0}</div>
+                  <div style={{ fontSize: '14px', marginTop: '5px' }}>Total Logs</div>
+                  <div style={{ fontSize: '12px', marginTop: '5px', opacity: 0.8 }}>Click to manage →</div>
+                </div>
+                <div 
+                  onClick={() => setActiveSection('evaluations')}
+                  style={{ 
+                    flex: '1', 
+                    minWidth: '200px', 
+                    padding: '20px', 
+                    backgroundColor: '#9B59B6', 
+                    borderRadius: '8px', 
+                    color: 'white', 
+                    textAlign: 'center',
+                    cursor: 'pointer',
+                    transition: 'all 0.3s ease',
+                    border: '2px solid transparent'
+                  }}
+                  onMouseEnter={(e) => e.target.style.border = '2px solid #fff'}
+                  onMouseLeave={(e) => e.target.style.border = '2px solid transparent'}
+                >
+                  <div style={{ fontSize: '32px', fontWeight: 'bold' }}>{stats?.total_evaluations || 0}</div>
+                  <div style={{ fontSize: '14px', marginTop: '5px' }}>Total Evaluations</div>
+                  <div style={{ fontSize: '12px', marginTop: '5px', opacity: 0.8 }}>Click to manage →</div>
+                </div>
+              </div>
+              
+              <div style={{ marginTop: '30px', padding: '20px', backgroundColor: '#f8f9fa', borderRadius: '8px', border: '1px solid #e9ecef' }}>
+                <h3 style={{ color: '#495057', marginBottom: '15px' }}>Quick Actions</h3>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '15px' }}>
+                  <button 
+                    onClick={() => setActiveSection('users')}
+                    style={{ 
+                      padding: '15px', 
+                      backgroundColor: '#007bff', 
+                      color: 'white', 
+                      border: 'none', 
+                      borderRadius: '6px', 
+                      cursor: 'pointer',
+                      fontSize: '14px',
+                      fontWeight: '500'
+                    }}
+                  >
+                    👥 Manage Users
+                  </button>
+                  <button 
+                    onClick={() => setActiveSection('placements')}
+                    style={{ 
+                      padding: '15px', 
+                      backgroundColor: '#28a745', 
+                      color: 'white', 
+                      border: 'none', 
+                      borderRadius: '6px', 
+                      cursor: 'pointer',
+                      fontSize: '14px',
+                      fontWeight: '500'
+                    }}
+                  >
+                    🏢 Manage Placements
+                  </button>
+                  <button 
+                    onClick={fetchDashboardData}
+                    style={{ 
+                      padding: '15px', 
+                      backgroundColor: '#17a2b8', 
+                      color: 'white', 
+                      border: 'none', 
+                      borderRadius: '6px', 
+                      cursor: 'pointer',
+                      fontSize: '14px',
+                      fontWeight: '500'
+                    }}
+                  >
+                    🔄 Refresh Data
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
 
-                <div className="admin-placement-layout">
-                  <div className="admin-students-panel">
-                    <div className="admin-section-heading">
-                      <h4>Students in the system</h4>
-                      <p>Select a student, then assign a placement.</p>
-                    </div>
-
-                    <div className="admin-students-list">
-                      {students.length ? (
-                        students.map((student) => {
-                          const currentPlacement = currentPlacementByStudent.get(student.id);
-                          const latestPlacement = latestPlacementByStudent.get(student.id);
-                          const isSelected = placementForm.student_id === String(student.id);
-
-                          return (
-                            <article
-                              key={student.id}
-                              className={`admin-student-card ${isSelected ? "selected" : ""}`}
-                            >
-                              <div className="admin-student-card-top">
-                                <div>
-                                  <h5>{getFullName(student)}</h5>
-                                  <p>{student.email || student.username}</p>
-                                </div>
-                                <span className={`admin-badge ${currentPlacement?.status || latestPlacement?.status || "draft"}`}>
-                                  {currentPlacement
-                                    ? titleCase(currentPlacement.status)
-                                    : latestPlacement
-                                      ? `Last: ${titleCase(latestPlacement.status)}`
-                                      : "Awaiting placement"}
-                                </span>
-                              </div>
-
-                              <div className="admin-student-meta">
-                                <span>Student No: {student.student_number || "N/A"}</span>
-                                <span>Department: {student.department || "N/A"}</span>
-                              </div>
-
-                              <button
-                                type="button"
-                                className="admin-inline-btn"
-                                onClick={() => startAssignmentForStudent(student)}
-                              >
-                                {currentPlacement ? "Already assigned" : "Assign placement"}
-                              </button>
-                            </article>
-                          );
-                        })
-                      ) : (
-                        <div className="admin-empty">No students are registered in the system yet.</div>
-                      )}
-                    </div>
-                  </div>
-
-                  <div className="admin-form-panel">
-                    <div className="admin-section-heading">
-                      <h4>Create internship placement</h4>
-                      <p>Assign one student to a workplace and an academic supervisor.</p>
-                    </div>
-
-                    <form className="admin-placement-form" onSubmit={handleCreatePlacement}>
-                      <label>
-                        Student
-                        <select
-                          name="student_id"
-                          value={placementForm.student_id}
-                          onChange={handlePlacementFieldChange}
-                          required
+          {activeSection === 'users' && (
+            <div>
+              <h2 style={{ color: '#2c3e50', marginBottom: '20px' }}>User Management</h2>
+              <div style={{ marginBottom: '20px', display: 'flex', gap: '15px', alignItems: 'center' }}>
+                <input
+                  type="text"
+                  placeholder="Search users..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  style={{ padding: '8px', border: '1px solid #ddd', borderRadius: '4px', flex: 1 }}
+                />
+                <select
+                  value={filterRole}
+                  onChange={(e) => setFilterRole(e.target.value)}
+                  style={{ padding: '8px', border: '1px solid #ddd', borderRadius: '4px' }}
+                >
+                  <option value="all">All Roles</option>
+                  <option value="student">Students</option>
+                  <option value="academic_supervisor">Academic Supervisors</option>
+                  <option value="workplace_supervisor">Workplace Supervisors</option>
+                  <option value="admin">Admins</option>
+                </select>
+                <button onClick={fetchDashboardData} style={{ padding: '8px 16px', backgroundColor: '#3498DB', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>
+                  Refresh
+                </button>
+              </div>
+              {filteredUsers.length === 0 ? (
+                <p>No users found matching your criteria.</p>
+              ) : (
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '20px' }}>
+                  {filteredUsers.map((user) => (
+                    <div key={user.id} style={{ backgroundColor: 'white', padding: '20px', borderRadius: '8px', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>
+                      <h3 style={{ margin: '0 0 10px 0', color: '#2c3e50' }}>{getFullName(user)}</h3>
+                      <p style={{ margin: '5px 0', color: '#7f8c8d' }}>Role: <span style={{ backgroundColor: '#27AE60', color: 'white', padding: '2px 6px', borderRadius: '4px', fontSize: '12px' }}>{user.role}</span></p>
+                      <p style={{ margin: '5px 0', color: '#7f8c8d' }}>Email: {user.email}</p>
+                      {user.student_number && <p style={{ margin: '5px 0', color: '#7f8c8d' }}>Student #: {user.student_number}</p>}
+                      {user.department && <p style={{ margin: '5px 0', color: '#7f8c8d' }}>Department: {user.department}</p>}
+                      <div style={{ marginTop: '15px', display: 'flex', gap: '10px' }}>
+                        <button 
+                          onClick={() => handleEditUser(user)}
+                          style={{ padding: '5px 10px', backgroundColor: '#3498DB', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
                         >
-                          <option value="">Select a student</option>
-                          {studentsAwaitingPlacement.map((student) => (
-                            <option key={student.id} value={student.id}>
-                              {getFullName(student)}
-                            </option>
-                          ))}
-                          {placementForm.student_id &&
-                          !studentsAwaitingPlacement.some(
-                            (student) => String(student.id) === placementForm.student_id
-                          ) ? (
-                            <option value={placementForm.student_id}>
-                              {getFullName(
-                                students.find((student) => String(student.id) === placementForm.student_id)
-                              )}
-                            </option>
-                          ) : null}
-                        </select>
-                      </label>
-
-                      <label>
-                        Workplace Supervisor
-                        <select
-                          name="workplace_supervisor_id"
-                          value={placementForm.workplace_supervisor_id}
-                          onChange={handlePlacementFieldChange}
-                          required
-                        >
-                          <option value="">Select workplace supervisor</option>
-                          {workplaceSupervisors.map((supervisor) => (
-                            <option key={supervisor.id} value={supervisor.id}>
-                              {getFullName(supervisor)}
-                            </option>
-                          ))}
-                        </select>
-                      </label>
-
-                      <label>
-                        Academic Supervisor
-                        <select
-                          name="academic_supervisor_id"
-                          value={placementForm.academic_supervisor_id}
-                          onChange={handlePlacementFieldChange}
-                          required
-                        >
-                          <option value="">Select academic supervisor</option>
-                          {academicSupervisors.map((supervisor) => (
-                            <option key={supervisor.id} value={supervisor.id}>
-                              {getFullName(supervisor)}
-                            </option>
-                          ))}
-                        </select>
-                      </label>
-
-                      <label>
-                        Company Name
-                        <input
-                          type="text"
-                          name="company_name"
-                          value={placementForm.company_name}
-                          onChange={handlePlacementFieldChange}
-                          placeholder="e.g. Uganda Telecom"
-                          required
-                        />
-                      </label>
-
-                      <label>
-                        Company Address
-                        <textarea
-                          name="company_address"
-                          value={placementForm.company_address}
-                          onChange={handlePlacementFieldChange}
-                          placeholder="Company location"
-                          rows="3"
-                        />
-                      </label>
-
-                      <div className="admin-form-row">
-                        <label>
-                          Start Date
-                          <input
-                            type="date"
-                            name="start_date"
-                            value={placementForm.start_date}
-                            onChange={handlePlacementFieldChange}
-                            required
-                          />
-                        </label>
-
-                        <label>
-                          End Date
-                          <input
-                            type="date"
-                            name="end_date"
-                            value={placementForm.end_date}
-                            onChange={handlePlacementFieldChange}
-                            required
-                          />
-                        </label>
-                      </div>
-
-                      <label>
-                        Status
-                        <select
-                          name="status"
-                          value={placementForm.status}
-                          onChange={handlePlacementFieldChange}
-                        >
-                          <option value="pending">Pending</option>
-                          <option value="active">Active</option>
-                          <option value="completed">Completed</option>
-                        </select>
-                      </label>
-
-                      <div className="admin-form-actions">
-                        <button type="submit" className="admin-primary-btn" disabled={submittingPlacement}>
-                          {submittingPlacement ? "Assigning..." : "Assign placement"}
+                          Edit
                         </button>
-                        <button
-                          type="button"
-                          className="admin-secondary-btn"
-                          onClick={() => setPlacementForm(initialPlacementForm)}
+                        <button 
+                          onClick={() => handleDeleteUser(user.id)}
+                          style={{ padding: '5px 10px', backgroundColor: '#E74C3C', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
                         >
-                          Reset form
+                          Delete
                         </button>
                       </div>
-                    </form>
-                  </div>
-                </div>
-
-                <div className="admin-placement-table-section">
-                  <div className="admin-section-heading">
-                    <h4>Existing placements</h4>
-                    <p>All created placement records appear here.</p>
-                  </div>
-
-                  {placements.length ? (
-                    <div className="admin-table-wrap">
-                      <table className="admin-table">
-                        <thead>
-                          <tr>
-                            <th>Student</th>
-                            <th>Company</th>
-                            <th>Workplace Supervisor</th>
-                            <th>Academic Supervisor</th>
-                            <th>Start</th>
-                            <th>End</th>
-                            <th>Status</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {placements.map((placement) => (
-                            <tr key={placement.id}>
-                              <td>{placement.student_name || getFullName(placement.student)}</td>
-                              <td>{placement.company_name}</td>
-                              <td>
-                                {placement.workplace_supervisor_name ||
-                                  getFullName(placement.workplace_supervisor)}
-                              </td>
-                              <td>
-                                {placement.academic_supervisor_name ||
-                                  getFullName(placement.academic_supervisor)}
-                              </td>
-                              <td>{formatDate(placement.start_date)}</td>
-                              <td>{formatDate(placement.end_date)}</td>
-                              <td>
-                                <span className={`admin-badge ${placement.status}`}>
-                                  {titleCase(placement.status)}
-                                </span>
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
                     </div>
-                  ) : (
-                    <div className="admin-empty">No placements have been created yet.</div>
-                  )}
+                  ))}
                 </div>
-              </section>
-            ) : null}
+              )}
+            </div>
+          )}
 
-            {activeSection === "evaluations" ? (
-              <section className="admin-panel">
-                <div className="admin-panel-header">
-                  <div>
-                    <p className="admin-panel-kicker">Evaluation activity</p>
-                    <h3>Recent submissions</h3>
-                  </div>
-                  <div className="admin-mini-stats">
-                    <span>Total: {evaluations.length}</span>
-                    <span>Average score: {averageEvaluationScore}</span>
-                  </div>
+          {activeSection === 'placements' && (
+            <div>
+              <h2 style={{ color: '#2c3e50', marginBottom: '20px' }}>Placement Management</h2>
+              <div style={{ marginBottom: '20px', display: 'flex', gap: '10px', alignItems: 'center' }}>
+                <input
+                  type="text"
+                  placeholder="Search placements..."
+                  style={{ padding: '8px', border: '1px solid #ddd', borderRadius: '4px', flex: 1 }}
+                />
+                <button onClick={fetchDashboardData} style={{ padding: '8px 16px', backgroundColor: '#3498DB', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>
+                  Refresh
+                </button>
+              </div>
+              {placements.length === 0 ? (
+                <p>No placements found.</p>
+              ) : (
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(350px, 1fr))', gap: '20px' }}>
+                  {placements.map((placement) => (
+                    <div key={placement.id} style={{ backgroundColor: 'white', padding: '20px', borderRadius: '8px', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>
+                      <h3 style={{ margin: '0 0 10px 0', color: '#2c3e50' }}>{placement.company_name}</h3>
+                      <p style={{ margin: '5px 0', color: '#7f8c8d' }}>Student: {placement.student?.full_name || placement.student?.username || 'Not assigned'}</p>
+                      <p style={{ margin: '5px 0', color: '#7f8c8d' }}>Status: <span style={{ backgroundColor: '#27AE60', color: 'white', padding: '2px 6px', borderRadius: '4px', fontSize: '12px' }}>{placement.status}</span></p>
+                      <p style={{ margin: '5px 0', color: '#7f8c8d' }}>Duration: {formatDate(placement.start_date)} - {formatDate(placement.end_date)}</p>
+                      <div style={{ marginTop: '15px', display: 'flex', gap: '10px' }}>
+                        <button 
+                          onClick={() => handleEditPlacement(placement)}
+                          style={{ padding: '5px 10px', backgroundColor: '#3498DB', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
+                        >
+                          Edit
+                        </button>
+                        <button 
+                          onClick={() => handleDeletePlacement(placement.id)}
+                          style={{ padding: '5px 10px', backgroundColor: '#E74C3C', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    </div>
+                  ))}
                 </div>
+              )}
+            </div>
+          )}
 
-                {recentEvaluations.length ? (
-                  <div className="admin-table-wrap">
-                    <table className="admin-table">
-                      <thead>
-                        <tr>
-                          <th>Student</th>
-                          <th>Type</th>
-                          <th>Evaluator</th>
-                          <th>Score</th>
-                          <th>Date</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {recentEvaluations.map((evaluation) => (
-                          <tr key={evaluation.id}>
-                            <td>
-                              {evaluation.placement?.student_name ||
-                                evaluation.placement?.student?.full_name ||
-                                "Unknown student"}
-                            </td>
-                            <td>
-                              <span className={`admin-badge ${evaluation.evaluation_type}`}>
-                                {titleCase(evaluation.evaluation_type)}
-                              </span>
-                            </td>
-                            <td>{evaluation.evaluator_name || evaluation.evaluator?.full_name || "Unknown"}</td>
-                            <td>{evaluation.score}</td>
-                            <td>{formatDate(evaluation.evaluated_at)}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                ) : (
-                  <div className="admin-empty">No evaluations have been submitted yet.</div>
-                )}
-              </section>
-            ) : null}
-
-            {activeSection === "criteria" ? (
-              <section className="admin-panel">
-                <div className="admin-panel-header">
-                  <div>
-                    <p className="admin-panel-kicker">Assessment setup</p>
-                    <h3>Evaluation criteria</h3>
-                  </div>
+          {activeSection === 'evaluations' && (
+            <div>
+              <h2 style={{ color: '#2c3e50', marginBottom: '20px' }}>Evaluation Management</h2>
+              {evaluations.length === 0 ? (
+                <p>No evaluations found.</p>
+              ) : (
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(350px, 1fr))', gap: '20px' }}>
+                  {evaluations.map((evaluation) => (
+                    <div key={evaluation.id} style={{ backgroundColor: 'white', padding: '20px', borderRadius: '8px', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>
+                      <h3 style={{ margin: '0 0 10px 0', color: '#2c3e50' }}>{evaluation.student?.full_name || evaluation.student?.username}</h3>
+                      <p style={{ margin: '5px 0', color: '#7f8c8d' }}>Placement: {evaluation.placement?.company_name}</p>
+                      <p style={{ margin: '5px 0', color: '#7f8c8d' }}>Score: {evaluation.score}</p>
+                      <p style={{ margin: '5px 0', color: '#7f8c8d' }}>Status: <span style={{ backgroundColor: '#27AE60', color: 'white', padding: '2px 6px', borderRadius: '4px', fontSize: '12px' }}>{evaluation.status}</span></p>
+                      <p style={{ margin: '5px 0', color: '#7f8c8d' }}>Date: {formatDate(evaluation.created_at)}</p>
+                    </div>
+                  ))}
                 </div>
-
-                {criteria.length ? (
-                  <div className="admin-criteria-grid">
-                    {criteria.map((criterion) => (
-                      <article className="admin-criterion-card" key={criterion.id}>
-                        <div className="admin-criterion-topline">
-                          <h4>{criterion.name}</h4>
-                          <span>{criterion.weight_percent}%</span>
-                        </div>
-                        <p>{criterion.description || "No description provided for this criterion yet."}</p>
-                        <div className="admin-criterion-meta">Maximum score: {criterion.max_score}</div>
-                      </article>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="admin-empty">No evaluation criteria are configured yet.</div>
-                )}
-              </section>
-            ) : null}
-          </>
-        )}
-      </main>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
     </div>
-  );
+  )
 }
 
-export default AdminDashboard;
+export default AdminDashboard
