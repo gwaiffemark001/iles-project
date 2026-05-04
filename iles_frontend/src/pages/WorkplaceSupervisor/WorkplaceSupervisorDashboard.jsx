@@ -44,6 +44,7 @@ export default function WorkplaceSupervisorDashboard() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [evaluatingPlacementId, setEvaluatingPlacementId] = useState(null)
+  const [evaluatingLogId, setEvaluatingLogId] = useState(null)
 
   const loadData = useCallback(async () => {
     try {
@@ -110,6 +111,14 @@ export default function WorkplaceSupervisorDashboard() {
       toast.error(getErrorMessage(requestError))
     }
   }
+
+  const getExistingEvaluationForLog = (log) => evaluations.find(
+    (evaluation) => (
+      evaluation.placement?.id === (log.placement?.id ?? log.placement_id)
+      && evaluation.evaluation_type === 'supervisor'
+      && evaluation.week_number === log.week_number
+    ),
+  )
 
   const handleRejectLog = async (logId, supervisorComment) => {
     try {
@@ -259,8 +268,35 @@ export default function WorkplaceSupervisorDashboard() {
                               <button type="button" className="workplace-btn-approve" onClick={() => handleApproveLog(log.id)}>Approve</button>
                               <button type="button" className="workplace-btn-reject" onClick={() => handleRejectLog(log.id, comment)}>Reject</button>
                             </div>
+                            <div style={{ marginTop: '12px' }}>
+                              <button
+                                type="button"
+                                className="workplace-btn-review"
+                                onClick={() => setEvaluatingLogId(log.id)}
+                              >
+                                {getExistingEvaluationForLog(log) ? 'Edit Weekly Evaluation' : 'Evaluate This Week'}
+                              </button>
+                            </div>
                           </div>
                         )}
+                        {evaluatingLogId === log.id ? (
+                          <div style={{ marginTop: '16px' }}>
+                            <SupervisorEvaluationForm
+                              placementId={log.placement?.id ?? log.placement_id}
+                              evaluatorId={user?.id}
+                              evaluationType="supervisor"
+                              existingEvaluation={getExistingEvaluationForLog(log)}
+                              initialWeekNumber={log.week_number}
+                              studentName={log.placement?.student?.full_name || log.placement?.student?.username || 'Student'}
+                              onSaved={() => {
+                                toast.success('Evaluation saved successfully')
+                                setEvaluatingLogId(null)
+                                loadData()
+                              }}
+                              onCancel={() => setEvaluatingLogId(null)}
+                            />
+                          </div>
+                        ) : null}
                       </div>
                     ))}
                   </div>
@@ -275,6 +311,9 @@ export default function WorkplaceSupervisorDashboard() {
             <div className="workplace-section-header"><h2>Intern Evaluations</h2></div>
             <div className="workplace-evaluations-grid">
               {interns.map((intern) => {
+                const internEvaluations = evaluations.filter(
+                  (evaluation) => evaluation.placement?.id === intern.placement.id && evaluation.evaluation_type === 'supervisor'
+                );
                 const existingEvaluation = evaluations.find(
                   (e) => e.placement?.id === intern.placement.id && e.evaluation_type === 'supervisor'
                 );
@@ -302,6 +341,16 @@ export default function WorkplaceSupervisorDashboard() {
                         ) : (
                           <p className="workplace-no-evaluation">Not evaluated yet</p>
                         )}
+                        {internEvaluations.length ? (
+                          <div style={{ marginTop: '12px', display: 'grid', gap: '8px' }}>
+                            {internEvaluations.map((evaluation) => (
+                              <div key={evaluation.id} style={{ padding: '8px 10px', border: '1px solid #e2e8f0', borderRadius: '6px', backgroundColor: '#f8fafc' }}>
+                                <strong>Week {evaluation.week_number}</strong>
+                                <div style={{ fontSize: '12px', color: '#64748b' }}>Score: {evaluation.score}</div>
+                              </div>
+                            ))}
+                          </div>
+                        ) : null}
                         <button
                           onClick={() => setEvaluatingPlacementId(intern.placement.id)}
                           style={{

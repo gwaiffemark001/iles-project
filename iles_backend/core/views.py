@@ -713,6 +713,50 @@ class EvaluationCriteriaListView(APIView):
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+
+class EvaluationCriteriaDetailView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def put(self, request, pk):
+        if request.user.role != 'admin':
+            return Response(
+                {'error': 'Only admins can update evaluation criteria'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        try:
+            criteria = EvaluationCriteria.objects.get(pk=pk)
+        except EvaluationCriteria.DoesNotExist:
+            return Response({'error': 'Criteria not found'}, status=status.HTTP_404_NOT_FOUND)
+
+        serializer = EvaluationCriteriaSerializer(criteria, data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def delete(self, request, pk):
+        if request.user.role != 'admin':
+            return Response(
+                {'error': 'Only admins can delete evaluation criteria'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        try:
+            criteria = EvaluationCriteria.objects.get(pk=pk)
+        except EvaluationCriteria.DoesNotExist:
+            return Response({'error': 'Criteria not found'}, status=status.HTTP_404_NOT_FOUND)
+
+        try:
+            criteria.delete()
+        except Exception:
+            return Response(
+                {'error': 'This criteria is already used in an evaluation and cannot be deleted.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        return Response({'message': 'Criteria deleted successfully'}, status=status.HTTP_204_NO_CONTENT)
+
 class WeeklyLogSubmitView(APIView):
     """
     PUT /api/logs/<pk>/submit/ - Student submits a draft log
@@ -782,6 +826,7 @@ class UserSummaryView(APIView):
         user = CustomUser.objects.get(pk=pk)
         serializer = UserProfileSerializer(user)
         return Response(serializer.data)
+
 
 class UserListView(APIView):
     permission_classes = [IsAuthenticated]

@@ -21,6 +21,7 @@ const AcademicSupervisorDashboard = () => {
   const [showEvalEditor, setShowEvalEditor] = useState(false);
   const [evalPlacement, setEvalPlacement] = useState(null);
   const [editingEvaluation, setEditingEvaluation] = useState(null);
+  const [evaluatingLogId, setEvaluatingLogId] = useState(null);
 
   const fetchData = useCallback(async () => {
     try {
@@ -133,6 +134,14 @@ const AcademicSupervisorDashboard = () => {
     setEditingEvaluation(null);
     setShowEvalEditor(true);
   };
+
+  const getExistingEvaluationForLog = (log) => evaluations.find(
+    (evaluation) => (
+      (evaluation.placement?.id ?? evaluation.placement_id) === (log.placement?.id ?? log.placement_id)
+      && evaluation.evaluation_type === 'academic'
+      && evaluation.week_number === log.week_number
+    ),
+  );
 
   const closeEvalEditor = () => {
     setShowEvalEditor(false);
@@ -312,6 +321,31 @@ const AcademicSupervisorDashboard = () => {
                   <p style={studentLogTextStyle}><strong>Learning:</strong> {log.learning || "No learning notes recorded."}</p>
                   <p style={studentLogTextStyle}><strong>Supervisor Comment:</strong> {log.supervisor_comment || "No comment yet."}</p>
                   <p style={studentLogTextStyle}><strong>Deadline:</strong> {formatDate(log.deadline)}</p>
+                  {log.status === 'submitted' ? (
+                    <div style={{ marginTop: '12px' }}>
+                      <button className="eval-btn" onClick={() => setEvaluatingLogId(log.id)}>
+                        {getExistingEvaluationForLog(log) ? 'Edit Weekly Evaluation' : 'Evaluate This Week'}
+                      </button>
+                    </div>
+                  ) : null}
+                  {evaluatingLogId === log.id ? (
+                    <div style={{ marginTop: '16px' }}>
+                      <SupervisorEvaluationForm
+                        placementId={log.placement?.id ?? log.placement_id}
+                        evaluatorId={user?.id}
+                        evaluationType="academic"
+                        existingEvaluation={getExistingEvaluationForLog(log)}
+                        initialWeekNumber={log.week_number}
+                        studentName={selectedStudent.name}
+                        onSaved={() => {
+                          toast.success('Evaluation saved successfully');
+                          setEvaluatingLogId(null);
+                          fetchData();
+                        }}
+                        onCancel={() => setEvaluatingLogId(null)}
+                      />
+                    </div>
+                  ) : null}
                   <div style={studentActionRowStyle}>
                     {log.status === "submitted" && (
                       <>
@@ -448,6 +482,7 @@ const AcademicSupervisorDashboard = () => {
                   <div>Student</div>
                   <div>Placement</div>
                   <div>Type</div>
+                    <div>Week</div>
                   <div>Score</div>
                   <div>Date</div>
                 </div>
@@ -456,6 +491,7 @@ const AcademicSupervisorDashboard = () => {
                     <div>{evaluation.student?.full_name || evaluation.student?.username || "Unknown Student"}</div>
                     <div>{evaluation.placement?.company_name || "Unknown placement"}</div>
                     <div>{evaluation.evaluation_type}</div>
+                    <div>{evaluation.week_number ?? 1}</div>
                     <div>{evaluation.score}</div>
                     <div>{formatDate(evaluation.evaluated_at)}</div>
                   </div>
