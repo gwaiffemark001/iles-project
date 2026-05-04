@@ -432,7 +432,7 @@ class EvaluationListView(APIView):
                 {'error': 'You are not allowed to submit evaluations'},
                 status=status.HTTP_403_FORBIDDEN
             )
-        serializer = EvaluationSerializer(data=request.data)
+        serializer = EvaluationSerializer(data=request.data, context={'request': request})
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
