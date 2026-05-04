@@ -57,7 +57,8 @@ class InternshipPlacement(models.Model):
     created_at = models.DateTimeField(auto_now_add =True)
 
     def __str__(self):
-        return (f"{self.student.username} at {self.company_name}")
+        student_username = self.student.username if self.student else "Unassigned"
+        return (f"{student_username} at {self.company_name}")
 
 
 class PlacementApplication(models.Model):
@@ -114,7 +115,8 @@ class WeeklyLog(models.Model):
         ordering = ['week_number']
 
     def __str__(self):
-        return (f"Week {self.week_number}-{self.placement.student.username} ({self.status})")
+        student_username = self.placement.student.username if self.placement.student else "Unknown"
+        return (f"Week {self.week_number}-{student_username} ({self.status})")
     
 class EvaluationCriteria(models.Model):
     name = models.CharField(max_length=100)
@@ -143,7 +145,8 @@ class Evaluation(models.Model):
         ordering = ['-evaluated_at']
 
     def __str__(self):
-        return f"{self.placement.student.username} - {self.evaluation_type}: {self.score}"
+        student_username = self.placement.student.username if self.placement.student else "Unknown"
+        return f"{student_username} - {self.evaluation_type}: {self.score}"
 
     def calculate_weighted_score(self):
         """
@@ -152,8 +155,14 @@ class Evaluation(models.Model):
         The method returns the aggregated percent (e.g. 85.5) and does not modify the model unless `save_calculated` is True.
         """
         try:
-            items_qs = self.evaluation_items.all()
-        except Exception:
+            # Use the declared related_name from EvaluationItem model
+            # getattr handles cases where the relation may not be initialized
+            items_qs = getattr(self, 'evaluation_items', None)
+            if items_qs is None:
+                items_qs = []
+            else:
+                items_qs = items_qs.all() if hasattr(items_qs, 'all') else []
+        except (AttributeError, Exception):
             # fallback to an empty iterable if the relation isn't available
             items_qs = []
 
