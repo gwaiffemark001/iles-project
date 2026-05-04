@@ -56,37 +56,41 @@ export const AuthProvider = ({ children }) => {
   };
 
   useEffect(() => {
-    const token = localStorage.getItem("access_token");
+    const initializeAuth = async () => {
+      const token = localStorage.getItem("access_token");
 
-    if (!token) {
-      setLoading(false);
-      return;
-    }
+      if (!token) {
+        setLoading(false);
+        return;
+      }
 
-    authAPI
-      .getProfile()
-      .then((response) => {
+      try {
+        const response = await authAPI.getProfile();
         setUser(response.data);
         localStorage.setItem("user", JSON.stringify(response.data));
-      })
-      .catch(() => {
+      } catch {
         localStorage.removeItem("access_token");
         localStorage.removeItem("refresh_token");
         localStorage.removeItem("user");
         setUser(null);
-      })
-      .finally(() => setLoading(false));
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    initializeAuth();
   }, []);
 
   useEffect(() => {
     if (!user) {
-      setNotifications([]);
-      seenNotificationIdsRef.current = new Set();
-      hasLoadedNotificationsRef.current = false;
       return;
     }
 
-    fetchNotifications();
+    const initializeNotifications = async () => {
+      await fetchNotifications();
+    };
+
+    initializeNotifications();
 
     const pollingInterval = setInterval(() => {
       fetchNotifications({ toastNew: true });
@@ -95,6 +99,18 @@ export const AuthProvider = ({ children }) => {
     return () => {
       clearInterval(pollingInterval);
     };
+  }, [user]);
+
+  useEffect(() => {
+    const resetNotifications = () => {
+      if (!user) {
+        setNotifications([]);
+        seenNotificationIdsRef.current = new Set();
+        hasLoadedNotificationsRef.current = false;
+      }
+    };
+
+    resetNotifications();
   }, [user]);
 
   const login = async (credentials) => {

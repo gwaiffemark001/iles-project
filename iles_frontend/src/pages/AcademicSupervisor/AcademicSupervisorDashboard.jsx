@@ -1,9 +1,8 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../contexts/useAuth";
-import { logsAPI, placementsAPI, evaluationsAPI } from "../../api/api";
+import { logsAPI, placementsAPI } from "../../api/api";
 import { getErrorMessage } from "../../api/api";
-import { toast } from "react-toastify";
 import "./AcademicSupervisorDashboard.css";
 
 const AcademicSupervisorDashboard = () => {
@@ -11,7 +10,6 @@ const AcademicSupervisorDashboard = () => {
   const { user } = useAuth();
   const [placements, setPlacements] = useState([]);
   const [logs, setLogs] = useState([]);
-  const [evaluations, setEvaluations] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -22,16 +20,14 @@ const AcademicSupervisorDashboard = () => {
   const fetchData = async () => {
     try {
       setLoading(true);
-      const [placementsRes, logsRes, evaluationsRes] = await Promise.all([
+      const [placementsRes, logsRes] = await Promise.all([
         placementsAPI.getPlacements(),
         logsAPI.getLogs(),
-        evaluationsAPI.getEvaluations(),
       ]);
       
       // Backend already filters by logged-in user based on role
       setPlacements(placementsRes.data);
       setLogs(logsRes.data);
-      setEvaluations(evaluationsRes.data);
     } catch (err) {
       setError(getErrorMessage(err));
     } finally {
@@ -66,7 +62,6 @@ const AcademicSupervisorDashboard = () => {
               placement.student?.username || 
               placement.student_name || 
               "Unknown Student",
-        placement: placement.company_name,
         companyAddress: placement.company_address || 'Not provided',
         startDate: placement.start_date,
         endDate: placement.end_date,
