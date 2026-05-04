@@ -130,10 +130,14 @@ export const evaluationsAPI = {
   createEvaluation: (data) => api.post('/evaluations/', data),
   getEvaluation: (id) => api.get(`/evaluations/${id}/`),
   updateEvaluation: (id, data) => api.put(`/evaluations/${id}/`, data),
+  deleteEvaluation: (id) => api.delete(`/evaluations/${id}/`),
 };
 
 export const criteriaAPI = {
   getCriteria: () => api.get('/criteria/'),
+  createCriteria: (data) => api.post('/criteria/', data),
+  updateCriteria: (id, data) => api.put(`/criteria/${id}/`, data),
+  deleteCriteria: (id) => api.delete(`/criteria/${id}/`),
 };
 
 export const adminAPI = {
