@@ -2,6 +2,7 @@ from django.db.models.signals import post_save
 from django.dispatch import receiver
 
 from .models import CustomUser, UserProfile
+from .models import InternshipPlacement, WeeklyLog
 from .notification_service import weekly_log_workflow_notification, placement_workflow_notification
 
 
@@ -24,7 +25,6 @@ def weekly_log_notification_handler(sender, instance, created, **kwargs):
     weekly_log_workflow_notification(sender, instance, created, **kwargs)
 
 
-@receiver(post_save, sender='core.InternshipPlacement')
+@receiver(post_save, sender=InternshipPlacement)
 def placement_notification_handler(sender, instance, created, **kwargs):
-    """Enhanced placement notifications with email/SMS integration"""
     placement_workflow_notification(sender, instance, created, **kwargs)
