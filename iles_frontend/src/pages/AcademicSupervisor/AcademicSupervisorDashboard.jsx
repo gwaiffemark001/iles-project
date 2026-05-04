@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../contexts/useAuth";
 import { evaluationsAPI, getErrorMessage, logsAPI, placementsAPI } from "../../api/api";
@@ -21,7 +21,7 @@ const AcademicSupervisorDashboard = () => {
   const [evalPlacement, setEvalPlacement] = useState(null);
   const [editingEvaluation, setEditingEvaluation] = useState(null);
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
@@ -40,11 +40,11 @@ const AcademicSupervisorDashboard = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     fetchData();
-  }, []);
+  }, [fetchData]);
 
   const getStudentsData = () => {
     return placements.map((placement) => {
