@@ -2,6 +2,19 @@ import { useState, useEffect, useCallback, useMemo } from 'react'
 import axios from 'axios'
 import { useAuth } from '../auth/useAuth'
 
+const userRoles = [
+  { value: 'student', label: 'Student' },
+  { value: 'workplace_supervisor', label: 'Workplace Supervisor' },
+  { value: 'academic_supervisor', label: 'Academic Supervisor' },
+  { value: 'admin', label: 'Admin' },
+]
+
+const placementStatuses = [
+  { value: 'pending', label: 'Pending' },
+  { value: 'active', label: 'Active' },
+  { value: 'completed', label: 'Completed' },
+]
+
 function AdminDashboard() {
   const { user, logout } = useAuth()
   const token = localStorage.getItem('access_token')
@@ -14,8 +27,137 @@ function AdminDashboard() {
   const [evaluations, setEvaluations] = useState([])
   const [searchTerm, setSearchTerm] = useState('')
   const [filterRole, setFilterRole] = useState('all')
+  const [editingEntity, setEditingEntity] = useState(null)
+  const [editingItem, setEditingItem] = useState(null)
+  const [editFormData, setEditFormData] = useState({})
+  const [editSaving, setEditSaving] = useState(false)
+  const [editError, setEditError] = useState('')
 
   const authHeaders = useMemo(() => ({ headers: { Authorization: `Bearer ${token}` } }), [token])
+
+  const closeEditModal = () => {
+    if (editSaving) {
+      return
+    }
+
+    setEditingEntity(null)
+    setEditingItem(null)
+    setEditFormData({})
+    setEditError('')
+  }
+
+  const handleEditFieldChange = (event) => {
+    const { name, value } = event.target
+    setEditFormData((currentData) => ({ ...currentData, [name]: value }))
+  }
+
+  const handleEditUser = (selectedUser) => {
+    setEditingEntity('user')
+    setEditingItem(selectedUser)
+    setEditError('')
+    setEditFormData({
+      username: selectedUser.username || '',
+      email: selectedUser.email || '',
+      first_name: selectedUser.first_name || '',
+      last_name: selectedUser.last_name || '',
+      role: selectedUser.role || 'student',
+      phone: selectedUser.phone || '',
+      department: selectedUser.department || '',
+      staff_number: selectedUser.staff_number || '',
+      student_number: selectedUser.student_number || '',
+      registration_number: selectedUser.registration_number || '',
+      password: '',
+    })
+  }
+
+  const handleEditPlacement = (selectedPlacement) => {
+    setEditingEntity('placement')
+    setEditingItem(selectedPlacement)
+    setEditError('')
+    setEditFormData({
+      student_id: selectedPlacement.student?.id ? String(selectedPlacement.student.id) : '',
+      workplace_supervisor_id: selectedPlacement.workplace_supervisor?.id ? String(selectedPlacement.workplace_supervisor.id) : '',
+      academic_supervisor_id: selectedPlacement.academic_supervisor?.id ? String(selectedPlacement.academic_supervisor.id) : '',
+      company_name: selectedPlacement.company_name || '',
+      company_address: selectedPlacement.company_address || '',
+      start_date: selectedPlacement.start_date || '',
+      end_date: selectedPlacement.end_date || '',
+      status: selectedPlacement.status || 'pending',
+    })
+  }
+
+  const handleSaveEdit = async (event) => {
+    event.preventDefault()
+
+    if (!editingEntity || !editingItem) {
+      return
+    }
+
+    setEditSaving(true)
+    setEditError('')
+
+    try {
+      if (editingEntity === 'user') {
+        const payload = {
+          username: editFormData.username.trim(),
+          email: editFormData.email.trim(),
+          first_name: editFormData.first_name.trim(),
+          last_name: editFormData.last_name.trim(),
+          role: editFormData.role,
+          phone: editFormData.phone.trim(),
+          department: editFormData.department.trim(),
+          staff_number: editFormData.staff_number.trim(),
+          student_number: editFormData.student_number.trim(),
+          registration_number: editFormData.registration_number.trim(),
+        }
+
+        if (editFormData.password.trim()) {
+          payload.password = editFormData.password.trim()
+        }
+
+        const response = await axios.put(
+          `http://127.0.0.1:8000/api/users/${editingItem.id}/`,
+          payload,
+          authHeaders,
+        )
+
+        setUsers((currentUsers) => currentUsers.map((existingUser) => (
+          existingUser.id === editingItem.id ? response.data : existingUser
+        )))
+      }
+
+      if (editingEntity === 'placement') {
+        const payload = {
+          student_id: editFormData.student_id ? Number(editFormData.student_id) : null,
+          workplace_supervisor_id: editFormData.workplace_supervisor_id ? Number(editFormData.workplace_supervisor_id) : null,
+          academic_supervisor_id: editFormData.academic_supervisor_id ? Number(editFormData.academic_supervisor_id) : null,
+          company_name: editFormData.company_name.trim(),
+          company_address: editFormData.company_address.trim(),
+          start_date: editFormData.start_date,
+          end_date: editFormData.end_date,
+          status: editFormData.status,
+        }
+
+        const response = await axios.put(
+          `http://127.0.0.1:8000/api/placements/${editingItem.id}/`,
+          payload,
+          authHeaders,
+        )
+
+        setPlacements((currentPlacements) => currentPlacements.map((existingPlacement) => (
+          existingPlacement.id === editingItem.id ? response.data : existingPlacement
+        )))
+      }
+
+      closeEditModal()
+      alert('Changes saved successfully')
+    } catch (requestError) {
+      const message = requestError?.response?.data?.error || requestError?.response?.data?.message || requestError?.message || 'Unable to save changes.'
+      setEditError(message)
+    } finally {
+      setEditSaving(false)
+    }
+  }
 
   const handleDeleteUser = async (userId) => {
     console.log('Attempting to delete user:', userId)
@@ -33,14 +175,6 @@ function AdminDashboard() {
         alert('Error deleting user: ' + (error.response?.data?.message || error.message))
       }
     }
-  }
-
-  const handleEditUser = () => {
-    alert('Edit functionality not implemented yet')
-  }
-
-  const handleEditPlacement = () => {
-    alert('Edit functionality not implemented yet')
   }
 
   const handleDeletePlacement = async (placementId) => {
@@ -508,8 +642,248 @@ function AdminDashboard() {
           )}
         </div>
       </div>
+
+      {editingEntity && editingItem && (
+        <div
+          role="presentation"
+          onClick={closeEditModal}
+          style={{
+            position: 'fixed',
+            inset: 0,
+            backgroundColor: 'rgba(15, 23, 42, 0.6)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '24px',
+            zIndex: 1000,
+          }}
+        >
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="admin-edit-title"
+            onClick={(event) => event.stopPropagation()}
+            style={{
+              width: 'min(960px, 100%)',
+              maxHeight: '90vh',
+              overflowY: 'auto',
+              backgroundColor: '#ffffff',
+              borderRadius: '16px',
+              boxShadow: '0 24px 80px rgba(15, 23, 42, 0.28)',
+              padding: '24px',
+            }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', gap: '16px', alignItems: 'flex-start', marginBottom: '20px' }}>
+              <div>
+                <h2 id="admin-edit-title" style={{ margin: '0 0 8px 0', color: '#0f172a' }}>
+                  {editingEntity === 'user' ? 'Edit User' : 'Edit Placement'}
+                </h2>
+                <p style={{ margin: 0, color: '#64748b' }}>
+                  Update the record details and save the changes back to the system.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={closeEditModal}
+                disabled={editSaving}
+                style={{
+                  border: 'none',
+                  backgroundColor: '#e2e8f0',
+                  color: '#0f172a',
+                  borderRadius: '999px',
+                  width: '36px',
+                  height: '36px',
+                  cursor: 'pointer',
+                }}
+              >
+                ×
+              </button>
+            </div>
+
+            {editError ? (
+              <div style={{ marginBottom: '16px', padding: '12px 14px', borderRadius: '10px', backgroundColor: '#fee2e2', color: '#991b1b' }}>
+                {editError}
+              </div>
+            ) : null}
+
+            <form onSubmit={handleSaveEdit} style={{ display: 'grid', gap: '18px' }}>
+              {editingEntity === 'user' ? (
+                <>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '14px' }}>
+                    <label style={{ display: 'grid', gap: '8px' }}>
+                      <span style={{ color: '#475569', fontSize: '14px' }}>Username</span>
+                      <input name="username" value={editFormData.username || ''} onChange={handleEditFieldChange} disabled={editSaving} style={editInputStyle} />
+                    </label>
+                    <label style={{ display: 'grid', gap: '8px' }}>
+                      <span style={{ color: '#475569', fontSize: '14px' }}>Email</span>
+                      <input name="email" type="email" value={editFormData.email || ''} onChange={handleEditFieldChange} disabled={editSaving} style={editInputStyle} />
+                    </label>
+                    <label style={{ display: 'grid', gap: '8px' }}>
+                      <span style={{ color: '#475569', fontSize: '14px' }}>Role</span>
+                      <select name="role" value={editFormData.role || 'student'} onChange={handleEditFieldChange} disabled={editSaving} style={editInputStyle}>
+                        {userRoles.map((roleOption) => (
+                          <option key={roleOption.value} value={roleOption.value}>{roleOption.label}</option>
+                        ))}
+                      </select>
+                    </label>
+                  </div>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '14px' }}>
+                    <label style={{ display: 'grid', gap: '8px' }}>
+                      <span style={{ color: '#475569', fontSize: '14px' }}>First Name</span>
+                      <input name="first_name" value={editFormData.first_name || ''} onChange={handleEditFieldChange} disabled={editSaving} style={editInputStyle} />
+                    </label>
+                    <label style={{ display: 'grid', gap: '8px' }}>
+                      <span style={{ color: '#475569', fontSize: '14px' }}>Last Name</span>
+                      <input name="last_name" value={editFormData.last_name || ''} onChange={handleEditFieldChange} disabled={editSaving} style={editInputStyle} />
+                    </label>
+                    <label style={{ display: 'grid', gap: '8px' }}>
+                      <span style={{ color: '#475569', fontSize: '14px' }}>Phone</span>
+                      <input name="phone" value={editFormData.phone || ''} onChange={handleEditFieldChange} disabled={editSaving} style={editInputStyle} />
+                    </label>
+                  </div>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '14px' }}>
+                    <label style={{ display: 'grid', gap: '8px' }}>
+                      <span style={{ color: '#475569', fontSize: '14px' }}>Department</span>
+                      <input name="department" value={editFormData.department || ''} onChange={handleEditFieldChange} disabled={editSaving} style={editInputStyle} />
+                    </label>
+                    <label style={{ display: 'grid', gap: '8px' }}>
+                      <span style={{ color: '#475569', fontSize: '14px' }}>Staff Number</span>
+                      <input name="staff_number" value={editFormData.staff_number || ''} onChange={handleEditFieldChange} disabled={editSaving} style={editInputStyle} />
+                    </label>
+                    <label style={{ display: 'grid', gap: '8px' }}>
+                      <span style={{ color: '#475569', fontSize: '14px' }}>Student Number</span>
+                      <input name="student_number" value={editFormData.student_number || ''} onChange={handleEditFieldChange} disabled={editSaving} style={editInputStyle} />
+                    </label>
+                    <label style={{ display: 'grid', gap: '8px' }}>
+                      <span style={{ color: '#475569', fontSize: '14px' }}>Registration Number</span>
+                      <input name="registration_number" value={editFormData.registration_number || ''} onChange={handleEditFieldChange} disabled={editSaving} style={editInputStyle} />
+                    </label>
+                  </div>
+
+                  <label style={{ display: 'grid', gap: '8px' }}>
+                    <span style={{ color: '#475569', fontSize: '14px' }}>Reset Password</span>
+                    <input
+                      name="password"
+                      type="password"
+                      value={editFormData.password || ''}
+                      onChange={handleEditFieldChange}
+                      placeholder="Leave blank to keep the current password"
+                      disabled={editSaving}
+                      style={editInputStyle}
+                    />
+                  </label>
+                </>
+              ) : (
+                <>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '14px' }}>
+                    <label style={{ display: 'grid', gap: '8px' }}>
+                      <span style={{ color: '#475569', fontSize: '14px' }}>Student</span>
+                      <select name="student_id" value={editFormData.student_id || ''} onChange={handleEditFieldChange} disabled={editSaving} style={editInputStyle}>
+                        <option value="">Unassigned</option>
+                        {users.filter((candidate) => candidate.role === 'student').map((candidate) => (
+                          <option key={candidate.id} value={candidate.id}>{getFullName(candidate)} ({candidate.username})</option>
+                        ))}
+                      </select>
+                    </label>
+                    <label style={{ display: 'grid', gap: '8px' }}>
+                      <span style={{ color: '#475569', fontSize: '14px' }}>Workplace Supervisor</span>
+                      <select name="workplace_supervisor_id" value={editFormData.workplace_supervisor_id || ''} onChange={handleEditFieldChange} disabled={editSaving} style={editInputStyle}>
+                        <option value="">Select supervisor</option>
+                        {users.filter((candidate) => candidate.role === 'workplace_supervisor').map((candidate) => (
+                          <option key={candidate.id} value={candidate.id}>{getFullName(candidate)} ({candidate.username})</option>
+                        ))}
+                      </select>
+                    </label>
+                    <label style={{ display: 'grid', gap: '8px' }}>
+                      <span style={{ color: '#475569', fontSize: '14px' }}>Academic Supervisor</span>
+                      <select name="academic_supervisor_id" value={editFormData.academic_supervisor_id || ''} onChange={handleEditFieldChange} disabled={editSaving} style={editInputStyle}>
+                        <option value="">Select supervisor</option>
+                        {users.filter((candidate) => candidate.role === 'academic_supervisor').map((candidate) => (
+                          <option key={candidate.id} value={candidate.id}>{getFullName(candidate)} ({candidate.username})</option>
+                        ))}
+                      </select>
+                    </label>
+                  </div>
+
+                  <label style={{ display: 'grid', gap: '8px' }}>
+                    <span style={{ color: '#475569', fontSize: '14px' }}>Company Name</span>
+                    <input name="company_name" value={editFormData.company_name || ''} onChange={handleEditFieldChange} disabled={editSaving} style={editInputStyle} />
+                  </label>
+
+                  <label style={{ display: 'grid', gap: '8px' }}>
+                    <span style={{ color: '#475569', fontSize: '14px' }}>Company Address</span>
+                    <textarea name="company_address" value={editFormData.company_address || ''} onChange={handleEditFieldChange} disabled={editSaving} rows="3" style={{ ...editInputStyle, resize: 'vertical' }} />
+                  </label>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '14px' }}>
+                    <label style={{ display: 'grid', gap: '8px' }}>
+                      <span style={{ color: '#475569', fontSize: '14px' }}>Start Date</span>
+                      <input name="start_date" type="date" value={editFormData.start_date || ''} onChange={handleEditFieldChange} disabled={editSaving} style={editInputStyle} />
+                    </label>
+                    <label style={{ display: 'grid', gap: '8px' }}>
+                      <span style={{ color: '#475569', fontSize: '14px' }}>End Date</span>
+                      <input name="end_date" type="date" value={editFormData.end_date || ''} onChange={handleEditFieldChange} disabled={editSaving} style={editInputStyle} />
+                    </label>
+                    <label style={{ display: 'grid', gap: '8px' }}>
+                      <span style={{ color: '#475569', fontSize: '14px' }}>Status</span>
+                      <select name="status" value={editFormData.status || 'pending'} onChange={handleEditFieldChange} disabled={editSaving} style={editInputStyle}>
+                        {placementStatuses.map((statusOption) => (
+                          <option key={statusOption.value} value={statusOption.value}>{statusOption.label}</option>
+                        ))}
+                      </select>
+                    </label>
+                  </div>
+                </>
+              )}
+
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', flexWrap: 'wrap', marginTop: '4px' }}>
+                <button
+                  type="button"
+                  onClick={closeEditModal}
+                  disabled={editSaving}
+                  style={{
+                    padding: '12px 18px',
+                    borderRadius: '10px',
+                    border: '1px solid #cbd5e1',
+                    backgroundColor: '#fff',
+                    color: '#0f172a',
+                    cursor: 'pointer',
+                  }}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={editSaving}
+                  style={{
+                    padding: '12px 18px',
+                    borderRadius: '10px',
+                    border: 'none',
+                    backgroundColor: '#2563eb',
+                    color: '#fff',
+                    cursor: 'pointer',
+                  }}
+                >
+                  {editSaving ? 'Saving...' : 'Save Changes'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   )
+}
+
+const editInputStyle = {
+  padding: '10px 12px',
+  borderRadius: '10px',
+  border: '1px solid #cbd5e1',
+  backgroundColor: '#fff',
+  color: '#0f172a',
+  fontSize: '14px',
 }
 
 export default AdminDashboard

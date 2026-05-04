@@ -74,6 +74,18 @@ class CustomUserSerializer(serializers.ModelSerializer):
         full_name = f"{obj.first_name} {obj.last_name}".strip()
         return full_name or obj.username
 
+    def update(self, instance, validated_data):
+        password = validated_data.pop("password", None)
+
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+
+        if password:
+            instance.set_password(password)
+
+        instance.save()
+        return instance
+
 class InternshipPlacementSerializer(serializers.ModelSerializer):
     student = CustomUserSerializer(read_only=True)
     workplace_supervisor = CustomUserSerializer(read_only=True)
