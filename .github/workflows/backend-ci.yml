@@ -1,7 +1,7 @@
 name: Backend CI (Django)
 on:
   push:
-    branches: [ main, develop, frontend, backend ]
+    branches: [ main, frontend, backend ]
     paths:
       - 'iles_backend/**'
       - '.github/workflows/backend-ci.yml'
