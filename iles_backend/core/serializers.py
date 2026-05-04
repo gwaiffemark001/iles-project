@@ -329,6 +329,7 @@ class EvaluationSerializer(serializers.ModelSerializer):
             "evaluator_id",
             "evaluator_name",
             "items",
+            "week_number",
             "score",
             "evaluation_type",
             "evaluated_at",

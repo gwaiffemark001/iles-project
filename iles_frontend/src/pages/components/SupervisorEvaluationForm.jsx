@@ -6,10 +6,12 @@ export default function SupervisorEvaluationForm({
   evaluatorId,
   evaluationType,
   existingEvaluation = null,
+  initialWeekNumber = 1,
   studentName = '',
   onSaved = () => {},
   onCancel = () => {},
 }) {
+  const [weekNumber, setWeekNumber] = useState(existingEvaluation?.week_number || initialWeekNumber || 1);
   const [criteria, setCriteria] = useState([]);
   const [items, setItems] = useState([]);
   const [saving, setSaving] = useState(false);
@@ -64,6 +66,10 @@ export default function SupervisorEvaluationForm({
     };
   }, [criteria, existingEvaluation]);
 
+  useEffect(() => {
+    setWeekNumber(existingEvaluation?.week_number || initialWeekNumber || 1);
+  }, [existingEvaluation, initialWeekNumber]);
+
   const setItemScore = (criteriaId, value) => {
     setItems((prev) =>
       prev.map((it) =>
@@ -102,6 +108,7 @@ export default function SupervisorEvaluationForm({
       placement_id: placementId,
       evaluator_id: evaluatorId,
       evaluation_type: evaluationType,
+      week_number: Number(weekNumber || 1),
       score: totalScore,
       items: items.map((i) => ({ criteria_id: i.criteria_id, score: Number(i.score) })),
     };
@@ -151,6 +158,19 @@ export default function SupervisorEvaluationForm({
         <p style={{ margin: 0, fontSize: '12px', color: '#64748b', textTransform: 'capitalize' }}>
           Evaluation Type: {evaluationType}
         </p>
+        <div style={{ marginTop: 8 }}>
+          <label style={{ fontSize: 12, color: '#475569' }}>
+            Week Number
+            <input
+              type="number"
+              min="1"
+              value={weekNumber}
+              onChange={(e) => setWeekNumber(Number(e.target.value))}
+              disabled={saving}
+              style={{ marginLeft: 8, padding: '6px 8px', borderRadius: 6, border: '1px solid #cbd5e1' }}
+            />
+          </label>
+        </div>
       </div>
 
       {error && (

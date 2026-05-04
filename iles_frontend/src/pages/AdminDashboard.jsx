@@ -16,6 +16,24 @@ const placementStatuses = [
   { value: 'completed', label: 'Completed' },
 ]
 
+const getScoreWeight = (score) => {
+  const numericScore = Number(score)
+
+  if (Number.isNaN(numericScore)) {
+    return null
+  }
+
+  if (numericScore > 80) return 5
+  if (numericScore > 75) return 4.5
+  if (numericScore > 70) return 4
+  if (numericScore > 65) return 3.5
+  if (numericScore > 60) return 3
+  if (numericScore > 55) return 2.5
+  if (numericScore > 50) return 2
+  if (numericScore > 30) return 1
+  return 0
+}
+
 function AdminDashboard() {
   const { user, logout } = useAuth()
   const token = localStorage.getItem('access_token')
@@ -37,13 +55,16 @@ function AdminDashboard() {
   // Criteria management state
   const [criteria, setCriteria] = useState([])
   const [showCriteriaForm, setShowCriteriaForm] = useState(false)
-  const [criteriaFormData, setCriteriaFormData] = useState({ name: '', description: '', max_score: '', weight_percent: '' })
+  const [criteriaFormData, setCriteriaFormData] = useState({ name: '', description: '', max_score: '', supervisor_share: '', academic_share: '' })
   const [editingCriteria, setEditingCriteria] = useState(null)
   const [criteriaSaving, setCriteriaSaving] = useState(false)
   const [criteriaError, setCriteriaError] = useState('')
   
   // Evaluation detail modal state
   const [selectedEvaluation, setSelectedEvaluation] = useState(null)
+  const [weeklySummary, setWeeklySummary] = useState(null)
+  const [showWeeklyModal, setShowWeeklyModal] = useState(false)
+  const [selectedPlacementForWeekly, setSelectedPlacementForWeekly] = useState(null)
 
   const authHeaders = useMemo(() => ({ headers: { Authorization: `Bearer ${token}` } }), [token])
 
@@ -202,10 +223,71 @@ function AdminDashboard() {
     }
   }
 
+  const fetchPlacementWeeklySummary = (placement) => {
+    const placementEvaluations = evaluations.filter((evaluation) => evaluation.placement?.id === placement.id)
+    const weekNumbers = Array.from(new Set(placementEvaluations.map((evaluation) => evaluation.week_number).filter((weekNumber) => weekNumber !== undefined && weekNumber !== null)))
+      .sort((left, right) => left - right)
+
+    const summary = {
+      weeks: weekNumbers.map((weekNumber) => {
+        const supervisorEvaluation = placementEvaluations.find((evaluation) => evaluation.week_number === weekNumber && evaluation.evaluation_type === 'supervisor')
+        const academicEvaluation = placementEvaluations.find((evaluation) => evaluation.week_number === weekNumber && evaluation.evaluation_type === 'academic')
+
+        const criteriaBreakdown = criteria.map((criterion) => {
+          const supervisorItem = supervisorEvaluation?.items?.find((item) => item.criteria?.id === criterion.id)
+          const academicItem = academicEvaluation?.items?.find((item) => item.criteria?.id === criterion.id)
+          const supervisorScore = supervisorItem?.score ?? null
+          const academicScore = academicItem?.score ?? null
+          const maxScore = Number(criterion.max_score || 0)
+          const weightPercent = Number(criterion.weight_percent || 0)
+          const supervisorShare = Number(criterion.supervisor_share || 0)
+          const academicShare = Number(criterion.academic_share || 0)
+          const supervisorContribution = supervisorScore !== null && maxScore > 0
+            ? ((Number(supervisorScore) / maxScore) * weightPercent * (supervisorShare / 100))
+            : 0
+          const academicContribution = academicScore !== null && maxScore > 0
+            ? ((Number(academicScore) / maxScore) * weightPercent * (academicShare / 100))
+            : 0
+
+          return {
+            criteria_id: criterion.id,
+            criteria_name: criterion.name,
+            max_score: maxScore,
+            weight_percent: weightPercent,
+            supervisor_score: supervisorScore,
+            academic_score: academicScore,
+            supervisor_contribution: Number(supervisorContribution.toFixed(2)),
+            academic_contribution: Number(academicContribution.toFixed(2)),
+            total_contribution: Number((supervisorContribution + academicContribution).toFixed(2)),
+          }
+        })
+
+        const combinedScore = criteriaBreakdown.reduce((total, criterionRow) => total + criterionRow.total_contribution, 0)
+
+        return {
+          week_number: weekNumber,
+          supervisor_score: supervisorEvaluation?.score ?? null,
+          academic_score: academicEvaluation?.score ?? null,
+          combined_score: Number(combinedScore.toFixed(2)),
+          criteria_breakdown: criteriaBreakdown,
+        }
+      }),
+      average: null,
+    }
+
+    summary.average = summary.weeks.length > 0
+      ? Number((summary.weeks.reduce((total, week) => total + week.combined_score, 0) / summary.weeks.length).toFixed(2))
+      : null
+
+    setWeeklySummary(summary)
+    setSelectedPlacementForWeekly(placement)
+    setShowWeeklyModal(true)
+  }
+
   // Criteria handlers
   const handleAddCriteria = () => {
     setEditingCriteria(null)
-    setCriteriaFormData({ name: '', description: '', max_score: '', weight_percent: '' })
+    setCriteriaFormData({ name: '', description: '', max_score: '', supervisor_share: '', academic_share: '' })
     setShowCriteriaForm(true)
     setCriteriaError('')
   }
@@ -216,7 +298,8 @@ function AdminDashboard() {
       name: crit.name || '',
       description: crit.description || '',
       max_score: crit.max_score || '',
-      weight_percent: crit.weight_percent || '',
+      supervisor_share: crit.supervisor_share ?? 40,
+      academic_share: crit.academic_share ?? 60,
     })
     setShowCriteriaForm(true)
     setCriteriaError('')
@@ -232,7 +315,8 @@ function AdminDashboard() {
         name: criteriaFormData.name.trim(),
         description: criteriaFormData.description.trim(),
         max_score: Number(criteriaFormData.max_score),
-        weight_percent: Number(criteriaFormData.weight_percent),
+        supervisor_share: Number(criteriaFormData.supervisor_share),
+        academic_share: Number(criteriaFormData.academic_share),
       }
 
       if (editingCriteria) {
@@ -244,8 +328,9 @@ function AdminDashboard() {
       }
 
       setShowCriteriaForm(false)
-      setCriteriaFormData({ name: '', description: '', max_score: '', weight_percent: '' })
+      setCriteriaFormData({ name: '', description: '', max_score: '', supervisor_share: '', academic_share: '' })
       setEditingCriteria(null)
+      await fetchDashboardData()
     } catch (err) {
       setCriteriaError(err.response?.data?.message || 'Error saving criteria')
     } finally {
@@ -708,6 +793,12 @@ function AdminDashboard() {
                         >
                           Edit
                         </button>
+                        <button
+                          onClick={() => fetchPlacementWeeklySummary(placement)}
+                          style={{ padding: '5px 10px', backgroundColor: '#6C5CE7', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
+                        >
+                          Weekly Eval
+                        </button>
                         <button 
                           onClick={() => handleDeletePlacement(placement.id)}
                           style={{ padding: '5px 10px', backgroundColor: '#E74C3C', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
@@ -790,7 +881,7 @@ function AdminDashboard() {
                       />
                     </label>
                     <label>
-                      Max Score
+                      Max Score by Each Supervisor
                       <input
                         type="number"
                         step="0.5"
@@ -800,17 +891,37 @@ function AdminDashboard() {
                         style={{ width: '100%', padding: '8px', marginTop: '4px' }}
                       />
                     </label>
-                    <label>
-                      Weight (%)
-                      <input
-                        type="number"
-                        step="0.5"
-                        value={criteriaFormData.weight_percent}
-                        onChange={(e) => setCriteriaFormData(prev => ({ ...prev, weight_percent: e.target.value }))}
-                        required
-                        style={{ width: '100%', padding: '8px', marginTop: '4px' }}
-                      />
-                    </label>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                      <label>
+                        Supervisor Share (%)
+                        <input
+                          type="number"
+                          step="0.5"
+                          min="0"
+                          max="100"
+                          value={criteriaFormData.supervisor_share}
+                          onChange={(e) => setCriteriaFormData(prev => ({ ...prev, supervisor_share: e.target.value }))}
+                          required
+                          style={{ width: '100%', padding: '8px', marginTop: '4px' }}
+                        />
+                      </label>
+                      <label>
+                        Academic Share (%)
+                        <input
+                          type="number"
+                          step="0.5"
+                          min="0"
+                          max="100"
+                          value={criteriaFormData.academic_share}
+                          onChange={(e) => setCriteriaFormData(prev => ({ ...prev, academic_share: e.target.value }))}
+                          required
+                          style={{ width: '100%', padding: '8px', marginTop: '4px' }}
+                        />
+                      </label>
+                    </div>
+                    <p style={{ margin: 0, color: '#64748b', fontSize: '12px' }}>
+                      Weight is calculated automatically by the backend.
+                    </p>
                     <div style={{ display: 'flex', gap: '10px' }}>
                       <button type="submit" disabled={criteriaSaving} style={{ padding: '8px 16px', backgroundColor: '#27AE60', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>
                         {criteriaSaving ? 'Saving...' : 'Save'}
@@ -832,7 +943,8 @@ function AdminDashboard() {
                       <h3 style={{ margin: '0 0 8px 0', color: '#2c3e50' }}>{crit.name}</h3>
                       <p style={{ margin: '4px 0', color: '#7f8c8d', fontSize: '14px' }}>{crit.description}</p>
                       <p style={{ margin: '8px 0', color: '#2c3e50' }}>
-                        Max Score: <strong>{crit.max_score}</strong> | Weight: <strong>{crit.weight_percent}%</strong>
+                        Max Score by Each Supervisor: <strong>{crit.max_score}</strong> | Weight: <strong>{crit.weight_percent}%</strong>
+                        <br />Supervisor Share: <strong>{crit.supervisor_share}%</strong> | Academic Share: <strong>{crit.academic_share}%</strong>
                       </p>
                       <div style={{ display: 'flex', gap: '8px', marginTop: '12px' }}>
                         <button onClick={() => handleEditCriteria(crit)} style={{ padding: '6px 12px', backgroundColor: '#3498DB', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '12px' }}>
@@ -1043,6 +1155,31 @@ function AdminDashboard() {
                       </select>
                     </label>
                   </div>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                    <label>
+                      Supervisor Share (%)
+                      <input
+                        type="number"
+                        step="0.5"
+                        value={criteriaFormData.supervisor_share}
+                        onChange={(e) => setCriteriaFormData(prev => ({ ...prev, supervisor_share: e.target.value }))}
+                        required
+                        style={{ width: '100%', padding: '8px', marginTop: '4px' }}
+                      />
+                    </label>
+                    <label>
+                      Academic Share (%)
+                      <input
+                        type="number"
+                        step="0.5"
+                        value={criteriaFormData.academic_share}
+                        onChange={(e) => setCriteriaFormData(prev => ({ ...prev, academic_share: e.target.value }))}
+                        required
+                        style={{ width: '100%', padding: '8px', marginTop: '4px' }}
+                      />
+                    </label>
+                  </div>
                 </>
               )}
 
@@ -1201,6 +1338,105 @@ function AdminDashboard() {
                 >
                   Close
                 </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+      {showWeeklyModal && weeklySummary && (
+        <div
+          role="presentation"
+          onClick={() => setShowWeeklyModal(false)}
+          style={{
+            position: 'fixed',
+            inset: 0,
+            backgroundColor: 'rgba(15, 23, 42, 0.6)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '24px',
+            zIndex: 1000,
+          }}
+        >
+          <div
+            role="dialog"
+            aria-modal="true"
+            onClick={(event) => event.stopPropagation()}
+            style={{
+              width: 'min(760px, 100%)',
+              maxHeight: '90vh',
+              overflowY: 'auto',
+              backgroundColor: '#ffffff',
+              borderRadius: '16px',
+              boxShadow: '0 24px 80px rgba(15, 23, 42, 0.28)',
+              padding: '24px',
+            }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+              <h2 style={{ margin: 0 }}>Weekly Evaluation Summary</h2>
+              <button onClick={() => setShowWeeklyModal(false)} style={{ border: 'none', background: '#eee', borderRadius: '8px', padding: '6px 10px' }}>Close</button>
+            </div>
+
+            <div style={{ marginBottom: '12px' }}>
+              <strong>Placement:</strong> {selectedPlacementForWeekly?.company_name}
+              <div><strong>Student:</strong> {selectedPlacementForWeekly?.student?.full_name || selectedPlacementForWeekly?.student?.username}</div>
+            </div>
+
+            {weeklySummary.weeks.length === 0 ? (
+              <p>No weekly evaluations found.</p>
+            ) : (
+              <div style={{ display: 'grid', gap: '8px' }}>
+                {weeklySummary.weeks.map((w) => (
+                  <div key={w.week_number} style={{ padding: '12px', background: '#f7f9fc', borderRadius: '8px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <div>
+                        <div style={{ fontWeight: 700 }}>Week {w.week_number}</div>
+                        <div style={{ fontSize: '13px', color: '#64748b' }}>Supervisor: {w.supervisor_score ?? 'N/A'} | Academic: {w.academic_score ?? 'N/A'}</div>
+                      </div>
+                      <div style={{ textAlign: 'right' }}>
+                        <div style={{ fontSize: '18px', fontWeight: 'bold', color: '#2563eb' }}>Total: {w.combined_score}</div>
+                        <div style={{ fontSize: '13px', color: '#64748b' }}>Grade Weight: {getScoreWeight(w.combined_score) ?? 'N/A'}</div>
+                      </div>
+                    </div>
+
+                    {/* Per-criterion breakdown */}
+                    {w.criteria_breakdown && w.criteria_breakdown.length > 0 && (
+                      <div style={{ marginTop: '10px', display: 'grid', gap: '8px' }}>
+                        {w.criteria_breakdown.map((cb) => (
+                          <div key={cb.criteria_id} style={{ padding: '10px', background: '#fff', borderRadius: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', border: '1px solid #eef2f7' }}>
+                            <div style={{ flex: 1 }}>
+                              <div style={{ fontWeight: 600, color: '#0f172a' }}>{cb.criteria_name}</div>
+                              <div style={{ fontSize: '12px', color: '#64748b' }}>Max: {cb.max_score} | Weight: {cb.weight_percent}%</div>
+                            </div>
+                            <div style={{ display: 'flex', gap: '12px', alignItems: 'center', minWidth: '260px', justifyContent: 'flex-end' }}>
+                              <div style={{ textAlign: 'right' }}>
+                                <div style={{ fontSize: '12px', color: '#475569' }}>Sup Score</div>
+                                <div style={{ fontWeight: 600, color: '#2563eb' }}>{cb.supervisor_score ?? '—'}</div>
+                                <div style={{ fontSize: '12px', color: '#64748b' }}>Contrib: {cb.supervisor_contribution}</div>
+                              </div>
+                              <div style={{ textAlign: 'right' }}>
+                                <div style={{ fontSize: '12px', color: '#475569' }}>Acad Score</div>
+                                <div style={{ fontWeight: 600, color: '#16a34a' }}>{cb.academic_score ?? '—'}</div>
+                                <div style={{ fontSize: '12px', color: '#64748b' }}>Contrib: {cb.academic_contribution}</div>
+                              </div>
+                              <div style={{ textAlign: 'right', minWidth: '80px' }}>
+                                <div style={{ fontSize: '12px', color: '#475569' }}>Total</div>
+                                <div style={{ fontWeight: 700, color: '#0f172a' }}>{cb.total_contribution}</div>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+
+            <div style={{ marginTop: '16px', display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
+              <div style={{ alignSelf: 'center', color: '#475569' }}>
+                Average: <strong style={{ fontSize: '18px', color: '#16a34a' }}>{weeklySummary.average ?? 'N/A'}</strong>
+                <span style={{ marginLeft: '10px' }}>Grade Weight: <strong>{getScoreWeight(weeklySummary.average) ?? 'N/A'}</strong></span>
               </div>
             </div>
           </div>
