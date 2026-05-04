@@ -1,4 +1,5 @@
 from django.db import models
+from decimal import Decimal
 from django.contrib.auth.models import AbstractUser
 
 class CustomUser(AbstractUser):
@@ -133,7 +134,7 @@ class Evaluation(models.Model):
 
     placement = models.ForeignKey(InternshipPlacement, on_delete=models.CASCADE, related_name='evaluations')
     evaluator = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='given_evaluations')
-    score = models.DecimalField(max_digits=5, decimal_places=2, default=0)
+    score = models.DecimalField(max_digits=5, decimal_places=2, default=Decimal('0'))
     evaluation_type = models.CharField(max_length=20, choices=EVALUATION_TYPES, default='supervisor')
     evaluated_at = models.DateTimeField(auto_now_add=True)
 
@@ -143,6 +144,53 @@ class Evaluation(models.Model):
 
     def __str__(self):
         return f"{self.placement.student.username} - {self.evaluation_type}: {self.score}"
+
+    def calculate_weighted_score(self):
+        """
+        Calculate the evaluation score from related EvaluationItem entries.
+        The formula used is: for each criteria, contribution = (item.score / criteria.max_score) * criteria.weight_percent
+        The method returns the aggregated percent (e.g. 85.5) and does not modify the model unless `save_calculated` is True.
+        """
+        try:
+            items_qs = self.evaluation_items.all()
+        except Exception:
+            # fallback to an empty iterable if the relation isn't available
+            items_qs = []
+
+        total = Decimal('0')
+        for item in items_qs:
+            crit = item.criteria
+            try:
+                # Avoid division by zero
+                if crit.max_score and crit.max_score > 0:
+                    contribution = (Decimal(str(item.score)) / Decimal(str(crit.max_score))) * Decimal(str(crit.weight_percent))
+                else:
+                    contribution = Decimal('0')
+            except Exception:
+                contribution = Decimal('0')
+            total += Decimal(str(contribution))
+
+        # total represents percentage points according to criteria weight_percent (which should sum to 100)
+        return float(round(total, 2))
+
+    def update_score_from_items(self):
+        """Recalculate `score` from EvaluationItem entries and save the model."""
+        calculated = self.calculate_weighted_score()
+        self.score = calculated
+        self.save(update_fields=['score'])
+
+
+class EvaluationItem(models.Model):
+    """Stores a per-criteria score for an Evaluation."""
+    evaluation = models.ForeignKey(Evaluation, on_delete=models.CASCADE, related_name='evaluation_items')
+    criteria = models.ForeignKey(EvaluationCriteria, on_delete=models.PROTECT, related_name='evaluation_items')
+    score = models.DecimalField(max_digits=7, decimal_places=2, default=Decimal('0'))
+
+    class Meta:
+        unique_together = [['evaluation', 'criteria']]
+
+    def __str__(self):
+        return f"{self.evaluation} - {self.criteria.name}: {self.score}"
 
 
 class Notification(models.Model):
