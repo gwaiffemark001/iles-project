@@ -1,7 +1,7 @@
 name: Backend CI (Django)
 on:
   push:
-    branches: [ main, develop, frontend, backend ]
+    branches: [ main, frontend, backend ]
     paths:
       - 'iles_backend/**'
       - '.github/workflows/backend-ci.yml'
@@ -33,7 +33,7 @@ jobs:
       DB_NAME: iles_test_db
       DB_USER: postgres
       DB_PASSWORD: postgres
-      DB_HOST: postgres
+      DB_HOST: localhost
       DB_PORT: 5432
     steps:
       - name: Checkout code
