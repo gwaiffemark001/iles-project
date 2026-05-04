@@ -1,8 +1,9 @@
 import { useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
+import { toast } from "react-toastify";
 import { useAuth } from "../../contexts/useAuth";
 import { evaluationsAPI, getErrorMessage, logsAPI, placementsAPI } from "../../api/api";
-import EvaluationEditor from './EvaluationEditor';
+import SupervisorEvaluationForm from "../components/SupervisorEvaluationForm";
 import "./AcademicSupervisorDashboard.css";
 
 const AcademicSupervisorDashboard = () => {
@@ -414,12 +415,14 @@ const AcademicSupervisorDashboard = () => {
             {renderStudentPanel()}
             {showEvalEditor && evalPlacement ? (
               <div style={{ padding: 16 }}>
-                <h3>New Evaluation for {evalPlacement.student?.full_name || evalPlacement.student_name}</h3>
-                <EvaluationEditor
+                <SupervisorEvaluationForm
                   placementId={evalPlacement.id}
                   evaluatorId={user?.id}
+                  evaluationType="academic"
                   existingEvaluation={editingEvaluation}
+                  studentName={evalPlacement.student?.full_name || evalPlacement.student_name || 'Student'}
                   onSaved={() => {
+                    toast.success('Evaluation saved successfully');
                     closeEvalEditor();
                     fetchData();
                   }}

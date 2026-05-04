@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import axios from 'axios'
 import { useAuth } from '../auth/useAuth'
+import { criteriaAPI, evaluationsAPI } from '../api/api'
 
 const userRoles = [
   { value: 'student', label: 'Student' },
@@ -32,6 +33,17 @@ function AdminDashboard() {
   const [editFormData, setEditFormData] = useState({})
   const [editSaving, setEditSaving] = useState(false)
   const [editError, setEditError] = useState('')
+  
+  // Criteria management state
+  const [criteria, setCriteria] = useState([])
+  const [showCriteriaForm, setShowCriteriaForm] = useState(false)
+  const [criteriaFormData, setCriteriaFormData] = useState({ name: '', description: '', max_score: '', weight_percent: '' })
+  const [editingCriteria, setEditingCriteria] = useState(null)
+  const [criteriaSaving, setCriteriaSaving] = useState(false)
+  const [criteriaError, setCriteriaError] = useState('')
+  
+  // Evaluation detail modal state
+  const [selectedEvaluation, setSelectedEvaluation] = useState(null)
 
   const authHeaders = useMemo(() => ({ headers: { Authorization: `Bearer ${token}` } }), [token])
 
@@ -190,6 +202,80 @@ function AdminDashboard() {
     }
   }
 
+  // Criteria handlers
+  const handleAddCriteria = () => {
+    setEditingCriteria(null)
+    setCriteriaFormData({ name: '', description: '', max_score: '', weight_percent: '' })
+    setShowCriteriaForm(true)
+    setCriteriaError('')
+  }
+
+  const handleEditCriteria = (crit) => {
+    setEditingCriteria(crit)
+    setCriteriaFormData({
+      name: crit.name || '',
+      description: crit.description || '',
+      max_score: crit.max_score || '',
+      weight_percent: crit.weight_percent || '',
+    })
+    setShowCriteriaForm(true)
+    setCriteriaError('')
+  }
+
+  const handleSaveCriteria = async (e) => {
+    e.preventDefault()
+    setCriteriaSaving(true)
+    setCriteriaError('')
+    
+    try {
+      const payload = {
+        name: criteriaFormData.name.trim(),
+        description: criteriaFormData.description.trim(),
+        max_score: Number(criteriaFormData.max_score),
+        weight_percent: Number(criteriaFormData.weight_percent),
+      }
+
+      if (editingCriteria) {
+        const response = await criteriaAPI.updateCriteria(editingCriteria.id, payload)
+        setCriteria(prev => prev.map(c => c.id === editingCriteria.id ? response.data : c))
+      } else {
+        const response = await criteriaAPI.createCriteria(payload)
+        setCriteria(prev => [...prev, response.data])
+      }
+
+      setShowCriteriaForm(false)
+      setCriteriaFormData({ name: '', description: '', max_score: '', weight_percent: '' })
+      setEditingCriteria(null)
+    } catch (err) {
+      setCriteriaError(err.response?.data?.message || 'Error saving criteria')
+    } finally {
+      setCriteriaSaving(false)
+    }
+  }
+
+  const handleDeleteCriteria = async (critId) => {
+    if (window.confirm('Are you sure you want to delete this criteria?')) {
+      try {
+        await criteriaAPI.deleteCriteria(critId)
+        setCriteria(prev => prev.filter(c => c.id !== critId))
+      } catch (err) {
+        alert('Error deleting criteria: ' + (err.response?.data?.message || err.message))
+      }
+    }
+  }
+
+  const handleDeleteEvaluation = async (evalId) => {
+    if (window.confirm('Are you sure you want to delete this evaluation?')) {
+      try {
+        await evaluationsAPI.deleteEvaluation(evalId)
+        setEvaluations(prev => prev.filter(e => e.id !== evalId))
+        setSelectedEvaluation(null)
+      } catch (err) {
+        alert('Error deleting evaluation: ' + (err.response?.data?.message || err.message))
+      }
+    }
+  }
+
   const filteredUsers = users.filter(user => {
     const matchesSearch = user.username?.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          user.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -203,18 +289,20 @@ function AdminDashboard() {
       setLoading(true)
       setError(null)
 
-      const [statsResponse, placementsResponse, evaluationsResponse, usersResponse] =
+      const [statsResponse, placementsResponse, evaluationsResponse, usersResponse, criteriaResponse] =
         await Promise.all([
           axios.get('http://127.0.0.1:8000/api/admin/statistics/', authHeaders),
           axios.get('http://127.0.0.1:8000/api/placements/', authHeaders),
           axios.get('http://127.0.0.1:8000/api/evaluations/', authHeaders),
           axios.get('http://127.0.0.1:8000/api/users/', authHeaders),
+          criteriaAPI.getCriteria(),
         ])
 
       setStats(statsResponse.data)
       setPlacements(Array.isArray(placementsResponse.data) ? placementsResponse.data : [])
       setEvaluations(Array.isArray(evaluationsResponse.data) ? evaluationsResponse.data : [])
       setUsers(Array.isArray(usersResponse.data) ? usersResponse.data : [])
+      setCriteria(Array.isArray(criteriaResponse.data) ? criteriaResponse.data : [])
 
       console.log('Dashboard data loaded successfully')
     } catch (requestError) {
@@ -334,6 +422,20 @@ function AdminDashboard() {
             }}
           >
             ⭐ Evaluations
+          </button>
+          <button 
+            onClick={() => setActiveSection('criteria')}
+            style={{ 
+              padding: '10px', 
+              backgroundColor: activeSection === 'criteria' ? '#34495e' : 'transparent',
+              color: 'white', 
+              border: 'none', 
+              borderRadius: '4px', 
+              cursor: 'pointer',
+              textAlign: 'left'
+            }}
+          >
+            📋 Criteria
           </button>
           <button 
             onClick={fetchDashboardData}
@@ -622,18 +724,124 @@ function AdminDashboard() {
 
           {activeSection === 'evaluations' && (
             <div>
-              <h2 style={{ color: '#2c3e50', marginBottom: '20px' }}>Evaluation Management</h2>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+                <h2 style={{ color: '#2c3e50', margin: 0 }}>Evaluation Management</h2>
+                <button onClick={() => setActiveSection('criteria')} style={{ padding: '8px 16px', backgroundColor: '#3498DB', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>
+                  Manage Criteria
+                </button>
+              </div>
               {evaluations.length === 0 ? (
                 <p>No evaluations found.</p>
               ) : (
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(350px, 1fr))', gap: '20px' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '20px' }}>
                   {evaluations.map((evaluation) => (
                     <div key={evaluation.id} style={{ backgroundColor: 'white', padding: '20px', borderRadius: '8px', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>
-                      <h3 style={{ margin: '0 0 10px 0', color: '#2c3e50' }}>{evaluation.student?.full_name || evaluation.student?.username}</h3>
+                      <h3 style={{ margin: '0 0 10px 0', color: '#2c3e50' }}>{evaluation.evaluator_name || 'Unknown Evaluator'}</h3>
+                      <p style={{ margin: '5px 0', color: '#7f8c8d' }}>Student: {evaluation.placement?.student?.full_name || 'Unknown'}</p>
                       <p style={{ margin: '5px 0', color: '#7f8c8d' }}>Placement: {evaluation.placement?.company_name}</p>
-                      <p style={{ margin: '5px 0', color: '#7f8c8d' }}>Score: {evaluation.score}</p>
-                      <p style={{ margin: '5px 0', color: '#7f8c8d' }}>Status: <span style={{ backgroundColor: '#27AE60', color: 'white', padding: '2px 6px', borderRadius: '4px', fontSize: '12px' }}>{evaluation.status}</span></p>
-                      <p style={{ margin: '5px 0', color: '#7f8c8d' }}>Date: {formatDate(evaluation.created_at)}</p>
+                      <p style={{ margin: '5px 0', color: '#7f8c8d' }}>Type: {evaluation.evaluation_type}</p>
+                      <p style={{ margin: '5px 0', fontSize: '18px', fontWeight: 'bold', color: '#27AE60' }}>Score: {evaluation.score}</p>
+                      <p style={{ margin: '5px 0', color: '#7f8c8d', fontSize: '12px' }}>Date: {new Date(evaluation.evaluated_at).toLocaleDateString()}</p>
+                      <div style={{ marginTop: '12px', display: 'flex', gap: '8px' }}>
+                        <button onClick={() => setSelectedEvaluation(evaluation)} style={{ padding: '6px 12px', backgroundColor: '#2980B9', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '12px' }}>
+                          View Details
+                        </button>
+                        <button onClick={() => handleDeleteEvaluation(evaluation.id)} style={{ padding: '6px 12px', backgroundColor: '#E74C3C', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '12px' }}>
+                          Delete
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {activeSection === 'criteria' && (
+            <div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+                <h2 style={{ color: '#2c3e50', margin: 0 }}>Evaluation Criteria</h2>
+                <button onClick={handleAddCriteria} style={{ padding: '8px 16px', backgroundColor: '#27AE60', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>
+                  Add Criteria
+                </button>
+              </div>
+
+              {showCriteriaForm && (
+                <div style={{ backgroundColor: '#f5f5f5', padding: '20px', borderRadius: '8px', marginBottom: '20px' }}>
+                  <h3>{editingCriteria ? 'Edit Criteria' : 'New Criteria'}</h3>
+                  {criteriaError && <div style={{ color: 'red', marginBottom: '10px' }}>{criteriaError}</div>}
+                  <form onSubmit={handleSaveCriteria} style={{ display: 'grid', gap: '12px' }}>
+                    <label>
+                      Name
+                      <input
+                        type="text"
+                        value={criteriaFormData.name}
+                        onChange={(e) => setCriteriaFormData(prev => ({ ...prev, name: e.target.value }))}
+                        required
+                        style={{ width: '100%', padding: '8px', marginTop: '4px' }}
+                      />
+                    </label>
+                    <label>
+                      Description
+                      <textarea
+                        value={criteriaFormData.description}
+                        onChange={(e) => setCriteriaFormData(prev => ({ ...prev, description: e.target.value }))}
+                        style={{ width: '100%', padding: '8px', marginTop: '4px', minHeight: '80px' }}
+                      />
+                    </label>
+                    <label>
+                      Max Score
+                      <input
+                        type="number"
+                        step="0.5"
+                        value={criteriaFormData.max_score}
+                        onChange={(e) => setCriteriaFormData(prev => ({ ...prev, max_score: e.target.value }))}
+                        required
+                        style={{ width: '100%', padding: '8px', marginTop: '4px' }}
+                      />
+                    </label>
+                    <label>
+                      Weight (%)
+                      <input
+                        type="number"
+                        step="0.5"
+                        value={criteriaFormData.weight_percent}
+                        onChange={(e) => setCriteriaFormData(prev => ({ ...prev, weight_percent: e.target.value }))}
+                        required
+                        style={{ width: '100%', padding: '8px', marginTop: '4px' }}
+                      />
+                    </label>
+                    <div style={{ display: 'flex', gap: '10px' }}>
+                      <button type="submit" disabled={criteriaSaving} style={{ padding: '8px 16px', backgroundColor: '#27AE60', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>
+                        {criteriaSaving ? 'Saving...' : 'Save'}
+                      </button>
+                      <button type="button" onClick={() => setShowCriteriaForm(false)} disabled={criteriaSaving} style={{ padding: '8px 16px', backgroundColor: '#95a5a6', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>
+                        Cancel
+                      </button>
+                    </div>
+                  </form>
+                </div>
+              )}
+
+              {criteria.length === 0 ? (
+                <p>No criteria defined yet.</p>
+              ) : (
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '16px' }}>
+                  {criteria.map((crit) => (
+                    <div key={crit.id} style={{ backgroundColor: 'white', padding: '16px', borderRadius: '8px', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>
+                      <h3 style={{ margin: '0 0 8px 0', color: '#2c3e50' }}>{crit.name}</h3>
+                      <p style={{ margin: '4px 0', color: '#7f8c8d', fontSize: '14px' }}>{crit.description}</p>
+                      <p style={{ margin: '8px 0', color: '#2c3e50' }}>
+                        Max Score: <strong>{crit.max_score}</strong> | Weight: <strong>{crit.weight_percent}%</strong>
+                      </p>
+                      <div style={{ display: 'flex', gap: '8px', marginTop: '12px' }}>
+                        <button onClick={() => handleEditCriteria(crit)} style={{ padding: '6px 12px', backgroundColor: '#3498DB', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '12px' }}>
+                          Edit
+                        </button>
+                        <button onClick={() => handleDeleteCriteria(crit.id)} style={{ padding: '6px 12px', backgroundColor: '#E74C3C', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '12px' }}>
+                          Delete
+                        </button>
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -870,6 +1078,131 @@ function AdminDashboard() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {selectedEvaluation && (
+        <div
+          role="presentation"
+          onClick={() => setSelectedEvaluation(null)}
+          style={{
+            position: 'fixed',
+            inset: 0,
+            backgroundColor: 'rgba(15, 23, 42, 0.6)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '24px',
+            zIndex: 1000,
+          }}
+        >
+          <div
+            role="dialog"
+            aria-modal="true"
+            onClick={(event) => event.stopPropagation()}
+            style={{
+              width: 'min(600px, 100%)',
+              maxHeight: '90vh',
+              overflowY: 'auto',
+              backgroundColor: '#ffffff',
+              borderRadius: '16px',
+              boxShadow: '0 24px 80px rgba(15, 23, 42, 0.28)',
+              padding: '24px',
+            }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', gap: '16px', alignItems: 'flex-start', marginBottom: '20px' }}>
+              <div>
+                <h2 style={{ margin: '0 0 8px 0', color: '#0f172a' }}>Evaluation Details</h2>
+                <p style={{ margin: 0, color: '#64748b' }}>View evaluation breakdown by criteria</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setSelectedEvaluation(null)}
+                style={{
+                  border: 'none',
+                  backgroundColor: '#e2e8f0',
+                  color: '#0f172a',
+                  borderRadius: '999px',
+                  width: '36px',
+                  height: '36px',
+                  cursor: 'pointer',
+                }}
+              >
+                ×
+              </button>
+            </div>
+
+            <div style={{ display: 'grid', gap: '16px' }}>
+              <div>
+                <h3 style={{ margin: '0 0 8px 0', color: '#0f172a' }}>Student</h3>
+                <p style={{ margin: 0, color: '#475569' }}>{selectedEvaluation.placement?.student?.full_name || 'Unknown'}</p>
+              </div>
+              <div>
+                <h3 style={{ margin: '0 0 8px 0', color: '#0f172a' }}>Placement</h3>
+                <p style={{ margin: 0, color: '#475569' }}>{selectedEvaluation.placement?.company_name || 'Unknown'}</p>
+              </div>
+              <div>
+                <h3 style={{ margin: '0 0 8px 0', color: '#0f172a' }}>Evaluator</h3>
+                <p style={{ margin: 0, color: '#475569' }}>{selectedEvaluation.evaluator_name || 'Unknown'}</p>
+              </div>
+              <div>
+                <h3 style={{ margin: '0 0 8px 0', color: '#0f172a' }}>Type</h3>
+                <p style={{ margin: 0, color: '#475569', textTransform: 'capitalize' }}>{selectedEvaluation.evaluation_type}</p>
+              </div>
+              <div>
+                <h3 style={{ margin: '0 0 8px 0', color: '#0f172a' }}>Overall Score</h3>
+                <p style={{ margin: 0, fontSize: '24px', fontWeight: 'bold', color: '#27AE60' }}>{selectedEvaluation.score}</p>
+              </div>
+
+              {selectedEvaluation.items && selectedEvaluation.items.length > 0 && (
+                <div>
+                  <h3 style={{ margin: '0 0 12px 0', color: '#0f172a' }}>Criteria Breakdown</h3>
+                  <div style={{ display: 'grid', gap: '8px' }}>
+                    {selectedEvaluation.items.map((item, idx) => (
+                      <div key={idx} style={{ padding: '12px', backgroundColor: '#f5f5f5', borderRadius: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <div>
+                          <p style={{ margin: '0 0 4px 0', fontWeight: 'bold', color: '#0f172a' }}>{item.criteria?.name || 'Unknown Criteria'}</p>
+                          <p style={{ margin: 0, fontSize: '12px', color: '#64748b' }}>Max: {item.criteria?.max_score} | Weight: {item.criteria?.weight_percent}%</p>
+                        </div>
+                        <p style={{ margin: 0, fontSize: '18px', fontWeight: 'bold', color: '#2563eb' }}>{item.score}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '20px' }}>
+                <button
+                  type="button"
+                  onClick={() => handleDeleteEvaluation(selectedEvaluation.id)}
+                  style={{
+                    padding: '12px 18px',
+                    borderRadius: '10px',
+                    border: 'none',
+                    backgroundColor: '#E74C3C',
+                    color: '#fff',
+                    cursor: 'pointer',
+                  }}
+                >
+                  Delete Evaluation
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSelectedEvaluation(null)}
+                  style={{
+                    padding: '12px 18px',
+                    borderRadius: '10px',
+                    border: '1px solid #cbd5e1',
+                    backgroundColor: '#fff',
+                    color: '#0f172a',
+                    cursor: 'pointer',
+                  }}
+                >
+                  Close
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}

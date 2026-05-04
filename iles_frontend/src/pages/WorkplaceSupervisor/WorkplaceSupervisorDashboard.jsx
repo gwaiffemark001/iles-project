@@ -1,7 +1,8 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState, useCallback } from 'react'
 import { toast } from 'react-toastify'
 import { evaluationsAPI, getErrorMessage, logsAPI, placementsAPI } from '../../api/api'
 import { useAuth } from '../../contexts/useAuth'
+import SupervisorEvaluationForm from '../components/SupervisorEvaluationForm'
 import './WorkplaceSupervisorDashboard.css'
 
 function normalizePlacement(placement, logs, evaluations) {
@@ -42,8 +43,9 @@ export default function WorkplaceSupervisorDashboard() {
   const [comment, setComment] = useState('')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [evaluatingPlacementId, setEvaluatingPlacementId] = useState(null)
 
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     try {
       setLoading(true)
       setError('')
@@ -60,15 +62,11 @@ export default function WorkplaceSupervisorDashboard() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [])
 
   useEffect(() => {
-    const initializeData = async () => {
-      await loadData();
-    };
-
-    initializeData();
-  }, [])
+    loadData();
+  }, [loadData])
 
   const interns = useMemo(
     () => placements.map((placement) => normalizePlacement(placement, logs, evaluations)),
@@ -276,38 +274,71 @@ export default function WorkplaceSupervisorDashboard() {
           <section className="workplace-evaluations-section">
             <div className="workplace-section-header"><h2>Intern Evaluations</h2></div>
             <div className="workplace-evaluations-grid">
-              {interns.map((intern) => (
-                <div key={intern.id} className="workplace-evaluation-card">
-                  <div className="workplace-evaluation-header">
-                    <h3>{intern.studentName}</h3>
-                    <span className={`workplace-status-badge ${intern.status}`}>{intern.status}</span>
-                  </div>
-                  <div className="workplace-evaluation-details">
-                    <p><strong>Company:</strong> {intern.companyName}</p>
-                    <p><strong>Period:</strong> {intern.startDate} - {intern.endDate}</p>
-                  </div>
-                  <div className="workplace-evaluation-score">
-                    <p><strong>Supervisor Evaluation:</strong></p>
-                    {intern.evaluationScore ? (
-                      <div className="workplace-score-display">
-                        <span className="workplace-score-value">{intern.evaluationScore}</span>
-                        <span className="workplace-score-date">Evaluated: {new Date(intern.evaluatedAt).toLocaleDateString()}</span>
+              {interns.map((intern) => {
+                const existingEvaluation = evaluations.find(
+                  (e) => e.placement?.id === intern.placement.id && e.evaluation_type === 'supervisor'
+                );
+                const isEvaluating = evaluatingPlacementId === intern.placement.id;
+
+                return (
+                  <div key={intern.id} className="workplace-evaluation-card">
+                    <div className="workplace-evaluation-header">
+                      <h3>{intern.studentName}</h3>
+                      <span className={`workplace-status-badge ${intern.status}`}>{intern.status}</span>
+                    </div>
+                    <div className="workplace-evaluation-details">
+                      <p><strong>Company:</strong> {intern.companyName}</p>
+                      <p><strong>Period:</strong> {intern.startDate} - {intern.endDate}</p>
+                    </div>
+
+                    {!isEvaluating ? (
+                      <div className="workplace-evaluation-score">
+                        <p><strong>Supervisor Evaluation:</strong></p>
+                        {intern.evaluationScore ? (
+                          <div className="workplace-score-display">
+                            <span className="workplace-score-value">{Number(intern.evaluationScore).toFixed(2)}</span>
+                            <span className="workplace-score-date">Evaluated: {new Date(intern.evaluatedAt).toLocaleDateString()}</span>
+                          </div>
+                        ) : (
+                          <p className="workplace-no-evaluation">Not evaluated yet</p>
+                        )}
+                        <button
+                          onClick={() => setEvaluatingPlacementId(intern.placement.id)}
+                          style={{
+                            marginTop: '12px',
+                            padding: '8px 14px',
+                            backgroundColor: '#2563eb',
+                            color: 'white',
+                            border: 'none',
+                            borderRadius: '4px',
+                            cursor: 'pointer',
+                            fontSize: '12px',
+                            fontWeight: '600',
+                          }}
+                        >
+                          {existingEvaluation ? 'Edit Evaluation' : 'Add Evaluation'}
+                        </button>
                       </div>
                     ) : (
-                      <p className="workplace-no-evaluation">Not evaluated yet</p>
+                      <div style={{ marginTop: '16px' }}>
+                        <SupervisorEvaluationForm
+                          placementId={intern.placement.id}
+                          evaluatorId={user?.id}
+                          evaluationType="supervisor"
+                          existingEvaluation={existingEvaluation}
+                          studentName={intern.studentName}
+                          onSaved={() => {
+                            toast.success('Evaluation saved successfully');
+                            setEvaluatingPlacementId(null);
+                            loadData();
+                          }}
+                          onCancel={() => setEvaluatingPlacementId(null)}
+                        />
+                      </div>
                     )}
                   </div>
-                  <div className="workplace-log-summary">
-                    <p><strong>Log Summary:</strong></p>
-                    <div className="workplace-log-stats">
-                      <span>Draft: {intern.draftLogs}</span>
-                      <span>Submitted: {intern.submittedLogs}</span>
-                      <span>Reviewed: {intern.reviewedLogs}</span>
-                      <span>Approved: {intern.approvedLogs}</span>
-                    </div>
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </section>
         )}
