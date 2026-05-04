@@ -47,7 +47,7 @@ function Signup() {
 
             setSuccessMessage('Account created successfully. Please log in.');
             navigate('/');
-        } catch (error) {
+        } catch {
             setErrorMessage('Unable to reach the server. Please try again later.');
         }
     };

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import axios from 'axios'
 import { useAuth } from '../auth/useAuth'
 
@@ -14,44 +14,8 @@ function AdminDashboard() {
   const [evaluations, setEvaluations] = useState([])
   const [searchTerm, setSearchTerm] = useState('')
   const [filterRole, setFilterRole] = useState('all')
-  const [editingUser, setEditingUser] = useState(null)
-  const [editingPlacement, setEditingPlacement] = useState(null)
 
   const authHeaders = { headers: { Authorization: `Bearer ${token}` } }
-
-  const handleEditUser = (user) => {
-    setEditingUser(user)
-  }
-
-  const handleUpdateUser = async () => {
-    if (!editingUser) return
-    
-    try {
-      const response = await axios.put(
-        `http://127.0.0.1:8000/api/users/${editingUser.id}/`,
-        {
-          username: editingUser.username,
-          email: editingUser.email,
-          first_name: editingUser.first_name,
-          last_name: editingUser.last_name,
-          role: editingUser.role,
-          phone: editingUser.phone,
-          department: editingUser.department,
-          student_number: editingUser.student_number,
-          staff_number: editingUser.staff_number,
-          registration_number: editingUser.registration_number
-        },
-        authHeaders
-      )
-      
-      setUsers(users.map(u => u.id === editingUser.id ? response.data : u))
-      setEditingUser(null)
-      alert('User updated successfully')
-    } catch (error) {
-      console.error('Error updating user:', error)
-      alert('Error updating user: ' + (error.response?.data?.message || error.message))
-    }
-  }
 
   const handleDeleteUser = async (userId) => {
     console.log('Attempting to delete user:', userId)
@@ -71,36 +35,12 @@ function AdminDashboard() {
     }
   }
 
-  const handleEditPlacement = (placement) => {
-    setEditingPlacement(placement)
+  const handleEditUser = () => {
+    alert('Edit functionality not implemented yet')
   }
 
-  const handleUpdatePlacement = async () => {
-    if (!editingPlacement) return
-    
-    try {
-      const response = await axios.put(
-        `http://127.0.0.1:8000/api/placements/${editingPlacement.id}/`,
-        {
-          company_name: editingPlacement.company_name,
-          student: editingPlacement.student?.id,
-          workplace_supervisor: editingPlacement.workplace_supervisor?.id,
-          academic_supervisor: editingPlacement.academic_supervisor?.id,
-          start_date: editingPlacement.start_date,
-          end_date: editingPlacement.end_date,
-          status: editingPlacement.status,
-          description: editingPlacement.description
-        },
-        authHeaders
-      )
-      
-      setPlacements(placements.map(p => p.id === editingPlacement.id ? response.data : p))
-      setEditingPlacement(null)
-      alert('Placement updated successfully')
-    } catch (error) {
-      console.error('Error updating placement:', error)
-      alert('Error updating placement: ' + (error.response?.data?.message || error.message))
-    }
+  const handleEditPlacement = () => {
+    alert('Edit functionality not implemented yet')
   }
 
   const handleDeletePlacement = async (placementId) => {
@@ -124,11 +64,7 @@ function AdminDashboard() {
     return matchesSearch && matchesRole
   })
 
-  useEffect(() => {
-    fetchDashboardData()
-  }, [])
-
-  const fetchDashboardData = async () => {
+  const fetchDashboardData = useCallback(async () => {
     try {
       setLoading(true)
       setError(null)
@@ -154,7 +90,15 @@ function AdminDashboard() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [authHeaders])
+
+  useEffect(() => {
+    const initializeDashboard = async () => {
+      await fetchDashboardData();
+    };
+
+    initializeDashboard();
+  }, [fetchDashboardData])
 
   const getFullName = (user) =>
     user?.full_name ||

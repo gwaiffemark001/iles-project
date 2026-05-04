@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
 import { toast } from 'react-toastify'
 import { evaluationsAPI, getErrorMessage, logsAPI, placementsAPI } from '../../api/api'
 import { useAuth } from '../../contexts/useAuth'
@@ -33,7 +32,6 @@ function normalizePlacement(placement, logs, evaluations) {
 }
 
 export default function WorkplaceSupervisorDashboard() {
-  const navigate = useNavigate()
   const { user, logout } = useAuth()
   const [placements, setPlacements] = useState([])
   const [logs, setLogs] = useState([])
@@ -65,7 +63,11 @@ export default function WorkplaceSupervisorDashboard() {
   }
 
   useEffect(() => {
-    loadData()
+    const initializeData = async () => {
+      await loadData();
+    };
+
+    initializeData();
   }, [])
 
   const interns = useMemo(

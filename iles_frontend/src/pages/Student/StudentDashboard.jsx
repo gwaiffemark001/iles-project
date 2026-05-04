@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/useAuth';
 import { logsAPI, placementsAPI, evaluationsAPI } from '@/api/api';
 import { getErrorMessage } from '@/api/api';
@@ -31,7 +30,6 @@ const getUserInitials = (user) => {
 };
 
 const StudentDashboard = () => {
-  const navigate = useNavigate();
   const { user, logout } = useAuth();
   const [logs, setLogs] = useState([]);
   const [placements, setPlacements] = useState([]);
@@ -44,25 +42,6 @@ const StudentDashboard = () => {
   const [saving, setSaving] = useState(false);
   const [pageError, setPageError] = useState('');
   const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    fetchData();
-  }, []);
-
-  useEffect(() => {
-    if (!placements.length) {
-      return;
-    }
-
-    setFormData((currentData) => {
-      if (currentData.placement_id) {
-        return currentData;
-      }
-
-      const activePlacement = placements.find((placement) => placement.status === 'active') || placements[0];
-      return createInitialLogForm(activePlacement.id);
-    });
-  }, [placements]);
 
   const fetchData = async () => {
     try {
@@ -85,6 +64,33 @@ const StudentDashboard = () => {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    const initializeDashboard = async () => {
+      await fetchData();
+    };
+
+    initializeDashboard();
+  }, []);
+
+  useEffect(() => {
+    if (!placements.length) {
+      return;
+    }
+
+    const updateFormData = () => {
+      setFormData((currentData) => {
+        if (currentData.placement_id) {
+          return currentData;
+        }
+
+        const activePlacement = placements.find((placement) => placement.status === 'active') || placements[0];
+        return createInitialLogForm(activePlacement.id);
+      });
+    };
+
+    updateFormData();
+  }, [placements]);
 
   const resetForm = () => {
     const activePlacement = placements.find((placement) => placement.status === 'active') || placements[0];
