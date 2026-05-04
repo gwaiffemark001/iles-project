@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import axios from 'axios'
 import { useAuth } from '../auth/useAuth'
 
@@ -15,7 +15,7 @@ function AdminDashboard() {
   const [searchTerm, setSearchTerm] = useState('')
   const [filterRole, setFilterRole] = useState('all')
 
-  const authHeaders = { headers: { Authorization: `Bearer ${token}` } }
+  const authHeaders = useMemo(() => ({ headers: { Authorization: `Bearer ${token}` } }), [token])
 
   const handleDeleteUser = async (userId) => {
     console.log('Attempting to delete user:', userId)
