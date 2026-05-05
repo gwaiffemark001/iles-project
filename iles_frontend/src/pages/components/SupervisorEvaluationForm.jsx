@@ -115,7 +115,13 @@ export default function SupervisorEvaluationForm({
 
     try {
       let res;
-      if (existingEvaluation && existingEvaluation.id) {
+      // Check if we're updating an existing evaluation for the same week
+      // If week_number changed, create new instead of updating
+      const shouldUpdate = existingEvaluation 
+        && existingEvaluation.id 
+        && Number(existingEvaluation.week_number) === Number(weekNumber);
+      
+      if (shouldUpdate) {
         res = await evaluationsAPI.updateEvaluation(existingEvaluation.id, payload);
       } else {
         res = await evaluationsAPI.createEvaluation(payload);
