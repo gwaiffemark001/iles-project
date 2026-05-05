@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import { useAuth } from "../../contexts/useAuth";
 import { evaluationsAPI, getErrorMessage, logsAPI, placementsAPI } from "../../api/api";
-import { buildWeeklyEvaluationSummaries, getGradeWeight } from "../../utils/evaluationSummary";
+import { buildWeeklyEvaluationSummaries } from "../../utils/evaluationSummary";
 import SupervisorEvaluationForm from "../components/SupervisorEvaluationForm";
 import "./AcademicSupervisorDashboard.css";
 
@@ -22,6 +22,7 @@ const AcademicSupervisorDashboard = () => {
   const [showEvalEditor, setShowEvalEditor] = useState(false);
   const [evalPlacement, setEvalPlacement] = useState(null);
   const [editingEvaluation, setEditingEvaluation] = useState(null);
+  const [selectedWeekNumber, setSelectedWeekNumber] = useState(1);
   const [evaluatingLogId, setEvaluatingLogId] = useState(null);
 
   const fetchData = useCallback(async () => {
@@ -130,9 +131,10 @@ const AcademicSupervisorDashboard = () => {
     setActiveSection("students");
   };
 
-  const openEvalEditor = (placement) => {
+  const openEvalEditor = (placement, weekNumber = 1, evaluation = null) => {
     setEvalPlacement(placement);
-    setEditingEvaluation(null);
+    setEditingEvaluation(evaluation);
+    setSelectedWeekNumber(weekNumber);
     setShowEvalEditor(true);
   };
 
@@ -169,10 +171,38 @@ const AcademicSupervisorDashboard = () => {
     return Array.from(groups.values());
   }, [allWeeklySummaries]);
 
+  const academicStudentCards = useMemo(() => {
+    return placements.map((placement) => {
+      const placementId = placement.id;
+      const placementWeeks = groupedSummaries.find((group) => group.placementId === placementId)?.weeks || [];
+      const placementLogWeeks = logs
+        .filter((log) => (log.placement?.id ?? log.placement_id) === placementId)
+        .map((log) => Number(log.week_number || 1))
+        .filter((weekNumber, index, array) => array.indexOf(weekNumber) === index)
+        .sort((left, right) => left - right);
+      const evaluatedWeeks = new Set(placementWeeks.map((week) => Number(week.week_number)));
+      const nextWeekNumber = placementLogWeeks.find((weekNumber) => !evaluatedWeeks.has(weekNumber)) || (placementLogWeeks.length ? placementLogWeeks[placementLogWeeks.length - 1] + 1 : 1);
+
+      return {
+        placement,
+        placementId,
+        placementName: placement.company_name || 'Unknown Placement',
+        studentName:
+          placement.student?.full_name ||
+          placement.student?.username ||
+          placement.student_name ||
+          'Unknown Student',
+        weeks: placementWeeks,
+        nextWeekNumber,
+      };
+    });
+  }, [placements, groupedSummaries, logs]);
+
   const closeEvalEditor = () => {
     setShowEvalEditor(false);
     setEvalPlacement(null);
     setEditingEvaluation(null);
+    setSelectedWeekNumber(1);
   };
 
   const closeStudentPanel = () => {
@@ -241,7 +271,6 @@ const AcademicSupervisorDashboard = () => {
   const students = getStudentsData();
   const selectedStudent = students.find((student) => student.id === selectedStudentId) || null;
   const selectedStudentLogs = selectedStudent ? selectedStudent.logsData : [];
-  const recentEvaluations = [...evaluations].slice(0, 6);
   const reportRows = [
     { label: "Submitted logs", value: stats.logsSubmitted },
     { label: "Reviewed logs", value: stats.reviewedLogs },
@@ -402,7 +431,7 @@ const AcademicSupervisorDashboard = () => {
         )}
 
         <div style={{ marginTop: 18 }}>
-          <button className="eval-btn" onClick={() => openEvalEditor(selectedStudent.placement)}>
+          <button className="eval-btn" onClick={() => openEvalEditor(selectedStudent.placement, (selectedStudentLogs.find((log) => !getExistingEvaluationForLog(log))?.week_number) || (selectedStudentLogs.length ? Math.max(...selectedStudentLogs.map((log) => Number(log.week_number || 1))) + 1 : 1))}>
             Evaluate Student
           </button>
         </div>
@@ -480,6 +509,7 @@ const AcademicSupervisorDashboard = () => {
                   evaluatorId={user?.id}
                   evaluationType="academic"
                   existingEvaluation={editingEvaluation}
+                  initialWeekNumber={selectedWeekNumber}
                   studentName={evalPlacement.student?.full_name || evalPlacement.student_name || 'Student'}
                   onSaved={() => {
                     toast.success('Evaluation saved successfully');
@@ -497,90 +527,82 @@ const AcademicSupervisorDashboard = () => {
           <>
             <div className="section-title" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <span>Evaluations</span>
-              <button
-                onClick={() => {
-                  setShowEvalEditor(true);
-                  setEvalPlacement(null);
-                  setEditingEvaluation(null);
-                }}
-                style={{ padding: '8px 16px', backgroundColor: '#27AE60', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
-              >
-                Create New Evaluation
-              </button>
+              <span style={{ color: '#64748b', fontSize: '14px' }}>Use each student card to add or edit weekly evaluations.</span>
             </div>
             
-            {allWeeklySummaries.length === 0 ? (
+            {academicStudentCards.length === 0 ? (
               <div className="intern-table">
                 <div className="table-row">
                   <div style={{ gridColumn: "1 / -1" }}>No evaluations recorded yet.</div>
                 </div>
               </div>
             ) : (
-              groupedSummaries.map((group) => {
-                const firstWeekData = group.weeks[0];
-                const studentName = firstWeekData?.studentName || 'Unknown Student';
-                
+              academicStudentCards.map((group) => {
                 return (
                   <div key={group.placementId} style={{ marginBottom: '18px', padding: '16px', background: '#fff', borderRadius: '8px', border: '1px solid #e9ecef' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
                       <div>
                         <h3 style={{ margin: '0 0 8px 0', color: '#2c3e50' }}>{group.placementName}</h3>
                         <div style={{ color: '#7f8c8d', fontSize: '14px' }}>
-                          <strong>Student:</strong> {studentName}
+                          <strong>Student:</strong> {group.studentName}
                         </div>
                       </div>
-                      <div style={{ color: '#64748b', textAlign: 'right' }}>
-                        <div style={{ fontWeight: '600' }}>Weeks: {group.weeks.length}</div>
+                      <button
+                        type="button"
+                        className="eval-btn"
+                        onClick={() => openEvalEditor(group.placement, group.nextWeekNumber, null)}
+                      >
+                        Add Evaluation
+                      </button>
+                    </div>
+                    {group.weeks.length === 0 ? (
+                      <p style={{ color: '#64748b', margin: 0 }}>No evaluations recorded yet.</p>
+                    ) : (
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '12px' }}>
+                        {group.weeks.map((w) => {
+                          const evalToEdit = academicEvaluations.find(
+                            (evaluation) => (evaluation.placement?.id ?? evaluation.placement_id) === group.placementId
+                              && Number(evaluation.week_number) === Number(w.week_number)
+                              && evaluation.evaluation_type === 'academic'
+                          );
+
+                          return (
+                            <div
+                              key={w.key}
+                              style={{
+                                padding: '12px',
+                                background: '#f7f9fc',
+                                borderRadius: '8px',
+                                border: '1px solid #e2e8f0',
+                              }}
+                            >
+                              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                <div>
+                                  <div style={{ fontWeight: 700 }}>Week {w.week_number}</div>
+                                  <div style={{ fontSize: '13px', color: '#64748b', marginTop: '4px' }}>Score: {w.combined_score ?? 'N/A'}</div>
+                                </div>
+                                <div style={{ textAlign: 'right' }}>
+                                  <div style={{ fontSize: '18px', fontWeight: 'bold', color: '#2563eb' }}>{w.combined_score ?? 'N/A'}</div>
+                                  <div style={{ fontSize: '13px', color: '#64748b' }}>Weight: {w.grade_weight ?? 'N/A'}</div>
+                                </div>
+                              </div>
+                              <div style={{ marginTop: '8px', display: 'flex', gap: '8px' }}>
+                                <button
+                                  type="button"
+                                  className="eval-btn"
+                                  onClick={() => openEvalEditor(group.placement, w.week_number, evalToEdit || null)}
+                                >
+                                  {evalToEdit ? 'Edit Evaluation' : 'Add Evaluation'}
+                                </button>
+                              </div>
+                            </div>
+                          );
+                        })}
                       </div>
-                    </div>
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '12px' }}>
-                      {group.weeks.map((w) => (
-                        <div 
-                          key={w.key}
-                          style={{ 
-                            padding: '12px', 
-                            background: '#f7f9fc', 
-                            borderRadius: '8px',
-                            cursor: 'pointer',
-                            border: '1px solid #e2e8f0',
-                            transition: 'all 0.2s'
-                          }}
-                          onMouseEnter={(e) => {
-                            e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.1)';
-                            e.currentTarget.style.backgroundColor = '#eef2f7';
-                          }}
-                          onMouseLeave={(e) => {
-                            e.currentTarget.style.boxShadow = 'none';
-                            e.currentTarget.style.backgroundColor = '#f7f9fc';
-                          }}
-                          onClick={() => {
-                            const evalToEdit = academicEvaluations.find(
-                              e => e.placement?.id === group.placementId && e.week_number === w.week_number
-                            );
-                            setEvalPlacement(placements.find(p => p.id === group.placementId));
-                            setEditingEvaluation(evalToEdit || null);
-                            setShowEvalEditor(true);
-                          }}
-                        >
-                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                            <div>
-                              <div style={{ fontWeight: 700 }}>Week {w.week_number}</div>
-                              <div style={{ fontSize: '13px', color: '#64748b', marginTop: '4px' }}>Score: {w.combined_score ?? 'N/A'}</div>
-                            </div>
-                            <div style={{ textAlign: 'right' }}>
-                              <div style={{ fontSize: '18px', fontWeight: 'bold', color: '#2563eb' }}>{w.combined_score ?? 'N/A'}</div>
-                              <div style={{ fontSize: '13px', color: '#64748b' }}>Weight: {w.grade_weight ?? 'N/A'}</div>
-                            </div>
-                          </div>
-                          <div style={{ marginTop: '8px', fontSize: '12px', color: '#475569' }}>
-                            Click to edit
-                          </div>
-                        </div>
-                      ))}
-                    </div>
+                    )}
                     <div style={{ marginTop: '12px', textAlign: 'right', color: '#475569' }}>
-                      <strong>Average Score:</strong> {((group.weeks.reduce((t, a) => t + Number(a.combined_score || 0), 0) / group.weeks.length).toFixed(2))}
-                      <span style={{ marginLeft: '12px' }}><strong>Average Weight:</strong> {((group.weeks.reduce((t, a) => t + Number(a.grade_weight || 0), 0) / group.weeks.length).toFixed(2))}</span>
+                      <strong>Average Score:</strong> {group.weeks.length ? ((group.weeks.reduce((t, a) => t + Number(a.combined_score || 0), 0) / group.weeks.length).toFixed(2)) : '0.00'}
+                      <span style={{ marginLeft: '12px' }}><strong>Average Weight:</strong> {group.weeks.length ? ((group.weeks.reduce((t, a) => t + Number(a.grade_weight || 0), 0) / group.weeks.length).toFixed(2)) : '0.00'}</span>
                     </div>
                   </div>
                 );
@@ -597,7 +619,7 @@ const AcademicSupervisorDashboard = () => {
                   evaluatorId={user?.id}
                   evaluationType="academic"
                   existingEvaluation={editingEvaluation}
-                  initialWeekNumber={editingEvaluation?.week_number || 1}
+                  initialWeekNumber={selectedWeekNumber}
                   studentName={evalPlacement.student?.full_name || evalPlacement.student_name || 'Student'}
                   onSaved={() => {
                     toast.success('Evaluation saved successfully');
@@ -607,7 +629,7 @@ const AcademicSupervisorDashboard = () => {
                   onCancel={closeEvalEditor}
                 />
               </div>
-            )}
+            ) : null}
           </>
         )}
 

@@ -46,6 +46,7 @@ export default function WorkplaceSupervisorDashboard() {
   const [error, setError] = useState('')
   const [evaluatingPlacementId, setEvaluatingPlacementId] = useState(null)
   const [evaluatingLogId, setEvaluatingLogId] = useState(null)
+  const [editingEvaluation, setEditingEvaluation] = useState(null)
 
   const loadData = useCallback(async () => {
     try {
@@ -116,6 +117,16 @@ export default function WorkplaceSupervisorDashboard() {
   const handlePlacementSelect = (placement) => {
     setSelectedPlacement(placement)
     setActiveTab('logs')
+  }
+
+  const openEvaluationEditor = (placementId, evaluation = null) => {
+    setEvaluatingPlacementId(placementId)
+    setEditingEvaluation(evaluation)
+  }
+
+  const closeEvaluationEditor = () => {
+    setEvaluatingPlacementId(null)
+    setEditingEvaluation(null)
   }
 
   const handleReviewLog = async (logId, supervisorComment) => {
