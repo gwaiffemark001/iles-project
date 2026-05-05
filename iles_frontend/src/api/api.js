@@ -114,6 +114,7 @@ export const logsAPI = {
   deleteLog: (id) => api.delete(`/logs/${id}/`),
   reviewLog: (id, data) => api.put(`/logs/${id}/review/`, data),
   approveLog: (id, data) => api.put(`/logs/${id}/approve/`, data),
+  reviseLog: (id, data) => api.put(`/logs/${id}/revise/`, data),
 };
 
 export const placementsAPI = {
@@ -129,6 +130,14 @@ export const evaluationsAPI = {
   createEvaluation: (data) => api.post('/evaluations/', data),
   getEvaluation: (id) => api.get(`/evaluations/${id}/`),
   updateEvaluation: (id, data) => api.put(`/evaluations/${id}/`, data),
+  deleteEvaluation: (id) => api.delete(`/evaluations/${id}/`),
+};
+
+export const criteriaAPI = {
+  getCriteria: () => api.get('/criteria/'),
+  createCriteria: (data) => api.post('/criteria/', data),
+  updateCriteria: (id, data) => api.put(`/criteria/${id}/`, data),
+  deleteCriteria: (id) => api.delete(`/criteria/${id}/`),
 };
 
 export const adminAPI = {

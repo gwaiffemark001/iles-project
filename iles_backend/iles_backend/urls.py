@@ -21,6 +21,7 @@ from core.views import (
     PlacementApplicationListCreateView,
     PlacementApplicationDecisionView,
     EvaluationCriteriaListView, 
+    EvaluationCriteriaDetailView,
     LogRevisionView, 
     WeeklyLogSubmitView,
     AdminStatisticsView,
@@ -72,6 +73,7 @@ urlpatterns = [
 
     # EvaluationCriteria
     path('api/criteria/', EvaluationCriteriaListView.as_view(), name='criteria-list'),
+    path('api/criteria/<int:pk>/', EvaluationCriteriaDetailView.as_view(), name='criteria-detail'),
 
     # Log Revison
     path('api/logs/<int:pk>/revise/', LogRevisionView.as_view(), name='log-revise'),
