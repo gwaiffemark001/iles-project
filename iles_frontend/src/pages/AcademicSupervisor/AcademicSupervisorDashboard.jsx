@@ -47,13 +47,11 @@ const AcademicSupervisorDashboard = () => {
   }, []);
 
   useEffect(() => {
-    let isMounted = true;
-    if (isMounted) {
-      fetchData();
-    }
-    return () => {
-      isMounted = false;
+    const initializeData = async () => {
+      await fetchData();
     };
+
+    initializeData();
   }, [fetchData]);
 
   const getStudentsData = () => {

@@ -43,8 +43,7 @@ export default function SupervisorEvaluationForm({
   }, []);
 
   useEffect(() => {
-    let isMounted = true;
-    if (isMounted && criteria.length > 0) {
+    const initializeItems = async () => {
       if (existingEvaluation && Array.isArray(existingEvaluation.items)) {
         setItems(
           criteria.map((c) => {
@@ -57,17 +56,20 @@ export default function SupervisorEvaluationForm({
             };
           })
         );
-      } else if (criteria.length > 0) {
+      } else if (criteria.length > 0 && !existingEvaluation) {
         setItems(criteria.map((c) => ({ criteria_id: c.id, score: 0 })));
       }
-    }
-    return () => {
-      isMounted = false;
     };
+
+    initializeItems();
   }, [criteria, existingEvaluation]);
 
   useEffect(() => {
-    setWeekNumber(existingEvaluation?.week_number || initialWeekNumber || 1);
+    const initializeWeekNumber = async () => {
+      setWeekNumber(existingEvaluation?.week_number || initialWeekNumber || 1);
+    };
+
+    initializeWeekNumber();
   }, [existingEvaluation, initialWeekNumber]);
 
   const setItemScore = (criteriaId, value) => {
