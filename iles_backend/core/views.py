@@ -341,11 +341,19 @@ class UserRegistrationView(APIView):
         if email and CustomUser.objects.filter(email=email).exists():
             return Response({'email': ['Email already exists.']}, status=status.HTTP_400_BAD_REQUEST)
 
+        allowed_roles = {'student', 'workplace_supervisor', 'academic_supervisor'}
+        role = request.data.get('role', 'student')
+        if role not in allowed_roles:
+            return Response(
+                {'role': [f"Role must be one of: {', '.join(sorted(allowed_roles))}."]},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
         user = CustomUser.objects.create_user(
             username=username,
             email=email,
             password=password,
-            role=request.data.get('role', 'student'),
+            role=role,
             first_name=request.data.get('first_name', ''),
             last_name=request.data.get('last_name', ''),
             phone=request.data.get('phone'),
@@ -406,25 +414,15 @@ class EvaluationListView(APIView):
     def get(self, request):
         if request.user.role in ['admin', 'workplace_supervisor', 'academic_supervisor']:
             evaluations = Evaluation.objects.all()
+            serializer = EvaluationSerializer(evaluations, many=True)
+            return Response(serializer.data)
         else:
+            # For students, return only their placement evaluations
             evaluations = Evaluation.objects.filter(
                 placement__student=request.user
             )
-            # Calculate total score if all 3 evaluations exist
-            if evaluations.count() == 3:
-                scores = {e.evaluation_type: e.score for e in evaluations}
-                total = (
-                    (scores.get('supervisor', 0) * 40 / 100) +
-                    (scores.get('academic', 0) * 30 / 100) +
-                    (scores.get('logbook', 0) * 30 / 100)
-                )
-                return Response({
-                    'evaluations': EvaluationSerializer(evaluations, many=True).data,
-                    'total_score': round(total, 2),
-                    'complete': True
-                })
-        serializer = EvaluationSerializer(evaluations, many=True)
-        return Response(serializer.data)
+            serializer = EvaluationSerializer(evaluations, many=True)
+            return Response(serializer.data)
 
     def post(self, request):
         if request.user.role not in ['admin', 'workplace_supervisor', 'academic_supervisor']:

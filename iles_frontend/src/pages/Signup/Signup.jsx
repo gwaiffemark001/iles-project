@@ -6,7 +6,7 @@ import '../Login/Login.css';
 function Signup() {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
-    const [extraFields, setExtraFields] = useState(false);
+    const [role, setRole] = useState('student');
     const [errorMessage, setErrorMessage] = useState('');
     const [successMessage, setSuccessMessage] = useState('');
     const [studentNumber, setStudentNumber] = useState('');
@@ -14,18 +14,6 @@ function Signup() {
 
     const navigate = useNavigate();
     const { register } = useAuth();
-    // student email domains are put here
-    const universityDomains = ['@students.mak.ac.ug'];
-
-    // Show extra fields for students//
-    const handleEmailChange = (e) => {
-        const value = e.target.value;
-        setEmail(value);
-
-        const isUniversityEmail = universityDomains.some((domain) => value.endsWith(domain));
-        setExtraFields(isUniversityEmail);
-    };
-
     const handleSignup = async (e) => {
         e.preventDefault();
         setErrorMessage('');
@@ -33,10 +21,18 @@ function Signup() {
 
         try {
             const username = email.includes('@') ? email.split('@')[0] : email;
-            let body = { username, email, password };
-            if (extraFields) {
-                body.student_number = studentNumber;
-            }
+            const body = {
+                username,
+                email,
+                password,
+                role,
+                ...(role === 'student'
+                    ? {
+                        student_number: studentNumber,
+                        registration_number: registrationNumber,
+                    }
+                    : {}),
+            };
 
             const result = await register(body);
 
@@ -61,11 +57,20 @@ function Signup() {
                 </header>
 
                 <form className="logins" onSubmit={handleSignup}>
+                    <select
+                        value={role}
+                        onChange={(e) => setRole(e.target.value)}
+                        required
+                    >
+                        <option value="student">Student</option>
+                        <option value="workplace_supervisor">Workplace Supervisor</option>
+                        <option value="academic_supervisor">Academic Supervisor</option>
+                    </select>
                     <input
                         type="email"
                         placeholder="Email"
                         value={email}
-                        onChange={handleEmailChange}
+                        onChange={(e) => setEmail(e.target.value)}
                         required
                     />
                     <input
@@ -76,9 +81,9 @@ function Signup() {
                         required
                     />
 
-                    {extraFields && (
+                    {role === 'student' && (
                         <div className="extra-fields">
-                            <p className='student_detected'>Student email detected! Please fill in the additional fields</p>
+                            <p className='student_detected'>Student account detected! Please fill in the additional fields</p>
                             <input
                                 type="text"
                                 placeholder="Student Number"
