@@ -342,6 +342,31 @@ class EvaluationSerializer(serializers.ModelSerializer):
         """Return evaluation items using the correct related_name"""
         return EvaluationItemSerializer(obj.evaluation_items.all(), many=True).data
 
+    def validate(self, attrs):
+        placement = attrs.get("placement") or getattr(self.instance, "placement", None)
+        evaluation_type = attrs.get("evaluation_type") or getattr(self.instance, "evaluation_type", None)
+        week_number = attrs.get("week_number") or getattr(self.instance, "week_number", None)
+
+        if placement and evaluation_type and week_number:
+            duplicate_qs = Evaluation.objects.filter(
+                placement=placement,
+                evaluation_type=evaluation_type,
+                week_number=week_number,
+            )
+            if self.instance:
+                duplicate_qs = duplicate_qs.exclude(pk=self.instance.pk)
+
+            if duplicate_qs.exists():
+                raise serializers.ValidationError(
+                    {
+                        "week_number": [
+                            "Only one evaluation can be created for this student, week, and supervisor type."
+                        ]
+                    }
+                )
+
+        return attrs
+
     def create(self, validated_data):
         # Allow nested evaluation items via initial data
         request = self.context.get('request')
