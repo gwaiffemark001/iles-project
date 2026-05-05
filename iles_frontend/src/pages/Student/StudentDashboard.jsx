@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '../../contexts/useAuth';
-import { logsAPI, placementsAPI, evaluationsAPI } from '@/api/api';
+import { logsAPI, placementsAPI, evaluationsAPI, criteriaAPI } from '@/api/api';
 import { getErrorMessage } from '@/api/api';
 import './StudentDashboard.css';
 
@@ -82,6 +82,7 @@ const StudentDashboard = () => {
   const [logs, setLogs] = useState([]);
   const [placements, setPlacements] = useState([]);
   const [evaluations, setEvaluations] = useState([]);
+  const [criteria, setCriteria] = useState([]);
   const [activeTab, setActiveTab] = useState('logs');
   const [formData, setFormData] = useState(createInitialLogForm());
   const [editingLogId, setEditingLogId] = useState(null);
@@ -91,14 +92,24 @@ const StudentDashboard = () => {
   const [pageError, setPageError] = useState('');
   const [loading, setLoading] = useState(true);
   const weeklyEvaluationSummaries = useMemo(() => getWeeklyEvaluationSummaries(evaluations), [evaluations]);
+  const loggablePlacements = useMemo(
+    () => placements.filter((placement) => placement.status !== 'completed'),
+    [placements],
+  );
+  const selectedPlacement = useMemo(
+    () => placements.find((placement) => String(placement.id) === String(formData.placement_id)),
+    [placements, formData.placement_id],
+  );
+  const isCompletedPlacementSelected = selectedPlacement?.status === 'completed';
 
   const fetchData = async () => {
     try {
       setPageError('');
-      const [logsRes, placementsRes, evaluationsRes] = await Promise.all([
+      const [logsRes, placementsRes, evaluationsRes, criteriaRes] = await Promise.all([
         logsAPI.getLogs(),
         placementsAPI.getPlacements(),
         evaluationsAPI.getEvaluations(),
+        criteriaAPI.getCriteria(),
       ]);
 
       const nextPlacements = placementsRes.data;
@@ -107,6 +118,7 @@ const StudentDashboard = () => {
       setLogs(nextLogs);
       setPlacements(nextPlacements);
       setEvaluations(evaluationsRes.data);
+      setCriteria(Array.isArray(criteriaRes.data) ? criteriaRes.data : []);
     } catch (error) {
       setPageError(getErrorMessage(error, 'Unable to load your dashboard right now.'));
     } finally {
@@ -123,26 +135,30 @@ const StudentDashboard = () => {
   }, []);
 
   useEffect(() => {
-    if (!placements.length) {
+    if (!loggablePlacements.length) {
       return;
     }
 
     const updateFormData = () => {
       setFormData((currentData) => {
-        if (currentData.placement_id) {
+        const currentlySelectedPlacement = loggablePlacements.find(
+          (placement) => String(placement.id) === String(currentData.placement_id),
+        );
+
+        if (currentlySelectedPlacement) {
           return currentData;
         }
 
-        const activePlacement = placements.find((placement) => placement.status === 'active') || placements[0];
+        const activePlacement = loggablePlacements.find((placement) => placement.status === 'active') || loggablePlacements[0];
         return createInitialLogForm(activePlacement.id);
       });
     };
 
     updateFormData();
-  }, [placements]);
+  }, [loggablePlacements]);
 
   const resetForm = () => {
-    const activePlacement = placements.find((placement) => placement.status === 'active') || placements[0];
+    const activePlacement = loggablePlacements.find((placement) => placement.status === 'active') || loggablePlacements[0];
     setEditingLogId(null);
     setFormData(createInitialLogForm(activePlacement?.id));
   };
@@ -155,6 +171,11 @@ const StudentDashboard = () => {
   const handleSaveLog = async (nextStatus) => {
     if (!formData.placement_id) {
       setFormError('You need an assigned placement before creating a log.');
+      return;
+    }
+
+    if (isCompletedPlacementSelected) {
+      setFormError('You cannot create or submit logs for a completed placement.');
       return;
     }
 
@@ -210,6 +231,11 @@ const StudentDashboard = () => {
 
   const handleEditLog = (log) => {
     if (log.status !== 'draft') {
+      return;
+    }
+
+    if (log.placement?.status === 'completed') {
+      setFormError('You cannot edit logs for a completed placement.');
       return;
     }
 
@@ -272,6 +298,12 @@ const StudentDashboard = () => {
           >
             Evaluations
           </button>
+           <button
+             className={`nav-item ${activeTab === 'criteria' ? 'active' : ''}`}
+             onClick={() => setActiveTab('criteria')}
+           >
+             Criteria
+           </button>
         </nav>
         <div className="sidebar-bottom">
           <button className="nav-item logout" onClick={logout}>
@@ -313,8 +345,11 @@ const StudentDashboard = () => {
 
                 {formError ? <div className="error-message">{formError}</div> : null}
                 {formSuccess ? <div className="success-message">{formSuccess}</div> : null}
+                {isCompletedPlacementSelected ? (
+                  <div className="error-message">This placement is completed. New logs and submissions are disabled.</div>
+                ) : null}
 
-                {placements.length ? (
+                {loggablePlacements.length ? (
                   <form className="log-form-grid" onSubmit={(event) => event.preventDefault()}>
                     <div className="form-row">
                       <label className="form-field">
@@ -325,7 +360,7 @@ const StudentDashboard = () => {
                           onChange={handleFormChange}
                           disabled={saving}
                         >
-                          {placements.map((placement) => (
+                          {loggablePlacements.map((placement) => (
                             <option key={placement.id} value={placement.id}>
                               {placement.company_name} ({placement.status})
                             </option>
@@ -401,7 +436,7 @@ const StudentDashboard = () => {
                         type="button"
                         className="secondary-btn"
                         onClick={() => handleSaveLog('draft')}
-                        disabled={saving}
+                        disabled={saving || isCompletedPlacementSelected}
                       >
                         {saving ? 'Saving...' : editingLogId ? 'Update Draft' : 'Save Draft'}
                       </button>
@@ -409,7 +444,7 @@ const StudentDashboard = () => {
                         type="button"
                         className="btn-primary-action"
                         onClick={() => handleSaveLog('submitted')}
-                        disabled={saving}
+                        disabled={saving || isCompletedPlacementSelected}
                       >
                         {saving ? 'Submitting...' : editingLogId ? 'Update and Submit' : 'Submit Log'}
                       </button>
@@ -417,7 +452,7 @@ const StudentDashboard = () => {
                   </form>
                 ) : (
                   <div className="empty-state">
-                    <p>You do not have an assigned placement yet, so log submission is not available.</p>
+                    <p>You have no active or pending placements available for log creation.</p>
                   </div>
                 )}
               </div>
@@ -521,6 +556,29 @@ const StudentDashboard = () => {
                   </div>
                 )}
               </div>
+            </div>
+          )}
+
+          {activeTab === 'criteria' && (
+            <div className="evaluations-section">
+              <h2>Evaluation Criteria</h2>
+              {criteria.length ? (
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '16px' }}>
+                  {criteria.map((crit) => (
+                    <div key={crit.id} className="evaluation-card" style={{ border: '1px solid #e2e8f0' }}>
+                      <h3>{crit.name}</h3>
+                      {crit.description ? <p>{crit.description}</p> : null}
+                      <p><strong>Max Score:</strong> {crit.max_score}</p>
+                      <p><strong>Supervisor Share:</strong> {crit.supervisor_share}%</p>
+                      <p><strong>Academic Share:</strong> {crit.academic_share}%</p>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="empty-state">
+                  <p>No criteria have been defined yet.</p>
+                </div>
+              )}
             </div>
           )}
         </div>
