@@ -420,10 +420,18 @@ class PasswordResetRequestView(APIView):
         )
 
         try:
-            send_mail(subject, message, None, [user.email])
-        except Exception:
-            # Fallback: log to console if email backend not configured
+            from django.conf import settings
+            send_mail(
+                subject,
+                message,
+                settings.EMAIL_HOST_USER or settings.DEFAULT_FROM_EMAIL,
+                [user.email],
+                fail_silently=False,
+            )
+        except Exception as e:
+            # Fallback: log to console if email backend not configured or sending fails
             print('Password reset link (development):', reset_url)
+            print('Email error:', str(e))
 
         return Response({'message': 'If an account with that email exists, a reset link has been sent.'})
 
