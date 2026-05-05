@@ -522,4 +522,6 @@ class Notification(models.Model):
 
     def __str__(self):
         return f"{self.recipient.username} - {self.title}"
+
+# Comment for models.py
     
