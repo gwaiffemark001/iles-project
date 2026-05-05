@@ -13,4 +13,3 @@ const Layout = ({ children }) => {
 
 export default Layout;
 
-// Comment for Layout.jsx
