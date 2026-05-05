@@ -384,7 +384,15 @@ class EvaluationSerializer(serializers.ModelSerializer):
             "score",
             "evaluation_type",
             "evaluated_at",
+            "weighted_score",
         ]
+        extra_kwargs = {
+            "evaluation_type": {"default": "supervisor"},
+            "placement": {"required": True},
+            "week_number": {"required": True},
+            "score": {"read_only": True},
+            "weighted_score": {"read_only": True},
+        }
 
     def get_evaluator_name(self, obj):
         return CustomUserSerializer(obj.evaluator).data["full_name"]
