@@ -1,7 +1,9 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState, useCallback } from 'react'
 import { toast } from 'react-toastify'
 import { evaluationsAPI, getErrorMessage, logsAPI, placementsAPI } from '../../api/api'
+import { buildWeeklyEvaluationSummaries, getGradeWeight } from '../../utils/evaluationSummary'
 import { useAuth } from '../../contexts/useAuth'
+import SupervisorEvaluationForm from '../components/SupervisorEvaluationForm'
 import './WorkplaceSupervisorDashboard.css'
 
 function normalizePlacement(placement, logs, evaluations) {
@@ -42,8 +44,11 @@ export default function WorkplaceSupervisorDashboard() {
   const [comment, setComment] = useState('')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [evaluatingPlacementId, setEvaluatingPlacementId] = useState(null)
+  const [evaluatingLogId, setEvaluatingLogId] = useState(null)
+  const [editingEvaluation, setEditingEvaluation] = useState(null)
 
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     try {
       setLoading(true)
       setError('')
@@ -60,15 +65,11 @@ export default function WorkplaceSupervisorDashboard() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [])
 
   useEffect(() => {
-    const initializeData = async () => {
-      await loadData();
-    };
-
-    initializeData();
-  }, [])
+    loadData();
+  }, [loadData])
 
   const interns = useMemo(
     () => placements.map((placement) => normalizePlacement(placement, logs, evaluations)),
@@ -82,6 +83,33 @@ export default function WorkplaceSupervisorDashboard() {
     activePlacements: interns.filter((intern) => intern.status === 'active').length,
   }), [interns])
 
+  // Get evaluations filtered for workplace supervisors (evaluation_type = 'supervisor')
+  const supervisorEvaluations = useMemo(() => {
+    return evaluations.filter(e => e.evaluation_type === 'supervisor');
+  }, [evaluations]);
+
+  // Build grouped weekly summaries like admin dashboard
+  const { weeklySummaries: allWeeklySummaries } = useMemo(
+    () => buildWeeklyEvaluationSummaries(supervisorEvaluations),
+    [supervisorEvaluations]
+  );
+
+  const groupedSummaries = useMemo(() => {
+    const groups = new Map();
+    allWeeklySummaries.forEach((summary) => {
+      const placementId = summary.placement_id;
+      if (!groups.has(placementId)) {
+        groups.set(placementId, {
+          placementId,
+          placementName: summary.placementName || 'Unknown Placement',
+          weeks: [],
+        });
+      }
+      groups.get(placementId).weeks.push(summary);
+    });
+    return Array.from(groups.values());
+  }, [allWeeklySummaries]);
+
   const filteredLogs = selectedPlacement
     ? logs.filter((log) => (log.placement?.id ?? log.placement_id) === selectedPlacement.id)
     : []
@@ -89,6 +117,16 @@ export default function WorkplaceSupervisorDashboard() {
   const handlePlacementSelect = (placement) => {
     setSelectedPlacement(placement)
     setActiveTab('logs')
+  }
+
+  const openEvaluationEditor = (placementId, evaluation = null) => {
+    setEvaluatingPlacementId(placementId)
+    setEditingEvaluation(evaluation)
+  }
+
+  const closeEvaluationEditor = () => {
+    setEvaluatingPlacementId(null)
+    setEditingEvaluation(null)
   }
 
   const handleReviewLog = async (logId, supervisorComment) => {
@@ -112,6 +150,14 @@ export default function WorkplaceSupervisorDashboard() {
       toast.error(getErrorMessage(requestError))
     }
   }
+
+  const getExistingEvaluationForLog = (log) => evaluations.find(
+    (evaluation) => (
+      evaluation.placement?.id === (log.placement?.id ?? log.placement_id)
+      && evaluation.evaluation_type === 'supervisor'
+      && evaluation.week_number === log.week_number
+    ),
+  )
 
   const handleRejectLog = async (logId, supervisorComment) => {
     try {
@@ -261,8 +307,35 @@ export default function WorkplaceSupervisorDashboard() {
                               <button type="button" className="workplace-btn-approve" onClick={() => handleApproveLog(log.id)}>Approve</button>
                               <button type="button" className="workplace-btn-reject" onClick={() => handleRejectLog(log.id, comment)}>Reject</button>
                             </div>
+                            <div style={{ marginTop: '12px' }}>
+                              <button
+                                type="button"
+                                className="workplace-btn-review"
+                                onClick={() => setEvaluatingLogId(log.id)}
+                              >
+                                {getExistingEvaluationForLog(log) ? 'Edit Weekly Evaluation' : 'Evaluate This Week'}
+                              </button>
+                            </div>
                           </div>
                         )}
+                        {evaluatingLogId === log.id ? (
+                          <div style={{ marginTop: '16px' }}>
+                            <SupervisorEvaluationForm
+                              placementId={log.placement?.id ?? log.placement_id}
+                              evaluatorId={user?.id}
+                              evaluationType="supervisor"
+                              existingEvaluation={getExistingEvaluationForLog(log)}
+                              initialWeekNumber={log.week_number}
+                              studentName={log.placement?.student?.full_name || log.placement?.student?.username || 'Student'}
+                              onSaved={() => {
+                                toast.success('Evaluation saved successfully')
+                                setEvaluatingLogId(null)
+                                loadData()
+                              }}
+                              onCancel={() => setEvaluatingLogId(null)}
+                            />
+                          </div>
+                        ) : null}
                       </div>
                     ))}
                   </div>
@@ -274,43 +347,91 @@ export default function WorkplaceSupervisorDashboard() {
 
         {activeTab === 'evaluations' && (
           <section className="workplace-evaluations-section">
-            <div className="workplace-section-header"><h2>Intern Evaluations</h2></div>
-            <div className="workplace-evaluations-grid">
-              {interns.map((intern) => (
-                <div key={intern.id} className="workplace-evaluation-card">
-                  <div className="workplace-evaluation-header">
-                    <h3>{intern.studentName}</h3>
-                    <span className={`workplace-status-badge ${intern.status}`}>{intern.status}</span>
-                  </div>
-                  <div className="workplace-evaluation-details">
-                    <p><strong>Company:</strong> {intern.companyName}</p>
-                    <p><strong>Period:</strong> {intern.startDate} - {intern.endDate}</p>
-                  </div>
-                  <div className="workplace-evaluation-score">
-                    <p><strong>Supervisor Evaluation:</strong></p>
-                    {intern.evaluationScore ? (
-                      <div className="workplace-score-display">
-                        <span className="workplace-score-value">{intern.evaluationScore}</span>
-                        <span className="workplace-score-date">Evaluated: {new Date(intern.evaluatedAt).toLocaleDateString()}</span>
-                      </div>
-                    ) : (
-                      <p className="workplace-no-evaluation">Not evaluated yet</p>
-                    )}
-                  </div>
-                  <div className="workplace-log-summary">
-                    <p><strong>Log Summary:</strong></p>
-                    <div className="workplace-log-stats">
-                      <span>Draft: {intern.draftLogs}</span>
-                      <span>Submitted: {intern.submittedLogs}</span>
-                      <span>Reviewed: {intern.reviewedLogs}</span>
-                      <span>Approved: {intern.approvedLogs}</span>
-                    </div>
-                  </div>
-                </div>
-              ))}
+            <div className="workplace-section-header">
+              <h2>Intern Evaluations</h2>
+              <button
+                onClick={() => setEvaluatingPlacementId('new')}
+                style={{ padding: '8px 16px', backgroundColor: '#27AE60', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
+              >
+                Create New Evaluation
+              </button>
             </div>
-          </section>
-        )}
+
+            {allWeeklySummaries.length === 0 ? (
+              <p>No evaluations recorded yet.</p>
+            ) : (
+              groupedSummaries.map((group) => {
+                const firstWeekData = group.weeks[0];
+                const studentName = firstWeekData?.studentName || 'Unknown Student';
+
+                return (
+                  <div key={group.placementId} style={{ marginBottom: '18px', padding: '16px', background: '#fff', borderRadius: '8px', border: '1px solid #e9ecef' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
+                      <div>
+                        <h3 style={{ margin: '0 0 8px 0', color: '#2c3e50' }}>{group.placementName}</h3>
+                        <div style={{ color: '#7f8c8d', fontSize: '14px' }}>
+                          <strong>Student:</strong> {studentName}
+                        </div>
+                      </div>
+                      <div style={{ color: '#64748b', textAlign: 'right' }}>
+                        <div style={{ fontWeight: '600' }}>Weeks: {group.weeks.length}</div>
+                      </div>
+                    </div>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '12px' }}>
+                      {group.weeks.map((w) => (
+                        <div 
+                          key={w.key}
+                          style={{ 
+                            padding: '12px', 
+                            background: '#f7f9fc', 
+                            borderRadius: '8px',
+                            cursor: 'pointer',
+                            border: '1px solid #e2e8f0',
+                            transition: 'all 0.2s'
+                          }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.1)';
+                            e.currentTarget.style.backgroundColor = '#eef2f7';
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.boxShadow = 'none';
+                            e.currentTarget.style.backgroundColor = '#f7f9fc';
+                          }}
+                          onClick={() => {
+                            const evalToEdit = supervisorEvaluations.find(
+                              e => e.placement?.id === group.placementId && e.week_number === w.week_number
+                            );
+                            if (evalToEdit) {
+                              setEvaluatingPlacementId(group.placementId);
+                            }
+                          }}
+                          >
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                              <div>
+                                <div style={{ fontWeight: 700 }}>Week {w.week_number}</div>
+                                <div style={{ fontSize: '13px', color: '#64748b', marginTop: '4px' }}>Score: {w.combined_score ?? 'N/A'}</div>
+                              </div>
+                              <div style={{ textAlign: 'right' }}>
+                                <div style={{ fontSize: '18px', fontWeight: 'bold', color: '#2563eb' }}>{w.combined_score ?? 'N/A'}</div>
+                                <div style={{ fontSize: '13px', color: '#64748b' }}>Weight: {w.grade_weight ?? 'N/A'}</div>
+                              </div>
+                            </div>
+                            <div style={{ marginTop: '8px', fontSize: '12px', color: '#475569' }}>
+                              Click to edit
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                      <div style={{ marginTop: '12px', textAlign: 'right', color: '#475569' }}>
+                        <strong>Average Score:</strong> {((group.weeks.reduce((t, a) => t + Number(a.combined_score || 0), 0) / group.weeks.length).toFixed(2))}
+                        <span style={{ marginLeft: '12px' }}><strong>Average Weight:</strong> {((group.weeks.reduce((t, a) => t + Number(a.grade_weight || 0), 0) / group.weeks.length).toFixed(2))}</span>
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+            </section>
+          )}
       </main>
     </div>
   )

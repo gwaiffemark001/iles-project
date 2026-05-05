@@ -1,6 +1,23 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import axios from 'axios'
 import { useAuth } from '../auth/useAuth'
+import { criteriaAPI, evaluationsAPI, placementsAPI } from '../api/api'
+import { buildWeeklyEvaluationSummaries, getGradeWeight } from '../utils/evaluationSummary'
+
+const userRoles = [
+  { value: 'student', label: 'Student' },
+  { value: 'workplace_supervisor', label: 'Workplace Supervisor' },
+  { value: 'academic_supervisor', label: 'Academic Supervisor' },
+  { value: 'admin', label: 'Admin' },
+]
+
+const placementStatuses = [
+  { value: 'pending', label: 'Pending' },
+  { value: 'active', label: 'Active' },
+  { value: 'completed', label: 'Completed' },
+]
+
+// use shared helper for weekly summaries and grade weights
 
 function AdminDashboard() {
   const { user, logout } = useAuth()
@@ -14,8 +31,187 @@ function AdminDashboard() {
   const [evaluations, setEvaluations] = useState([])
   const [searchTerm, setSearchTerm] = useState('')
   const [filterRole, setFilterRole] = useState('all')
+  const [editingEntity, setEditingEntity] = useState(null)
+  const [editingItem, setEditingItem] = useState(null)
+  const [placementFormMode, setPlacementFormMode] = useState('edit')
+  const [editFormData, setEditFormData] = useState({})
+  const [editSaving, setEditSaving] = useState(false)
+  const [editError, setEditError] = useState('')
+  
+  // Criteria management state
+  const [criteria, setCriteria] = useState([])
+  const [showCriteriaForm, setShowCriteriaForm] = useState(false)
+  const [criteriaFormData, setCriteriaFormData] = useState({ name: '', description: '', max_score: '', supervisor_share: '', academic_share: '' })
+  const [editingCriteria, setEditingCriteria] = useState(null)
+  const [criteriaSaving, setCriteriaSaving] = useState(false)
+  const [criteriaError, setCriteriaError] = useState('')
+  
+  // Evaluation detail modal state
+  const [selectedEvaluation, setSelectedEvaluation] = useState(null)
+  const [weeklySummary, setWeeklySummary] = useState(null)
+  const [showWeeklyModal, setShowWeeklyModal] = useState(false)
+  const [selectedPlacementForWeekly, setSelectedPlacementForWeekly] = useState(null)
+
+  const { weeklySummaries: allWeeklySummaries } = useMemo(() => buildWeeklyEvaluationSummaries(evaluations), [evaluations])
+  const groupedSummaries = useMemo(() => {
+    if (!allWeeklySummaries || allWeeklySummaries.length === 0) return []
+    return Object.values(allWeeklySummaries.reduce((acc, s) => {
+      const key = s.placementId || s.placementId === 0 ? s.placementId : s.placementName
+      acc[key] = acc[key] || { placementName: s.placementName || 'Unknown', placementId: key, weeks: [] }
+      acc[key].weeks.push(s)
+      return acc
+    }, {}))
+  }, [allWeeklySummaries])
 
   const authHeaders = useMemo(() => ({ headers: { Authorization: `Bearer ${token}` } }), [token])
+
+  const closeEditModal = () => {
+    if (editSaving) {
+      return
+    }
+
+    setEditingEntity(null)
+    setEditingItem(null)
+    setPlacementFormMode('edit')
+    setEditFormData({})
+    setEditError('')
+  }
+
+  const handleEditFieldChange = (event) => {
+    const { name, value } = event.target
+    setEditFormData((currentData) => ({ ...currentData, [name]: value }))
+  }
+
+  const handleEditUser = (selectedUser) => {
+    setEditingEntity('user')
+    setEditingItem(selectedUser)
+    setEditError('')
+    setEditFormData({
+      username: selectedUser.username || '',
+      email: selectedUser.email || '',
+      first_name: selectedUser.first_name || '',
+      last_name: selectedUser.last_name || '',
+      role: selectedUser.role || 'student',
+      phone: selectedUser.phone || '',
+      department: selectedUser.department || '',
+      staff_number: selectedUser.staff_number || '',
+      student_number: selectedUser.student_number || '',
+      registration_number: selectedUser.registration_number || '',
+      password: '',
+    })
+  }
+
+  const handleEditPlacement = (selectedPlacement) => {
+    setEditingEntity('placement')
+    setEditingItem(selectedPlacement)
+    setPlacementFormMode('edit')
+    setEditError('')
+    setEditFormData({
+      student_id: selectedPlacement.student?.id ? String(selectedPlacement.student.id) : '',
+      workplace_supervisor_id: selectedPlacement.workplace_supervisor?.id ? String(selectedPlacement.workplace_supervisor.id) : '',
+      academic_supervisor_id: selectedPlacement.academic_supervisor?.id ? String(selectedPlacement.academic_supervisor.id) : '',
+      company_name: selectedPlacement.company_name || '',
+      company_address: selectedPlacement.company_address || '',
+      start_date: selectedPlacement.start_date || '',
+      end_date: selectedPlacement.end_date || '',
+      status: selectedPlacement.status || 'pending',
+    })
+  }
+
+  const handleAddPlacement = () => {
+    setEditingEntity('placement')
+    setEditingItem({ id: null })
+    setPlacementFormMode('create')
+    setEditError('')
+    setEditFormData({
+      student_id: '',
+      workplace_supervisor_id: '',
+      academic_supervisor_id: '',
+      company_name: '',
+      company_address: '',
+      start_date: '',
+      end_date: '',
+      status: 'pending',
+    })
+  }
+
+  const handleSaveEdit = async (event) => {
+    event.preventDefault()
+
+    if (!editingEntity || (!editingItem && editingEntity !== 'placement')) {
+      return
+    }
+
+    setEditSaving(true)
+    setEditError('')
+
+    try {
+      if (editingEntity === 'user') {
+        const payload = {
+          username: editFormData.username.trim(),
+          email: editFormData.email.trim(),
+          first_name: editFormData.first_name.trim(),
+          last_name: editFormData.last_name.trim(),
+          role: editFormData.role,
+          phone: editFormData.phone.trim(),
+          department: editFormData.department.trim(),
+          staff_number: editFormData.staff_number.trim(),
+          student_number: editFormData.student_number.trim(),
+          registration_number: editFormData.registration_number.trim(),
+        }
+
+        if (editFormData.password.trim()) {
+          payload.password = editFormData.password.trim()
+        }
+
+        const response = await axios.put(
+          `http://127.0.0.1:8000/api/users/${editingItem.id}/`,
+          payload,
+          authHeaders,
+        )
+
+        setUsers((currentUsers) => currentUsers.map((existingUser) => (
+          existingUser.id === editingItem.id ? response.data : existingUser
+        )))
+      }
+
+      if (editingEntity === 'placement') {
+        const payload = {
+          student_id: editFormData.student_id ? Number(editFormData.student_id) : null,
+          workplace_supervisor_id: editFormData.workplace_supervisor_id ? Number(editFormData.workplace_supervisor_id) : null,
+          academic_supervisor_id: editFormData.academic_supervisor_id ? Number(editFormData.academic_supervisor_id) : null,
+          company_name: editFormData.company_name.trim(),
+          company_address: editFormData.company_address.trim(),
+          start_date: editFormData.start_date,
+          end_date: editFormData.end_date,
+          status: editFormData.status,
+        }
+
+        if (placementFormMode === 'create') {
+          const response = await placementsAPI.createPlacement(payload)
+          setPlacements((currentPlacements) => [...currentPlacements, response.data])
+        } else {
+          const response = await axios.put(
+            `http://127.0.0.1:8000/api/placements/${editingItem.id}/`,
+            payload,
+            authHeaders,
+          )
+
+          setPlacements((currentPlacements) => currentPlacements.map((existingPlacement) => (
+            existingPlacement.id === editingItem.id ? response.data : existingPlacement
+          )))
+        }
+      }
+
+      closeEditModal()
+      alert('Changes saved successfully')
+    } catch (requestError) {
+      const message = requestError?.response?.data?.error || requestError?.response?.data?.message || requestError?.message || 'Unable to save changes.'
+      setEditError(message)
+    } finally {
+      setEditSaving(false)
+    }
+  }
 
   const handleDeleteUser = async (userId) => {
     console.log('Attempting to delete user:', userId)
@@ -35,14 +231,6 @@ function AdminDashboard() {
     }
   }
 
-  const handleEditUser = () => {
-    alert('Edit functionality not implemented yet')
-  }
-
-  const handleEditPlacement = () => {
-    alert('Edit functionality not implemented yet')
-  }
-
   const handleDeletePlacement = async (placementId) => {
     if (window.confirm('Are you sure you want to delete this placement?')) {
       try {
@@ -52,6 +240,180 @@ function AdminDashboard() {
       } catch (error) {
         console.error('Error deleting placement:', error)
         alert('Error deleting placement: ' + (error.response?.data?.message || error.message))
+      }
+    }
+  }
+
+  const fetchPlacementWeeklySummary = (placement) => {
+    // Filter evaluations for this placement - try both placement?.id and placement_id
+    const placementEvaluations = evaluations.filter((evaluation) => {
+      const evalPlacementId = evaluation.placement?.id ?? evaluation.placement_id
+      return evalPlacementId === placement.id
+    })
+
+    console.log('Placement ID:', placement.id)
+    console.log('Total evaluations:', evaluations.length)
+    console.log('Filtered evaluations:', placementEvaluations.length)
+    console.log('Sample evaluation:', placementEvaluations[0])
+
+    const weekNumbers = Array.from(new Set(placementEvaluations.map((evaluation) => evaluation.week_number).filter((weekNumber) => weekNumber !== undefined && weekNumber !== null)))
+      .sort((left, right) => left - right)
+
+    console.log('Week numbers found:', weekNumbers)
+
+    const summary = {
+      weeks: weekNumbers.map((weekNumber) => {
+        const supervisorEvaluation = placementEvaluations.find((evaluation) => evaluation.week_number === weekNumber && evaluation.evaluation_type === 'supervisor')
+        const academicEvaluation = placementEvaluations.find((evaluation) => evaluation.week_number === weekNumber && evaluation.evaluation_type === 'academic')
+
+        console.log(`Week ${weekNumber} - Supervisor:`, supervisorEvaluation?.id, 'Academic:', academicEvaluation?.id)
+        console.log(`Week ${weekNumber} - Supervisor items:`, supervisorEvaluation?.items)
+        console.log(`Week ${weekNumber} - Academic items:`, academicEvaluation?.items)
+
+        const criteriaBreakdown = criteria.map((criterion) => {
+          const supervisorItem = supervisorEvaluation?.items?.find((item) => item.criteria?.id === criterion.id)
+          const academicItem = academicEvaluation?.items?.find((item) => item.criteria?.id === criterion.id)
+          const supervisorScore = supervisorItem?.score ?? null
+          const academicScore = academicItem?.score ?? null
+          const maxScore = Number(criterion.max_score || 0)
+          const weightPercent = Number(criterion.weight_percent || 0)
+          const supervisorShare = Number(criterion.supervisor_share || 0)
+          const academicShare = Number(criterion.academic_share || 0)
+          const supervisorContribution = supervisorScore !== null && maxScore > 0
+            ? ((Number(supervisorScore) / maxScore) * weightPercent * (supervisorShare / 100))
+            : 0
+          const academicContribution = academicScore !== null && maxScore > 0
+            ? ((Number(academicScore) / maxScore) * weightPercent * (academicShare / 100))
+            : 0
+
+          return {
+            criteria_id: criterion.id,
+            criteria_name: criterion.name,
+            max_score: maxScore,
+            weight_percent: weightPercent,
+            supervisor_score: supervisorScore,
+            academic_score: academicScore,
+            supervisor_contribution: Number(supervisorContribution.toFixed(2)),
+            academic_contribution: Number(academicContribution.toFixed(2)),
+            total_contribution: Number((supervisorContribution + academicContribution).toFixed(2)),
+          }
+        })
+
+        const combinedScore = criteriaBreakdown.reduce((total, criterionRow) => total + criterionRow.total_contribution, 0)
+
+        // Calculate supervisor and academic total scores from criteria items
+        let supervisorTotalScore = null
+        let academicTotalScore = null
+
+        if (supervisorEvaluation?.items?.length > 0) {
+          supervisorTotalScore = Number((supervisorEvaluation.items.reduce((total, item) => total + (Number(item.score) || 0), 0) / supervisorEvaluation.items.length).toFixed(2))
+        } else if (supervisorEvaluation?.score != null) {
+          // Fallback to the evaluation's score field if items are empty
+          supervisorTotalScore = Number(supervisorEvaluation.score)
+        }
+
+        if (academicEvaluation?.items?.length > 0) {
+          academicTotalScore = Number((academicEvaluation.items.reduce((total, item) => total + (Number(item.score) || 0), 0) / academicEvaluation.items.length).toFixed(2))
+        } else if (academicEvaluation?.score != null) {
+          // Fallback to the evaluation's score field if items are empty
+          academicTotalScore = Number(academicEvaluation.score)
+        }
+
+        return {
+          week_number: weekNumber,
+          supervisor_score: supervisorTotalScore,
+          academic_score: academicTotalScore,
+          combined_score: Number(combinedScore.toFixed(2)),
+          criteria_breakdown: criteriaBreakdown,
+        }
+      }),
+      average: null,
+    }
+
+    summary.average = summary.weeks.length > 0
+      ? Number((summary.weeks.reduce((total, week) => total + week.combined_score, 0) / summary.weeks.length).toFixed(2))
+      : null
+
+    console.log('Final summary:', summary)
+
+    setWeeklySummary(summary)
+    setSelectedPlacementForWeekly(placement)
+    setShowWeeklyModal(true)
+  }
+
+  // Criteria handlers
+  const handleAddCriteria = () => {
+    setEditingCriteria(null)
+    setCriteriaFormData({ name: '', description: '', max_score: '', supervisor_share: '', academic_share: '' })
+    setShowCriteriaForm(true)
+    setCriteriaError('')
+  }
+
+  const handleEditCriteria = (crit) => {
+    setEditingCriteria(crit)
+    setCriteriaFormData({
+      name: crit.name || '',
+      description: crit.description || '',
+      max_score: crit.max_score || '',
+      supervisor_share: crit.supervisor_share ?? 40,
+      academic_share: crit.academic_share ?? 60,
+    })
+    setShowCriteriaForm(true)
+    setCriteriaError('')
+  }
+
+  const handleSaveCriteria = async (e) => {
+    e.preventDefault()
+    setCriteriaSaving(true)
+    setCriteriaError('')
+    
+    try {
+      const payload = {
+        name: criteriaFormData.name.trim(),
+        description: criteriaFormData.description.trim(),
+        max_score: Number(criteriaFormData.max_score),
+        supervisor_share: Number(criteriaFormData.supervisor_share),
+        academic_share: Number(criteriaFormData.academic_share),
+      }
+
+      if (editingCriteria) {
+        const response = await criteriaAPI.updateCriteria(editingCriteria.id, payload)
+        setCriteria(prev => prev.map(c => c.id === editingCriteria.id ? response.data : c))
+      } else {
+        const response = await criteriaAPI.createCriteria(payload)
+        setCriteria(prev => [...prev, response.data])
+      }
+
+      setShowCriteriaForm(false)
+      setCriteriaFormData({ name: '', description: '', max_score: '', supervisor_share: '', academic_share: '' })
+      setEditingCriteria(null)
+      await fetchDashboardData()
+    } catch (err) {
+      setCriteriaError(err.response?.data?.message || 'Error saving criteria')
+    } finally {
+      setCriteriaSaving(false)
+    }
+  }
+
+  const handleDeleteCriteria = async (critId) => {
+    if (window.confirm('Are you sure you want to delete this criteria?')) {
+      try {
+        await criteriaAPI.deleteCriteria(critId)
+        setCriteria(prev => prev.filter(c => c.id !== critId))
+      } catch (err) {
+        alert('Error deleting criteria: ' + (err.response?.data?.message || err.message))
+      }
+    }
+  }
+
+  const handleDeleteEvaluation = async (evalId) => {
+    if (window.confirm('Are you sure you want to delete this evaluation?')) {
+      try {
+        await evaluationsAPI.deleteEvaluation(evalId)
+        setEvaluations(prev => prev.filter(e => e.id !== evalId))
+        setSelectedEvaluation(null)
+      } catch (err) {
+        alert('Error deleting evaluation: ' + (err.response?.data?.message || err.message))
       }
     }
   }
@@ -69,18 +431,20 @@ function AdminDashboard() {
       setLoading(true)
       setError(null)
 
-      const [statsResponse, placementsResponse, evaluationsResponse, usersResponse] =
+      const [statsResponse, placementsResponse, evaluationsResponse, usersResponse, criteriaResponse] =
         await Promise.all([
           axios.get('http://127.0.0.1:8000/api/admin/statistics/', authHeaders),
           axios.get('http://127.0.0.1:8000/api/placements/', authHeaders),
           axios.get('http://127.0.0.1:8000/api/evaluations/', authHeaders),
           axios.get('http://127.0.0.1:8000/api/users/', authHeaders),
+          criteriaAPI.getCriteria(),
         ])
 
       setStats(statsResponse.data)
       setPlacements(Array.isArray(placementsResponse.data) ? placementsResponse.data : [])
       setEvaluations(Array.isArray(evaluationsResponse.data) ? evaluationsResponse.data : [])
       setUsers(Array.isArray(usersResponse.data) ? usersResponse.data : [])
+      setCriteria(Array.isArray(criteriaResponse.data) ? criteriaResponse.data : [])
 
       console.log('Dashboard data loaded successfully')
     } catch (requestError) {
@@ -200,6 +564,20 @@ function AdminDashboard() {
             }}
           >
             ⭐ Evaluations
+          </button>
+          <button 
+            onClick={() => setActiveSection('criteria')}
+            style={{ 
+              padding: '10px', 
+              backgroundColor: activeSection === 'criteria' ? '#34495e' : 'transparent',
+              color: 'white', 
+              border: 'none', 
+              borderRadius: '4px', 
+              cursor: 'pointer',
+              textAlign: 'left'
+            }}
+          >
+            📋 Criteria
           </button>
           <button 
             onClick={fetchDashboardData}
@@ -444,7 +822,12 @@ function AdminDashboard() {
 
           {activeSection === 'placements' && (
             <div>
-              <h2 style={{ color: '#2c3e50', marginBottom: '20px' }}>Placement Management</h2>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '16px', marginBottom: '20px' }}>
+                <h2 style={{ color: '#2c3e50', margin: 0 }}>Placement Management</h2>
+                <button onClick={handleAddPlacement} style={{ padding: '8px 16px', backgroundColor: '#27AE60', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>
+                  Add Placement
+                </button>
+              </div>
               <div style={{ marginBottom: '20px', display: 'flex', gap: '10px', alignItems: 'center' }}>
                 <input
                   type="text"
@@ -472,6 +855,12 @@ function AdminDashboard() {
                         >
                           Edit
                         </button>
+                        <button
+                          onClick={() => fetchPlacementWeeklySummary(placement)}
+                          style={{ padding: '5px 10px', backgroundColor: '#6C5CE7', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
+                        >
+                          Weekly Eval
+                        </button>
                         <button 
                           onClick={() => handleDeletePlacement(placement.id)}
                           style={{ padding: '5px 10px', backgroundColor: '#E74C3C', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
@@ -488,18 +877,167 @@ function AdminDashboard() {
 
           {activeSection === 'evaluations' && (
             <div>
-              <h2 style={{ color: '#2c3e50', marginBottom: '20px' }}>Evaluation Management</h2>
-              {evaluations.length === 0 ? (
-                <p>No evaluations found.</p>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+                <h2 style={{ color: '#2c3e50', margin: 0 }}>Evaluation Management</h2>
+                <button onClick={() => setActiveSection('criteria')} style={{ padding: '8px 16px', backgroundColor: '#3498DB', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>
+                  Manage Criteria
+                </button>
+              </div>
+              {allWeeklySummaries.length === 0 ? (
+                <p>No weekly evaluations found.</p>
               ) : (
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(350px, 1fr))', gap: '20px' }}>
-                  {evaluations.map((evaluation) => (
-                    <div key={evaluation.id} style={{ backgroundColor: 'white', padding: '20px', borderRadius: '8px', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>
-                      <h3 style={{ margin: '0 0 10px 0', color: '#2c3e50' }}>{evaluation.student?.full_name || evaluation.student?.username}</h3>
-                      <p style={{ margin: '5px 0', color: '#7f8c8d' }}>Placement: {evaluation.placement?.company_name}</p>
-                      <p style={{ margin: '5px 0', color: '#7f8c8d' }}>Score: {evaluation.score}</p>
-                      <p style={{ margin: '5px 0', color: '#7f8c8d' }}>Status: <span style={{ backgroundColor: '#27AE60', color: 'white', padding: '2px 6px', borderRadius: '4px', fontSize: '12px' }}>{evaluation.status}</span></p>
-                      <p style={{ margin: '5px 0', color: '#7f8c8d' }}>Date: {formatDate(evaluation.created_at)}</p>
+                groupedSummaries.map((group) => {
+                  // Get student details from the first week's data if available
+                  const firstWeekData = group.weeks[0]
+                  const studentName = firstWeekData?.studentName || 'Unknown Student'
+                  const placementName = group.placementName || 'Unknown Placement'
+                  
+                  return (
+                    <div key={group.placementId} style={{ marginBottom: '18px', padding: '16px', background: '#fff', borderRadius: '8px', border: '1px solid #e9ecef' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
+                        <div>
+                          <h3 style={{ margin: '0 0 8px 0', color: '#2c3e50' }}>{placementName}</h3>
+                          <div style={{ color: '#7f8c8d', fontSize: '14px' }}>
+                            <strong>Student:</strong> {studentName}
+                          </div>
+                        </div>
+                        <div style={{ color: '#64748b', textAlign: 'right' }}>
+                          <div style={{ fontWeight: '600' }}>Weeks: {group.weeks.length}</div>
+                        </div>
+                      </div>
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '12px' }}>
+                        {group.weeks.map((w) => (
+                          <div key={w.key} style={{ padding: '12px', background: '#f7f9fc', borderRadius: '8px' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                              <div>
+                                <div style={{ fontWeight: 700 }}>Week {w.week_number}</div>
+                                <div style={{ fontSize: '13px', color: '#64748b' }}>Supervisor: {w.supervisor_score ?? 'N/A'} | Academic: {w.academic_score ?? 'N/A'}</div>
+                              </div>
+                              <div style={{ textAlign: 'right' }}>
+                                <div style={{ fontSize: '18px', fontWeight: 'bold', color: '#2563eb' }}>Total: {w.combined_score}</div>
+                                <div style={{ fontSize: '13px', color: '#64748b' }}>Grade Weight: {w.grade_weight ?? 'N/A'}</div>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                      <div style={{ marginTop: '12px', textAlign: 'right', color: '#475569' }}>
+                        <strong>Average Score:</strong> { (group.weeks.reduce((t,a)=>t+Number(a.combined_score||0),0)/group.weeks.length).toFixed(2) }
+                        <span style={{ marginLeft: '12px' }}><strong>Average Weight:</strong> { (group.weeks.reduce((t,a)=>t+Number(a.grade_weight||0),0)/group.weeks.length).toFixed(2) }</span>
+                      </div>
+                    </div>
+                  )
+                })
+              )}
+            </div>
+          )}
+
+          {activeSection === 'criteria' && (
+            <div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+                <h2 style={{ color: '#2c3e50', margin: 0 }}>Evaluation Criteria</h2>
+                <button onClick={handleAddCriteria} style={{ padding: '8px 16px', backgroundColor: '#27AE60', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>
+                  Add Criteria
+                </button>
+              </div>
+
+              {showCriteriaForm && (
+                <div style={{ backgroundColor: '#f5f5f5', padding: '20px', borderRadius: '8px', marginBottom: '20px' }}>
+                  <h3>{editingCriteria ? 'Edit Criteria' : 'New Criteria'}</h3>
+                  {criteriaError && <div style={{ color: 'red', marginBottom: '10px' }}>{criteriaError}</div>}
+                  <form onSubmit={handleSaveCriteria} style={{ display: 'grid', gap: '12px' }}>
+                    <label>
+                      Name
+                      <input
+                        type="text"
+                        value={criteriaFormData.name}
+                        onChange={(e) => setCriteriaFormData(prev => ({ ...prev, name: e.target.value }))}
+                        required
+                        style={{ width: '100%', padding: '8px', marginTop: '4px' }}
+                      />
+                    </label>
+                    <label>
+                      Description
+                      <textarea
+                        value={criteriaFormData.description}
+                        onChange={(e) => setCriteriaFormData(prev => ({ ...prev, description: e.target.value }))}
+                        style={{ width: '100%', padding: '8px', marginTop: '4px', minHeight: '80px' }}
+                      />
+                    </label>
+                    <label>
+                      Max Score by Each Supervisor
+                      <input
+                        type="number"
+                        step="0.5"
+                        value={criteriaFormData.max_score}
+                        onChange={(e) => setCriteriaFormData(prev => ({ ...prev, max_score: e.target.value }))}
+                        required
+                        style={{ width: '100%', padding: '8px', marginTop: '4px' }}
+                      />
+                    </label>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                      <label>
+                        Supervisor Share (%)
+                        <input
+                          type="number"
+                          step="0.5"
+                          min="0"
+                          max="100"
+                          value={criteriaFormData.supervisor_share}
+                          onChange={(e) => setCriteriaFormData(prev => ({ ...prev, supervisor_share: e.target.value }))}
+                          required
+                          style={{ width: '100%', padding: '8px', marginTop: '4px' }}
+                        />
+                      </label>
+                      <label>
+                        Academic Share (%)
+                        <input
+                          type="number"
+                          step="0.5"
+                          min="0"
+                          max="100"
+                          value={criteriaFormData.academic_share}
+                          onChange={(e) => setCriteriaFormData(prev => ({ ...prev, academic_share: e.target.value }))}
+                          required
+                          style={{ width: '100%', padding: '8px', marginTop: '4px' }}
+                        />
+                      </label>
+                    </div>
+                    <p style={{ margin: 0, color: '#64748b', fontSize: '12px' }}>
+                      Weight is calculated automatically by the backend.
+                    </p>
+                    <div style={{ display: 'flex', gap: '10px' }}>
+                      <button type="submit" disabled={criteriaSaving} style={{ padding: '8px 16px', backgroundColor: '#27AE60', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>
+                        {criteriaSaving ? 'Saving...' : 'Save'}
+                      </button>
+                      <button type="button" onClick={() => setShowCriteriaForm(false)} disabled={criteriaSaving} style={{ padding: '8px 16px', backgroundColor: '#95a5a6', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>
+                        Cancel
+                      </button>
+                    </div>
+                  </form>
+                </div>
+              )}
+
+              {criteria.length === 0 ? (
+                <p>No criteria defined yet.</p>
+              ) : (
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '16px' }}>
+                  {criteria.map((crit) => (
+                    <div key={crit.id} style={{ backgroundColor: 'white', padding: '16px', borderRadius: '8px', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>
+                      <h3 style={{ margin: '0 0 8px 0', color: '#2c3e50' }}>{crit.name}</h3>
+                      <p style={{ margin: '4px 0', color: '#7f8c8d', fontSize: '14px' }}>{crit.description}</p>
+                      <p style={{ margin: '8px 0', color: '#2c3e50' }}>
+                        Max Score by Each Supervisor: <strong>{crit.max_score}</strong> | Weight: <strong>{crit.weight_percent}%</strong>
+                        <br />Supervisor Share: <strong>{crit.supervisor_share}%</strong> | Academic Share: <strong>{crit.academic_share}%</strong>
+                      </p>
+                      <div style={{ display: 'flex', gap: '8px', marginTop: '12px' }}>
+                        <button onClick={() => handleEditCriteria(crit)} style={{ padding: '6px 12px', backgroundColor: '#3498DB', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '12px' }}>
+                          Edit
+                        </button>
+                        <button onClick={() => handleDeleteCriteria(crit.id)} style={{ padding: '6px 12px', backgroundColor: '#E74C3C', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '12px' }}>
+                          Delete
+                        </button>
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -508,8 +1046,501 @@ function AdminDashboard() {
           )}
         </div>
       </div>
+
+      {editingEntity && editingItem && (
+        <div
+          role="presentation"
+          onClick={closeEditModal}
+          style={{
+            position: 'fixed',
+            inset: 0,
+            backgroundColor: 'rgba(15, 23, 42, 0.6)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '24px',
+            zIndex: 1000,
+          }}
+        >
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="admin-edit-title"
+            onClick={(event) => event.stopPropagation()}
+            style={{
+              width: 'min(960px, 100%)',
+              maxHeight: '90vh',
+              overflowY: 'auto',
+              backgroundColor: '#ffffff',
+              borderRadius: '16px',
+              boxShadow: '0 24px 80px rgba(15, 23, 42, 0.28)',
+              padding: '24px',
+            }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', gap: '16px', alignItems: 'flex-start', marginBottom: '20px' }}>
+              <div>
+                <h2 id="admin-edit-title" style={{ margin: '0 0 8px 0', color: '#0f172a' }}>
+                  {editingEntity === 'user' ? 'Edit User' : placementFormMode === 'create' ? 'Create Placement' : 'Edit Placement'}
+                </h2>
+                <p style={{ margin: 0, color: '#64748b' }}>
+                  {editingEntity === 'user'
+                    ? 'Update the record details and save the changes back to the system.'
+                    : placementFormMode === 'create'
+                      ? 'Assign a student, workplace supervisor, and academic supervisor to a new placement.'
+                      : 'Update the record details and save the changes back to the system.'}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={closeEditModal}
+                disabled={editSaving}
+                style={{
+                  border: 'none',
+                  backgroundColor: '#e2e8f0',
+                  color: '#0f172a',
+                  borderRadius: '999px',
+                  width: '36px',
+                  height: '36px',
+                  cursor: 'pointer',
+                }}
+              >
+                ×
+              </button>
+            </div>
+
+            {editError ? (
+              <div style={{ marginBottom: '16px', padding: '12px 14px', borderRadius: '10px', backgroundColor: '#fee2e2', color: '#991b1b' }}>
+                {editError}
+              </div>
+            ) : null}
+
+            <form onSubmit={handleSaveEdit} style={{ display: 'grid', gap: '18px' }}>
+              {editingEntity === 'user' ? (
+                <>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '14px' }}>
+                    <label style={{ display: 'grid', gap: '8px' }}>
+                      <span style={{ color: '#475569', fontSize: '14px' }}>Username</span>
+                      <input name="username" value={editFormData.username || ''} onChange={handleEditFieldChange} disabled={editSaving} style={editInputStyle} />
+                    </label>
+                    <label style={{ display: 'grid', gap: '8px' }}>
+                      <span style={{ color: '#475569', fontSize: '14px' }}>Email</span>
+                      <input name="email" type="email" value={editFormData.email || ''} onChange={handleEditFieldChange} disabled={editSaving} style={editInputStyle} />
+                    </label>
+                    <label style={{ display: 'grid', gap: '8px' }}>
+                      <span style={{ color: '#475569', fontSize: '14px' }}>Role</span>
+                      <select name="role" value={editFormData.role || 'student'} onChange={handleEditFieldChange} disabled={editSaving} style={editInputStyle}>
+                        {userRoles.map((roleOption) => (
+                          <option key={roleOption.value} value={roleOption.value}>{roleOption.label}</option>
+                        ))}
+                      </select>
+                    </label>
+                  </div>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '14px' }}>
+                    <label style={{ display: 'grid', gap: '8px' }}>
+                      <span style={{ color: '#475569', fontSize: '14px' }}>First Name</span>
+                      <input name="first_name" value={editFormData.first_name || ''} onChange={handleEditFieldChange} disabled={editSaving} style={editInputStyle} />
+                    </label>
+                    <label style={{ display: 'grid', gap: '8px' }}>
+                      <span style={{ color: '#475569', fontSize: '14px' }}>Last Name</span>
+                      <input name="last_name" value={editFormData.last_name || ''} onChange={handleEditFieldChange} disabled={editSaving} style={editInputStyle} />
+                    </label>
+                    <label style={{ display: 'grid', gap: '8px' }}>
+                      <span style={{ color: '#475569', fontSize: '14px' }}>Phone</span>
+                      <input name="phone" value={editFormData.phone || ''} onChange={handleEditFieldChange} disabled={editSaving} style={editInputStyle} />
+                    </label>
+                  </div>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '14px' }}>
+                    <label style={{ display: 'grid', gap: '8px' }}>
+                      <span style={{ color: '#475569', fontSize: '14px' }}>Department</span>
+                      <input name="department" value={editFormData.department || ''} onChange={handleEditFieldChange} disabled={editSaving} style={editInputStyle} />
+                    </label>
+                    <label style={{ display: 'grid', gap: '8px' }}>
+                      <span style={{ color: '#475569', fontSize: '14px' }}>Staff Number</span>
+                      <input name="staff_number" value={editFormData.staff_number || ''} onChange={handleEditFieldChange} disabled={editSaving} style={editInputStyle} />
+                    </label>
+                    <label style={{ display: 'grid', gap: '8px' }}>
+                      <span style={{ color: '#475569', fontSize: '14px' }}>Student Number</span>
+                      <input name="student_number" value={editFormData.student_number || ''} onChange={handleEditFieldChange} disabled={editSaving} style={editInputStyle} />
+                    </label>
+                    <label style={{ display: 'grid', gap: '8px' }}>
+                      <span style={{ color: '#475569', fontSize: '14px' }}>Registration Number</span>
+                      <input name="registration_number" value={editFormData.registration_number || ''} onChange={handleEditFieldChange} disabled={editSaving} style={editInputStyle} />
+                    </label>
+                  </div>
+
+                  <label style={{ display: 'grid', gap: '8px' }}>
+                    <span style={{ color: '#475569', fontSize: '14px' }}>Reset Password</span>
+                    <input
+                      name="password"
+                      type="password"
+                      value={editFormData.password || ''}
+                      onChange={handleEditFieldChange}
+                      placeholder="Leave blank to keep the current password"
+                      disabled={editSaving}
+                      style={editInputStyle}
+                    />
+                  </label>
+                </>
+              ) : (
+                <>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '14px' }}>
+                    <label style={{ display: 'grid', gap: '8px' }}>
+                      <span style={{ color: '#475569', fontSize: '14px' }}>Student</span>
+                      <select name="student_id" value={editFormData.student_id || ''} onChange={handleEditFieldChange} disabled={editSaving} style={editInputStyle}>
+                        <option value="">Unassigned</option>
+                        {users.filter((candidate) => candidate.role === 'student').map((candidate) => (
+                          <option key={candidate.id} value={candidate.id}>{getFullName(candidate)} ({candidate.username})</option>
+                        ))}
+                      </select>
+                    </label>
+                    <label style={{ display: 'grid', gap: '8px' }}>
+                      <span style={{ color: '#475569', fontSize: '14px' }}>Workplace Supervisor</span>
+                      <select name="workplace_supervisor_id" value={editFormData.workplace_supervisor_id || ''} onChange={handleEditFieldChange} disabled={editSaving} style={editInputStyle}>
+                        <option value="">Select supervisor</option>
+                        {users.filter((candidate) => candidate.role === 'workplace_supervisor').map((candidate) => (
+                          <option key={candidate.id} value={candidate.id}>{getFullName(candidate)} ({candidate.username})</option>
+                        ))}
+                      </select>
+                    </label>
+                    <label style={{ display: 'grid', gap: '8px' }}>
+                      <span style={{ color: '#475569', fontSize: '14px' }}>Academic Supervisor</span>
+                      <select name="academic_supervisor_id" value={editFormData.academic_supervisor_id || ''} onChange={handleEditFieldChange} disabled={editSaving} style={editInputStyle}>
+                        <option value="">Select supervisor</option>
+                        {users.filter((candidate) => candidate.role === 'academic_supervisor').map((candidate) => (
+                          <option key={candidate.id} value={candidate.id}>{getFullName(candidate)} ({candidate.username})</option>
+                        ))}
+                      </select>
+                    </label>
+                  </div>
+
+                  <label style={{ display: 'grid', gap: '8px' }}>
+                    <span style={{ color: '#475569', fontSize: '14px' }}>Company Name</span>
+                    <input name="company_name" value={editFormData.company_name || ''} onChange={handleEditFieldChange} disabled={editSaving} style={editInputStyle} />
+                  </label>
+
+                  <label style={{ display: 'grid', gap: '8px' }}>
+                    <span style={{ color: '#475569', fontSize: '14px' }}>Company Address</span>
+                    <textarea name="company_address" value={editFormData.company_address || ''} onChange={handleEditFieldChange} disabled={editSaving} rows="3" style={{ ...editInputStyle, resize: 'vertical' }} />
+                  </label>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '14px' }}>
+                    <label style={{ display: 'grid', gap: '8px' }}>
+                      <span style={{ color: '#475569', fontSize: '14px' }}>Start Date</span>
+                      <input name="start_date" type="date" value={editFormData.start_date || ''} onChange={handleEditFieldChange} disabled={editSaving} style={editInputStyle} />
+                    </label>
+                    <label style={{ display: 'grid', gap: '8px' }}>
+                      <span style={{ color: '#475569', fontSize: '14px' }}>End Date</span>
+                      <input name="end_date" type="date" value={editFormData.end_date || ''} onChange={handleEditFieldChange} disabled={editSaving} style={editInputStyle} />
+                    </label>
+                    <label style={{ display: 'grid', gap: '8px' }}>
+                      <span style={{ color: '#475569', fontSize: '14px' }}>Status</span>
+                      <select name="status" value={editFormData.status || 'pending'} onChange={handleEditFieldChange} disabled={editSaving} style={editInputStyle}>
+                        {placementStatuses.map((statusOption) => (
+                          <option key={statusOption.value} value={statusOption.value}>{statusOption.label}</option>
+                        ))}
+                      </select>
+                    </label>
+                  </div>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                    <label>
+                      Supervisor Share (%)
+                      <input
+                        type="number"
+                        step="0.5"
+                        value={criteriaFormData.supervisor_share}
+                        onChange={(e) => setCriteriaFormData(prev => ({ ...prev, supervisor_share: e.target.value }))}
+                        required
+                        style={{ width: '100%', padding: '8px', marginTop: '4px' }}
+                      />
+                    </label>
+                    <label>
+                      Academic Share (%)
+                      <input
+                        type="number"
+                        step="0.5"
+                        value={criteriaFormData.academic_share}
+                        onChange={(e) => setCriteriaFormData(prev => ({ ...prev, academic_share: e.target.value }))}
+                        required
+                        style={{ width: '100%', padding: '8px', marginTop: '4px' }}
+                      />
+                    </label>
+                  </div>
+                </>
+              )}
+
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', flexWrap: 'wrap', marginTop: '4px' }}>
+                <button
+                  type="button"
+                  onClick={closeEditModal}
+                  disabled={editSaving}
+                  style={{
+                    padding: '12px 18px',
+                    borderRadius: '10px',
+                    border: '1px solid #cbd5e1',
+                    backgroundColor: '#fff',
+                    color: '#0f172a',
+                    cursor: 'pointer',
+                  }}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={editSaving}
+                  style={{
+                    padding: '12px 18px',
+                    borderRadius: '10px',
+                    border: 'none',
+                    backgroundColor: '#2563eb',
+                    color: '#fff',
+                    cursor: 'pointer',
+                  }}
+                >
+                  {editSaving ? 'Saving...' : 'Save Changes'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {selectedEvaluation && (
+        <div
+          role="presentation"
+          onClick={() => setSelectedEvaluation(null)}
+          style={{
+            position: 'fixed',
+            inset: 0,
+            backgroundColor: 'rgba(15, 23, 42, 0.6)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '24px',
+            zIndex: 1000,
+          }}
+        >
+          <div
+            role="dialog"
+            aria-modal="true"
+            onClick={(event) => event.stopPropagation()}
+            style={{
+              width: 'min(600px, 100%)',
+              maxHeight: '90vh',
+              overflowY: 'auto',
+              backgroundColor: '#ffffff',
+              borderRadius: '16px',
+              boxShadow: '0 24px 80px rgba(15, 23, 42, 0.28)',
+              padding: '24px',
+            }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', gap: '16px', alignItems: 'flex-start', marginBottom: '20px' }}>
+              <div>
+                <h2 style={{ margin: '0 0 8px 0', color: '#0f172a' }}>Evaluation Details</h2>
+                <p style={{ margin: 0, color: '#64748b' }}>View evaluation breakdown by criteria</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setSelectedEvaluation(null)}
+                style={{
+                  border: 'none',
+                  backgroundColor: '#e2e8f0',
+                  color: '#0f172a',
+                  borderRadius: '999px',
+                  width: '36px',
+                  height: '36px',
+                  cursor: 'pointer',
+                }}
+              >
+                ×
+              </button>
+            </div>
+
+            <div style={{ display: 'grid', gap: '16px' }}>
+              <div>
+                <h3 style={{ margin: '0 0 8px 0', color: '#0f172a' }}>Student</h3>
+                <p style={{ margin: 0, color: '#475569' }}>{selectedEvaluation.placement?.student?.full_name || 'Unknown'}</p>
+              </div>
+              <div>
+                <h3 style={{ margin: '0 0 8px 0', color: '#0f172a' }}>Placement</h3>
+                <p style={{ margin: 0, color: '#475569' }}>{selectedEvaluation.placement?.company_name || 'Unknown'}</p>
+              </div>
+              <div>
+                <h3 style={{ margin: '0 0 8px 0', color: '#0f172a' }}>Evaluator</h3>
+                <p style={{ margin: 0, color: '#475569' }}>{selectedEvaluation.evaluator_name || 'Unknown'}</p>
+              </div>
+              <div>
+                <h3 style={{ margin: '0 0 8px 0', color: '#0f172a' }}>Type</h3>
+                <p style={{ margin: 0, color: '#475569', textTransform: 'capitalize' }}>{selectedEvaluation.evaluation_type}</p>
+              </div>
+              <div>
+                <h3 style={{ margin: '0 0 8px 0', color: '#0f172a' }}>Overall Score</h3>
+                <p style={{ margin: 0, fontSize: '24px', fontWeight: 'bold', color: '#27AE60' }}>{selectedEvaluation.score}</p>
+              </div>
+
+              {selectedEvaluation.items && selectedEvaluation.items.length > 0 && (
+                <div>
+                  <h3 style={{ margin: '0 0 12px 0', color: '#0f172a' }}>Criteria Breakdown</h3>
+                  <div style={{ display: 'grid', gap: '8px' }}>
+                    {selectedEvaluation.items.map((item, idx) => (
+                      <div key={idx} style={{ padding: '12px', backgroundColor: '#f5f5f5', borderRadius: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <div>
+                          <p style={{ margin: '0 0 4px 0', fontWeight: 'bold', color: '#0f172a' }}>{item.criteria?.name || 'Unknown Criteria'}</p>
+                          <p style={{ margin: 0, fontSize: '12px', color: '#64748b' }}>Max: {item.criteria?.max_score} | Weight: {item.criteria?.weight_percent}%</p>
+                        </div>
+                        <p style={{ margin: 0, fontSize: '18px', fontWeight: 'bold', color: '#2563eb' }}>{item.score}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '20px' }}>
+                <button
+                  type="button"
+                  onClick={() => handleDeleteEvaluation(selectedEvaluation.id)}
+                  style={{
+                    padding: '12px 18px',
+                    borderRadius: '10px',
+                    border: 'none',
+                    backgroundColor: '#E74C3C',
+                    color: '#fff',
+                    cursor: 'pointer',
+                  }}
+                >
+                  Delete Evaluation
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSelectedEvaluation(null)}
+                  style={{
+                    padding: '12px 18px',
+                    borderRadius: '10px',
+                    border: '1px solid #cbd5e1',
+                    backgroundColor: '#fff',
+                    color: '#0f172a',
+                    cursor: 'pointer',
+                  }}
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+      {showWeeklyModal && weeklySummary && (
+        <div
+          role="presentation"
+          onClick={() => setShowWeeklyModal(false)}
+          style={{
+            position: 'fixed',
+            inset: 0,
+            backgroundColor: 'rgba(15, 23, 42, 0.6)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '24px',
+            zIndex: 1000,
+          }}
+        >
+          <div
+            role="dialog"
+            aria-modal="true"
+            onClick={(event) => event.stopPropagation()}
+            style={{
+              width: 'min(760px, 100%)',
+              maxHeight: '90vh',
+              overflowY: 'auto',
+              backgroundColor: '#ffffff',
+              borderRadius: '16px',
+              boxShadow: '0 24px 80px rgba(15, 23, 42, 0.28)',
+              padding: '24px',
+            }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+              <h2 style={{ margin: 0 }}>Weekly Evaluation Summary</h2>
+              <button onClick={() => setShowWeeklyModal(false)} style={{ border: 'none', background: '#eee', borderRadius: '8px', padding: '6px 10px' }}>Close</button>
+            </div>
+
+            <div style={{ marginBottom: '12px' }}>
+              <strong>Placement:</strong> {selectedPlacementForWeekly?.company_name}
+              <div><strong>Student:</strong> {selectedPlacementForWeekly?.student?.full_name || selectedPlacementForWeekly?.student?.username}</div>
+            </div>
+
+            {weeklySummary.weeks.length === 0 ? (
+              <p>No weekly evaluations found.</p>
+            ) : (
+              <div style={{ display: 'grid', gap: '8px' }}>
+                {weeklySummary.weeks.map((w) => (
+                  <div key={w.week_number} style={{ padding: '12px', background: '#f7f9fc', borderRadius: '8px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <div>
+                        <div style={{ fontWeight: 700 }}>Week {w.week_number}</div>
+                        <div style={{ fontSize: '13px', color: '#64748b' }}>Supervisor: {w.supervisor_score ?? 'N/A'} | Academic: {w.academic_score ?? 'N/A'}</div>
+                      </div>
+                      <div style={{ textAlign: 'right' }}>
+                        <div style={{ fontSize: '18px', fontWeight: 'bold', color: '#2563eb' }}>Total: {w.combined_score}</div>
+                        <div style={{ fontSize: '13px', color: '#64748b' }}>Grade Weight: {getGradeWeight(w.combined_score) ?? 'N/A'}</div>
+                      </div>
+                    </div>
+
+                    {/* Per-criterion breakdown */}
+                    {w.criteria_breakdown && w.criteria_breakdown.length > 0 && (
+                      <div style={{ marginTop: '10px', display: 'grid', gap: '8px' }}>
+                        {w.criteria_breakdown.map((cb) => (
+                          <div key={cb.criteria_id} style={{ padding: '10px', background: '#fff', borderRadius: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', border: '1px solid #eef2f7' }}>
+                            <div style={{ flex: 1 }}>
+                              <div style={{ fontWeight: 600, color: '#0f172a' }}>{cb.criteria_name}</div>
+                              <div style={{ fontSize: '12px', color: '#64748b' }}>Max: {cb.max_score} | Weight: {cb.weight_percent}%</div>
+                            </div>
+                            <div style={{ display: 'flex', gap: '12px', alignItems: 'center', minWidth: '260px', justifyContent: 'flex-end' }}>
+                              <div style={{ textAlign: 'right' }}>
+                                <div style={{ fontSize: '12px', color: '#475569' }}>Sup Score</div>
+                                <div style={{ fontWeight: 600, color: '#2563eb' }}>{cb.supervisor_score ?? '—'}</div>
+                                <div style={{ fontSize: '12px', color: '#64748b' }}>Contrib: {cb.supervisor_contribution}</div>
+                              </div>
+                              <div style={{ textAlign: 'right' }}>
+                                <div style={{ fontSize: '12px', color: '#475569' }}>Acad Score</div>
+                                <div style={{ fontWeight: 600, color: '#16a34a' }}>{cb.academic_score ?? '—'}</div>
+                                <div style={{ fontSize: '12px', color: '#64748b' }}>Contrib: {cb.academic_contribution}</div>
+                              </div>
+                              <div style={{ textAlign: 'right', minWidth: '80px' }}>
+                                <div style={{ fontSize: '12px', color: '#475569' }}>Total</div>
+                                <div style={{ fontWeight: 700, color: '#0f172a' }}>{cb.total_contribution}</div>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+
+            <div style={{ marginTop: '16px', display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
+              <div style={{ alignSelf: 'center', color: '#475569' }}>
+                Average: <strong style={{ fontSize: '18px', color: '#16a34a' }}>{weeklySummary.average ?? 'N/A'}</strong>
+                <span style={{ marginLeft: '10px' }}>Grade Weight: <strong>{getGradeWeight(weeklySummary.average) ?? 'N/A'}</strong></span>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
+}
+
+const editInputStyle = {
+  padding: '10px 12px',
+  borderRadius: '10px',
+  border: '1px solid #cbd5e1',
+  backgroundColor: '#fff',
+  color: '#0f172a',
+  fontSize: '14px',
 }
 
 export default AdminDashboard

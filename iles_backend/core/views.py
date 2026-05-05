@@ -341,11 +341,19 @@ class UserRegistrationView(APIView):
         if email and CustomUser.objects.filter(email=email).exists():
             return Response({'email': ['Email already exists.']}, status=status.HTTP_400_BAD_REQUEST)
 
+        allowed_roles = {'student', 'workplace_supervisor', 'academic_supervisor'}
+        role = request.data.get('role', 'student')
+        if role not in allowed_roles:
+            return Response(
+                {'role': [f"Role must be one of: {', '.join(sorted(allowed_roles))}."]},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
         user = CustomUser.objects.create_user(
             username=username,
             email=email,
             password=password,
-            role=request.data.get('role', 'student'),
+            role=role,
             first_name=request.data.get('first_name', ''),
             last_name=request.data.get('last_name', ''),
             phone=request.data.get('phone'),
@@ -406,25 +414,15 @@ class EvaluationListView(APIView):
     def get(self, request):
         if request.user.role in ['admin', 'workplace_supervisor', 'academic_supervisor']:
             evaluations = Evaluation.objects.all()
+            serializer = EvaluationSerializer(evaluations, many=True)
+            return Response(serializer.data)
         else:
+            # For students, return only their placement evaluations
             evaluations = Evaluation.objects.filter(
                 placement__student=request.user
             )
-            # Calculate total score if all 3 evaluations exist
-            if evaluations.count() == 3:
-                scores = {e.evaluation_type: e.score for e in evaluations}
-                total = (
-                    (scores.get('supervisor', 0) * 40 / 100) +
-                    (scores.get('academic', 0) * 30 / 100) +
-                    (scores.get('logbook', 0) * 30 / 100)
-                )
-                return Response({
-                    'evaluations': EvaluationSerializer(evaluations, many=True).data,
-                    'total_score': round(total, 2),
-                    'complete': True
-                })
-        serializer = EvaluationSerializer(evaluations, many=True)
-        return Response(serializer.data)
+            serializer = EvaluationSerializer(evaluations, many=True)
+            return Response(serializer.data)
 
     def post(self, request):
         if request.user.role not in ['admin', 'workplace_supervisor', 'academic_supervisor']:
@@ -432,7 +430,7 @@ class EvaluationListView(APIView):
                 {'error': 'You are not allowed to submit evaluations'},
                 status=status.HTTP_403_FORBIDDEN
             )
-        serializer = EvaluationSerializer(data=request.data)
+        serializer = EvaluationSerializer(data=request.data, context={'request': request})
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
@@ -713,6 +711,50 @@ class EvaluationCriteriaListView(APIView):
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+
+class EvaluationCriteriaDetailView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def put(self, request, pk):
+        if request.user.role != 'admin':
+            return Response(
+                {'error': 'Only admins can update evaluation criteria'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        try:
+            criteria = EvaluationCriteria.objects.get(pk=pk)
+        except EvaluationCriteria.DoesNotExist:
+            return Response({'error': 'Criteria not found'}, status=status.HTTP_404_NOT_FOUND)
+
+        serializer = EvaluationCriteriaSerializer(criteria, data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def delete(self, request, pk):
+        if request.user.role != 'admin':
+            return Response(
+                {'error': 'Only admins can delete evaluation criteria'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        try:
+            criteria = EvaluationCriteria.objects.get(pk=pk)
+        except EvaluationCriteria.DoesNotExist:
+            return Response({'error': 'Criteria not found'}, status=status.HTTP_404_NOT_FOUND)
+
+        try:
+            criteria.delete()
+        except Exception:
+            return Response(
+                {'error': 'This criteria is already used in an evaluation and cannot be deleted.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        return Response({'message': 'Criteria deleted successfully'}, status=status.HTTP_204_NO_CONTENT)
+
 class WeeklyLogSubmitView(APIView):
     """
     PUT /api/logs/<pk>/submit/ - Student submits a draft log
@@ -783,6 +825,7 @@ class UserSummaryView(APIView):
         serializer = UserProfileSerializer(user)
         return Response(serializer.data)
 
+
 class UserListView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -790,6 +833,24 @@ class UserListView(APIView):
         users = CustomUser.objects.all()
         serializer = CustomUserSerializer(users, many=True)
         return Response(serializer.data)
+
+    def put(self, request, pk):
+        if request.user.role != "admin":
+            return Response(
+                {"error": "Only admins can update users"},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        try:
+            user = CustomUser.objects.get(pk=pk)
+        except CustomUser.DoesNotExist:
+            return Response({"error": "User not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        serializer = CustomUserSerializer(user, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
     def delete(self, request, pk):
         try:
