@@ -112,10 +112,61 @@ class InternshipPlacementSerializer(serializers.ModelSerializer):
     student_name = serializers.SerializerMethodField(read_only=True)
     workplace_supervisor_name = serializers.SerializerMethodField(read_only=True)
     academic_supervisor_name = serializers.SerializerMethodField(read_only=True)
+    status = serializers.SerializerMethodField(read_only=True)
+    average_score = serializers.SerializerMethodField(read_only=True)
+    average_weight = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
         model = InternshipPlacement
-        fields = '__all__'
+        fields = [
+            "id",
+            "student",
+            "student_id",
+            "student_name",
+            "workplace_supervisor",
+            "workplace_supervisor_id",
+            "workplace_supervisor_name",
+            "academic_supervisor",
+            "academic_supervisor_id",
+            "academic_supervisor_name",
+            "company_name",
+            "company_address",
+            "start_date",
+            "end_date",
+            "status",
+            "created_at",
+            "average_score",
+            "average_weight",
+        ]
+
+    def get_status(self, obj):
+        """Return computed status based on dates."""
+        return obj.get_computed_status()
+
+    def get_average_score(self, obj):
+        """Return canonical average combined score for this placement across weeks.
+        Uses Evaluation.weekly_summary_for_placement which already computes per-week combined
+        scores and an overall average.
+        """
+        try:
+            summary = Evaluation.weekly_summary_for_placement(obj)
+            return summary.get('average')
+        except Exception:
+            return None
+
+    def get_average_weight(self, obj):
+        """Return the average criterion weight percent across all criteria.
+        This provides a canonical average weight (usually 100 / num_criteria).
+        """
+        try:
+            criteria = EvaluationCriteria.objects.all()
+            if not criteria.exists():
+                return None
+            total = sum([c.weight_percent for c in criteria])
+            avg = float(round((total / criteria.count()), 2))
+            return avg
+        except Exception:
+            return None
 
     def validate(self, attrs):
         placement = getattr(self, "instance", None)
@@ -346,6 +397,21 @@ class EvaluationSerializer(serializers.ModelSerializer):
         placement = attrs.get("placement") or getattr(self.instance, "placement", None)
         evaluation_type = attrs.get("evaluation_type") or getattr(self.instance, "evaluation_type", None)
         week_number = attrs.get("week_number") or getattr(self.instance, "week_number", None)
+
+        # Validate that a log exists for this week before allowing evaluation
+        if placement and week_number:
+            log_exists = WeeklyLog.objects.filter(
+                placement=placement,
+                week_number=week_number
+            ).exists()
+            if not log_exists:
+                raise serializers.ValidationError(
+                    {
+                        "week_number": [
+                            "No log found for this week. Evaluations can only be created for weeks with existing logs."
+                        ]
+                    }
+                )
 
         if placement and evaluation_type and week_number:
             duplicate_qs = Evaluation.objects.filter(
