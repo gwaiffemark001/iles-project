@@ -317,7 +317,7 @@ class EvaluationSerializer(serializers.ModelSerializer):
         required=False,
     )
     evaluator_name = serializers.SerializerMethodField(read_only=True)
-    items = EvaluationItemSerializer(many=True, read_only=True)
+    items = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
         model = Evaluation
@@ -337,6 +337,10 @@ class EvaluationSerializer(serializers.ModelSerializer):
 
     def get_evaluator_name(self, obj):
         return CustomUserSerializer(obj.evaluator).data["full_name"]
+
+    def get_items(self, obj):
+        """Return evaluation items using the correct related_name"""
+        return EvaluationItemSerializer(obj.evaluation_items.all(), many=True).data
 
     def create(self, validated_data):
         # Allow nested evaluation items via initial data
