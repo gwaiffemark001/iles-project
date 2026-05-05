@@ -2,6 +2,11 @@
 # Built by Mugabe Gideon
 # Endpoints: WeeklyLog, Placement, Evaluation, Auth, Profile, Supervisor Workflow
 from django.db.models import Avg, Count
+from django.contrib.auth.tokens import PasswordResetTokenGenerator
+from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
+from django.utils.encoding import force_bytes, force_str
+from django.core.mail import send_mail
+import os
 from django.utils import timezone
 from rest_framework import status
 from rest_framework.permissions import AllowAny, IsAuthenticated
@@ -382,39 +387,72 @@ class UserRegistrationView(APIView):
         }, status=status.HTTP_201_CREATED)
 
 
-class ForgotPasswordView(APIView):
+class PasswordResetRequestView(APIView):
     permission_classes = [AllowAny]
 
     def post(self, request):
-        identifier = request.data.get('identifier')
-        username = request.data.get('username')
         email = request.data.get('email')
+        frontend_base = os.getenv('FRONTEND_URL', 'http://localhost:5173')
+
+        if not email:
+            return Response({'email': ['This field is required.']}, status=status.HTTP_400_BAD_REQUEST)
+
+        user = CustomUser.objects.filter(email__iexact=email).first()
+
+        # Always return success to avoid leaking user existence
+        if not user:
+            return Response({'message': 'If an account with that email exists, a reset link has been sent.'})
+
+        token_generator = PasswordResetTokenGenerator()
+        token = token_generator.make_token(user)
+        uid = urlsafe_base64_encode(force_bytes(user.pk))
+
+        reset_path = f"/reset-password?uid={uid}&token={token}"
+        reset_url = f"{frontend_base.rstrip('/')}{reset_path}"
+
+        subject = 'ILES password reset'
+        message = (
+            f"Hello {user.get_full_name() or user.username},\n\n"
+            f"You (or someone else) requested a password reset for your ILES account.\n"
+            f"Click the link below to reset your password:\n\n{reset_url}\n\n"
+            "If you did not request this, you can ignore this email.\n\n"
+            "Thanks,\nILES Team"
+        )
+
+        try:
+            send_mail(subject, message, None, [user.email])
+        except Exception:
+            # Fallback: log to console if email backend not configured
+            print('Password reset link (development):', reset_url)
+
+        return Response({'message': 'If an account with that email exists, a reset link has been sent.'})
+
+
+class PasswordResetConfirmView(APIView):
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        uid = request.data.get('uid')
+        token = request.data.get('token')
         new_password = request.data.get('new_password')
         confirm_password = request.data.get('confirm_password')
 
-        if not identifier and not username and not email:
-            return Response(
-                {'identifier': ['Provide username or email.']},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+        if not uid or not token:
+            return Response({'detail': 'uid and token are required.'}, status=status.HTTP_400_BAD_REQUEST)
         if not new_password:
             return Response({'new_password': ['This field is required.']}, status=status.HTTP_400_BAD_REQUEST)
         if new_password != confirm_password:
             return Response({'confirm_password': ['Passwords do not match.']}, status=status.HTTP_400_BAD_REQUEST)
 
-        user = None
-        lookup_value = identifier or username
-        if lookup_value:
-            user = CustomUser.objects.filter(username=lookup_value).first()
-            if not user:
-                user = CustomUser.objects.filter(email=lookup_value).first()
-        if not user and email:
-            user = CustomUser.objects.filter(email=email).first()
-        if not user:
-            return Response({'identifier': ['User not found.']}, status=status.HTTP_404_NOT_FOUND)
+        try:
+            uid_decoded = force_str(urlsafe_base64_decode(uid))
+            user = CustomUser.objects.get(pk=uid_decoded)
+        except Exception:
+            return Response({'detail': 'Invalid uid.'}, status=status.HTTP_400_BAD_REQUEST)
 
-        if email and user.email and user.email.lower() != str(email).lower():
-            return Response({'email': ['Email does not match this account.']}, status=status.HTTP_400_BAD_REQUEST)
+        token_generator = PasswordResetTokenGenerator()
+        if not token_generator.check_token(user, token):
+            return Response({'detail': 'Invalid or expired token.'}, status=status.HTTP_400_BAD_REQUEST)
 
         user.set_password(new_password)
         user.save(update_fields=['password'])

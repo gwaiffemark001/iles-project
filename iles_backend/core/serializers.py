@@ -389,7 +389,6 @@ class EvaluationSerializer(serializers.ModelSerializer):
         extra_kwargs = {
             "evaluation_type": {"default": "supervisor"},
             "placement": {"required": True},
-            "week_number": {"required": True},
             "score": {"read_only": True},
             "weighted_score": {"read_only": True},
         }
