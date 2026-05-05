@@ -194,6 +194,14 @@ const StudentDashboard = () => {
       return;
     }
 
+    // Enhanced validation for CSC 1202 requirements
+    const today = new Date();
+    const deadlineDate = new Date(formData.deadline);
+    if (deadlineDate < today && nextStatus === 'submitted') {
+      setFormError('Cannot submit log with past deadline. Choose a future date.');
+      return;
+    }
+
     setSaving(true);
     setFormError('');
     setFormSuccess('');
@@ -210,6 +218,13 @@ const StudentDashboard = () => {
 
     try {
       if (editingLogId) {
+        // Check if log can be edited based on CSC 1202 workflow rules
+        const currentLog = logs.find(log => log.id === editingLogId);
+        if (currentLog && !['draft', 'submitted'].includes(currentLog.status)) {
+          setFormError('Cannot edit log that has been reviewed or approved.');
+          return;
+        }
+        
         await logsAPI.updateLog(editingLogId, payload);
       } else {
         await logsAPI.createLog(payload);
@@ -217,8 +232,8 @@ const StudentDashboard = () => {
 
       setFormSuccess(
         nextStatus === 'submitted'
-          ? 'Weekly log submitted successfully.'
-          : 'Draft saved successfully.'
+          ? 'Log submitted successfully! Your supervisor will review it soon.'
+          : 'Log saved as draft. You can edit it until submission.'
       );
       resetForm();
       await fetchData();
