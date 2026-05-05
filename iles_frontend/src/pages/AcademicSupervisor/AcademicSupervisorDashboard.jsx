@@ -2,7 +2,7 @@ import { useEffect, useState, useCallback, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import { useAuth } from "../../contexts/useAuth";
-import { evaluationsAPI, getErrorMessage, logsAPI, placementsAPI } from "../../api/api";
+import { criteriaAPI, evaluationsAPI, getErrorMessage, logsAPI, placementsAPI } from "../../api/api";
 import { buildWeeklyEvaluationSummaries } from "../../utils/evaluationSummary";
 import SupervisorEvaluationForm from "../components/SupervisorEvaluationForm";
 import "./AcademicSupervisorDashboard.css";
@@ -13,6 +13,7 @@ const AcademicSupervisorDashboard = () => {
   const [placements, setPlacements] = useState([]);
   const [logs, setLogs] = useState([]);
   const [evaluations, setEvaluations] = useState([]);
+  const [criteria, setCriteria] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [actionError, setActionError] = useState("");
@@ -30,15 +31,17 @@ const AcademicSupervisorDashboard = () => {
       setLoading(true);
       setError(null);
 
-      const [placementsRes, logsRes, evaluationsRes] = await Promise.all([
+      const [placementsRes, logsRes, evaluationsRes, criteriaRes] = await Promise.all([
         placementsAPI.getPlacements(),
         logsAPI.getLogs(),
         evaluationsAPI.getEvaluations(),
+        criteriaAPI.getCriteria(),
       ]);
 
       setPlacements(Array.isArray(placementsRes.data) ? placementsRes.data : []);
       setLogs(Array.isArray(logsRes.data) ? logsRes.data : []);
       setEvaluations(Array.isArray(evaluationsRes.data) ? evaluationsRes.data : []);
+      setCriteria(Array.isArray(criteriaRes.data) ? criteriaRes.data : []);
     } catch (requestError) {
       setError(getErrorMessage(requestError, "Unable to load academic dashboard."));
     } finally {
@@ -140,9 +143,9 @@ const AcademicSupervisorDashboard = () => {
 
   const getExistingEvaluationForLog = (log) => evaluations.find(
     (evaluation) => (
-      (evaluation.placement?.id ?? evaluation.placement_id) === (log.placement?.id ?? log.placement_id)
+      Number(evaluation.placement?.id ?? evaluation.placement_id) === Number(log.placement?.id ?? log.placement_id)
       && evaluation.evaluation_type === 'academic'
-      && evaluation.week_number === log.week_number
+      && Number(evaluation.week_number) === Number(log.week_number)
     ),
   );
 
@@ -151,24 +154,36 @@ const AcademicSupervisorDashboard = () => {
   }, [evaluations]);
 
   const { weeklySummaries: allWeeklySummaries } = useMemo(
-    () => buildWeeklyEvaluationSummaries(academicEvaluations),
-    [academicEvaluations]
+    () => buildWeeklyEvaluationSummaries(evaluations),
+    [evaluations]
   );
 
   const groupedSummaries = useMemo(() => {
     const groups = new Map();
     allWeeklySummaries.forEach((summary) => {
-      const placementId = summary.placement_id;
+      const placementId = summary.placementId;
+      if (placementId == null) return;
       if (!groups.has(placementId)) {
         groups.set(placementId, {
           placementId,
           placementName: summary.placementName || 'Unknown Placement',
           weeks: [],
+          placementAverageScore: null,
+          placementAverageWeight: null,
         });
       }
       groups.get(placementId).weeks.push(summary);
     });
-    return Array.from(groups.values());
+    // attach any placement-level canonical averages if available
+    const results = Array.from(groups.values());
+    results.forEach((g) => {
+      const placement = placements.find((p) => p.id === g.placementId);
+      if (placement) {
+        g.placementAverageScore = placement.average_score ?? null;
+        g.placementAverageWeight = placement.average_weight ?? null;
+      }
+    });
+    return results;
   }, [allWeeklySummaries]);
 
   const academicStudentCards = useMemo(() => {
@@ -458,6 +473,9 @@ const AcademicSupervisorDashboard = () => {
           <button className={`nav-item ${activeSection === "reports" ? "active" : ""}`} onClick={() => setActiveSection("reports")}>
             Reports
           </button>
+           <button className={`nav-item ${activeSection === "criteria" ? "active" : ""}`} onClick={() => setActiveSection("criteria")}>
+             Criteria
+           </button>
         </nav>
         <div className="sidebar-bottom">
           <button className="nav-item logout" onClick={() => navigate("/")}>Logout</button>
@@ -561,10 +579,11 @@ const AcademicSupervisorDashboard = () => {
                       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '12px' }}>
                         {group.weeks.map((w) => {
                           const evalToEdit = academicEvaluations.find(
-                            (evaluation) => (evaluation.placement?.id ?? evaluation.placement_id) === group.placementId
+                            (evaluation) => Number(evaluation.placement?.id ?? evaluation.placement_id) === Number(group.placementId)
                               && Number(evaluation.week_number) === Number(w.week_number)
                               && evaluation.evaluation_type === 'academic'
                           );
+                          const otherSupervisorSubmitted = w.supervisor_score !== null && w.supervisor_score !== undefined;
 
                           return (
                             <div
@@ -576,14 +595,23 @@ const AcademicSupervisorDashboard = () => {
                                 border: '1px solid #e2e8f0',
                               }}
                             >
-                              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                              <div style={{ marginBottom: '8px' }}>
+                                <div style={{ fontWeight: 700, marginBottom: '8px' }}>Week {w.week_number}</div>
+                                <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '4px' }}>
+                                  Supervisor: <strong>{w.supervisor_score ?? 'N/A'}</strong>
+                                </div>
+                                <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '4px' }}>
+                                  Academic: <strong>{w.academic_score ?? 'N/A'}</strong>
+                                </div>
+                              </div>
+                              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '8px', borderTop: '1px solid #e2e8f0' }}>
                                 <div>
-                                  <div style={{ fontWeight: 700 }}>Week {w.week_number}</div>
-                                  <div style={{ fontSize: '13px', color: '#64748b', marginTop: '4px' }}>Score: {w.combined_score ?? 'N/A'}</div>
+                                  <div style={{ fontSize: '11px', color: '#64748b' }}>Total Score</div>
+                                  <div style={{ fontSize: '18px', fontWeight: 'bold', color: '#2563eb' }}>{w.combined_score ?? 'N/A'}</div>
                                 </div>
                                 <div style={{ textAlign: 'right' }}>
-                                  <div style={{ fontSize: '18px', fontWeight: 'bold', color: '#2563eb' }}>{w.combined_score ?? 'N/A'}</div>
-                                  <div style={{ fontSize: '13px', color: '#64748b' }}>Weight: {w.grade_weight ?? 'N/A'}</div>
+                                  <div style={{ fontSize: '11px', color: '#64748b' }}>Weight</div>
+                                  <div style={{ fontSize: '16px', fontWeight: 'bold', color: '#059669' }}>{w.grade_weight ?? 'N/A'}</div>
                                 </div>
                               </div>
                               <div style={{ marginTop: '8px', display: 'flex', gap: '8px' }}>
@@ -595,14 +623,18 @@ const AcademicSupervisorDashboard = () => {
                                   {evalToEdit ? 'Edit Evaluation' : 'Add Evaluation'}
                                 </button>
                               </div>
+                              <div style={{ marginTop: '8px', fontSize: '12px', color: '#475569' }}>
+                                <div><strong>Your evaluation:</strong> {evalToEdit ? 'Edit' : 'Add'}</div>
+                                <div><strong>Other supervisor evaluation:</strong> {otherSupervisorSubmitted ? 'Already submitted' : 'Not yet submitted'}</div>
+                              </div>
                             </div>
                           );
                         })}
                       </div>
                     )}
                     <div style={{ marginTop: '12px', textAlign: 'right', color: '#475569' }}>
-                      <strong>Average Score:</strong> {group.weeks.length ? ((group.weeks.reduce((t, a) => t + Number(a.combined_score || 0), 0) / group.weeks.length).toFixed(2)) : '0.00'}
-                      <span style={{ marginLeft: '12px' }}><strong>Average Weight:</strong> {group.weeks.length ? ((group.weeks.reduce((t, a) => t + Number(a.grade_weight || 0), 0) / group.weeks.length).toFixed(2)) : '0.00'}</span>
+                      <strong>Average Score:</strong> {group.placementAverageScore != null ? (Number(group.placementAverageScore).toFixed(2)) : (group.weeks.length ? ((group.weeks.reduce((t, a) => t + Number(a.combined_score || 0), 0) / group.weeks.length).toFixed(2)) : '0.00')}
+                      <span style={{ marginLeft: '12px' }}><strong>Average Weight:</strong> {group.placementAverageWeight != null ? (Number(group.placementAverageWeight).toFixed(2)) : (group.weeks.length ? ((group.weeks.reduce((t, a) => t + Number(a.grade_weight || 0), 0) / group.weeks.length).toFixed(2)) : '0.00')}</span>
                     </div>
                   </div>
                 );
@@ -644,6 +676,31 @@ const AcademicSupervisorDashboard = () => {
                 </div>
               ))}
             </div>
+          </>
+        )}
+
+        {activeSection === "criteria" && (
+          <>
+            <div className="section-title">Evaluation Criteria</div>
+            {criteria.length === 0 ? (
+              <div className="intern-table">
+                <div className="table-row">
+                  <div style={{ gridColumn: "1 / -1" }}>No criteria defined yet.</div>
+                </div>
+              </div>
+            ) : (
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '16px' }}>
+                {criteria.map((crit) => (
+                  <div key={crit.id} style={{ padding: '16px', background: '#f8fafc', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+                    <div style={{ fontWeight: 700, color: '#0f172a', marginBottom: '8px' }}>{crit.name}</div>
+                    {crit.description && <p style={{ fontSize: '13px', color: '#64748b', marginBottom: '12px' }}>{crit.description}</p>}
+                    <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '8px' }}><strong>Max Score:</strong> {crit.max_score}</div>
+                    <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '4px' }}><strong>Supervisor Share:</strong> {crit.supervisor_share}%</div>
+                    <div style={{ fontSize: '12px', color: '#64748b' }}><strong>Academic Share:</strong> {crit.academic_share}%</div>
+                  </div>
+                ))}
+              </div>
+            )}
           </>
         )}
       </div>
