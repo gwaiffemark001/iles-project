@@ -1,7 +1,8 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import axios from 'axios'
 import { useAuth } from '../auth/useAuth'
-import { criteriaAPI, evaluationsAPI } from '../api/api'
+import { criteriaAPI, evaluationsAPI, placementsAPI } from '../api/api'
+import { buildWeeklyEvaluationSummaries, getGradeWeight } from '../utils/evaluationSummary'
 
 const userRoles = [
   { value: 'student', label: 'Student' },
@@ -16,23 +17,7 @@ const placementStatuses = [
   { value: 'completed', label: 'Completed' },
 ]
 
-const getScoreWeight = (score) => {
-  const numericScore = Number(score)
-
-  if (Number.isNaN(numericScore)) {
-    return null
-  }
-
-  if (numericScore > 80) return 5
-  if (numericScore > 75) return 4.5
-  if (numericScore > 70) return 4
-  if (numericScore > 65) return 3.5
-  if (numericScore > 60) return 3
-  if (numericScore > 55) return 2.5
-  if (numericScore > 50) return 2
-  if (numericScore > 30) return 1
-  return 0
-}
+// use shared helper for weekly summaries and grade weights
 
 function AdminDashboard() {
   const { user, logout } = useAuth()
@@ -48,6 +33,7 @@ function AdminDashboard() {
   const [filterRole, setFilterRole] = useState('all')
   const [editingEntity, setEditingEntity] = useState(null)
   const [editingItem, setEditingItem] = useState(null)
+  const [placementFormMode, setPlacementFormMode] = useState('edit')
   const [editFormData, setEditFormData] = useState({})
   const [editSaving, setEditSaving] = useState(false)
   const [editError, setEditError] = useState('')
@@ -66,6 +52,17 @@ function AdminDashboard() {
   const [showWeeklyModal, setShowWeeklyModal] = useState(false)
   const [selectedPlacementForWeekly, setSelectedPlacementForWeekly] = useState(null)
 
+  const { weeklySummaries: allWeeklySummaries } = useMemo(() => buildWeeklyEvaluationSummaries(evaluations), [evaluations])
+  const groupedSummaries = useMemo(() => {
+    if (!allWeeklySummaries || allWeeklySummaries.length === 0) return []
+    return Object.values(allWeeklySummaries.reduce((acc, s) => {
+      const key = s.placementId || s.placementId === 0 ? s.placementId : s.placementName
+      acc[key] = acc[key] || { placementName: s.placementName || 'Unknown', placementId: key, weeks: [] }
+      acc[key].weeks.push(s)
+      return acc
+    }, {}))
+  }, [allWeeklySummaries])
+
   const authHeaders = useMemo(() => ({ headers: { Authorization: `Bearer ${token}` } }), [token])
 
   const closeEditModal = () => {
@@ -75,6 +72,7 @@ function AdminDashboard() {
 
     setEditingEntity(null)
     setEditingItem(null)
+    setPlacementFormMode('edit')
     setEditFormData({})
     setEditError('')
   }
@@ -106,6 +104,7 @@ function AdminDashboard() {
   const handleEditPlacement = (selectedPlacement) => {
     setEditingEntity('placement')
     setEditingItem(selectedPlacement)
+    setPlacementFormMode('edit')
     setEditError('')
     setEditFormData({
       student_id: selectedPlacement.student?.id ? String(selectedPlacement.student.id) : '',
@@ -119,10 +118,27 @@ function AdminDashboard() {
     })
   }
 
+  const handleAddPlacement = () => {
+    setEditingEntity('placement')
+    setEditingItem({ id: null })
+    setPlacementFormMode('create')
+    setEditError('')
+    setEditFormData({
+      student_id: '',
+      workplace_supervisor_id: '',
+      academic_supervisor_id: '',
+      company_name: '',
+      company_address: '',
+      start_date: '',
+      end_date: '',
+      status: 'pending',
+    })
+  }
+
   const handleSaveEdit = async (event) => {
     event.preventDefault()
 
-    if (!editingEntity || !editingItem) {
+    if (!editingEntity || (!editingItem && editingEntity !== 'placement')) {
       return
     }
 
@@ -171,15 +187,20 @@ function AdminDashboard() {
           status: editFormData.status,
         }
 
-        const response = await axios.put(
-          `http://127.0.0.1:8000/api/placements/${editingItem.id}/`,
-          payload,
-          authHeaders,
-        )
+        if (placementFormMode === 'create') {
+          const response = await placementsAPI.createPlacement(payload)
+          setPlacements((currentPlacements) => [...currentPlacements, response.data])
+        } else {
+          const response = await axios.put(
+            `http://127.0.0.1:8000/api/placements/${editingItem.id}/`,
+            payload,
+            authHeaders,
+          )
 
-        setPlacements((currentPlacements) => currentPlacements.map((existingPlacement) => (
-          existingPlacement.id === editingItem.id ? response.data : existingPlacement
-        )))
+          setPlacements((currentPlacements) => currentPlacements.map((existingPlacement) => (
+            existingPlacement.id === editingItem.id ? response.data : existingPlacement
+          )))
+        }
       }
 
       closeEditModal()
@@ -224,14 +245,30 @@ function AdminDashboard() {
   }
 
   const fetchPlacementWeeklySummary = (placement) => {
-    const placementEvaluations = evaluations.filter((evaluation) => evaluation.placement?.id === placement.id)
+    // Filter evaluations for this placement - try both placement?.id and placement_id
+    const placementEvaluations = evaluations.filter((evaluation) => {
+      const evalPlacementId = evaluation.placement?.id ?? evaluation.placement_id
+      return evalPlacementId === placement.id
+    })
+
+    console.log('Placement ID:', placement.id)
+    console.log('Total evaluations:', evaluations.length)
+    console.log('Filtered evaluations:', placementEvaluations.length)
+    console.log('Sample evaluation:', placementEvaluations[0])
+
     const weekNumbers = Array.from(new Set(placementEvaluations.map((evaluation) => evaluation.week_number).filter((weekNumber) => weekNumber !== undefined && weekNumber !== null)))
       .sort((left, right) => left - right)
+
+    console.log('Week numbers found:', weekNumbers)
 
     const summary = {
       weeks: weekNumbers.map((weekNumber) => {
         const supervisorEvaluation = placementEvaluations.find((evaluation) => evaluation.week_number === weekNumber && evaluation.evaluation_type === 'supervisor')
         const academicEvaluation = placementEvaluations.find((evaluation) => evaluation.week_number === weekNumber && evaluation.evaluation_type === 'academic')
+
+        console.log(`Week ${weekNumber} - Supervisor:`, supervisorEvaluation?.id, 'Academic:', academicEvaluation?.id)
+        console.log(`Week ${weekNumber} - Supervisor items:`, supervisorEvaluation?.items)
+        console.log(`Week ${weekNumber} - Academic items:`, academicEvaluation?.items)
 
         const criteriaBreakdown = criteria.map((criterion) => {
           const supervisorItem = supervisorEvaluation?.items?.find((item) => item.criteria?.id === criterion.id)
@@ -264,10 +301,28 @@ function AdminDashboard() {
 
         const combinedScore = criteriaBreakdown.reduce((total, criterionRow) => total + criterionRow.total_contribution, 0)
 
+        // Calculate supervisor and academic total scores from criteria items
+        let supervisorTotalScore = null
+        let academicTotalScore = null
+
+        if (supervisorEvaluation?.items?.length > 0) {
+          supervisorTotalScore = Number((supervisorEvaluation.items.reduce((total, item) => total + (Number(item.score) || 0), 0) / supervisorEvaluation.items.length).toFixed(2))
+        } else if (supervisorEvaluation?.score != null) {
+          // Fallback to the evaluation's score field if items are empty
+          supervisorTotalScore = Number(supervisorEvaluation.score)
+        }
+
+        if (academicEvaluation?.items?.length > 0) {
+          academicTotalScore = Number((academicEvaluation.items.reduce((total, item) => total + (Number(item.score) || 0), 0) / academicEvaluation.items.length).toFixed(2))
+        } else if (academicEvaluation?.score != null) {
+          // Fallback to the evaluation's score field if items are empty
+          academicTotalScore = Number(academicEvaluation.score)
+        }
+
         return {
           week_number: weekNumber,
-          supervisor_score: supervisorEvaluation?.score ?? null,
-          academic_score: academicEvaluation?.score ?? null,
+          supervisor_score: supervisorTotalScore,
+          academic_score: academicTotalScore,
           combined_score: Number(combinedScore.toFixed(2)),
           criteria_breakdown: criteriaBreakdown,
         }
@@ -278,6 +333,8 @@ function AdminDashboard() {
     summary.average = summary.weeks.length > 0
       ? Number((summary.weeks.reduce((total, week) => total + week.combined_score, 0) / summary.weeks.length).toFixed(2))
       : null
+
+    console.log('Final summary:', summary)
 
     setWeeklySummary(summary)
     setSelectedPlacementForWeekly(placement)
@@ -765,7 +822,12 @@ function AdminDashboard() {
 
           {activeSection === 'placements' && (
             <div>
-              <h2 style={{ color: '#2c3e50', marginBottom: '20px' }}>Placement Management</h2>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '16px', marginBottom: '20px' }}>
+                <h2 style={{ color: '#2c3e50', margin: 0 }}>Placement Management</h2>
+                <button onClick={handleAddPlacement} style={{ padding: '8px 16px', backgroundColor: '#27AE60', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>
+                  Add Placement
+                </button>
+              </div>
               <div style={{ marginBottom: '20px', display: 'flex', gap: '10px', alignItems: 'center' }}>
                 <input
                   type="text"
@@ -821,29 +883,51 @@ function AdminDashboard() {
                   Manage Criteria
                 </button>
               </div>
-              {evaluations.length === 0 ? (
-                <p>No evaluations found.</p>
+              {allWeeklySummaries.length === 0 ? (
+                <p>No weekly evaluations found.</p>
               ) : (
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '20px' }}>
-                  {evaluations.map((evaluation) => (
-                    <div key={evaluation.id} style={{ backgroundColor: 'white', padding: '20px', borderRadius: '8px', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>
-                      <h3 style={{ margin: '0 0 10px 0', color: '#2c3e50' }}>{evaluation.evaluator_name || 'Unknown Evaluator'}</h3>
-                      <p style={{ margin: '5px 0', color: '#7f8c8d' }}>Student: {evaluation.placement?.student?.full_name || 'Unknown'}</p>
-                      <p style={{ margin: '5px 0', color: '#7f8c8d' }}>Placement: {evaluation.placement?.company_name}</p>
-                      <p style={{ margin: '5px 0', color: '#7f8c8d' }}>Type: {evaluation.evaluation_type}</p>
-                      <p style={{ margin: '5px 0', fontSize: '18px', fontWeight: 'bold', color: '#27AE60' }}>Score: {evaluation.score}</p>
-                      <p style={{ margin: '5px 0', color: '#7f8c8d', fontSize: '12px' }}>Date: {new Date(evaluation.evaluated_at).toLocaleDateString()}</p>
-                      <div style={{ marginTop: '12px', display: 'flex', gap: '8px' }}>
-                        <button onClick={() => setSelectedEvaluation(evaluation)} style={{ padding: '6px 12px', backgroundColor: '#2980B9', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '12px' }}>
-                          View Details
-                        </button>
-                        <button onClick={() => handleDeleteEvaluation(evaluation.id)} style={{ padding: '6px 12px', backgroundColor: '#E74C3C', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '12px' }}>
-                          Delete
-                        </button>
+                groupedSummaries.map((group) => {
+                  // Get student details from the first week's data if available
+                  const firstWeekData = group.weeks[0]
+                  const studentName = firstWeekData?.studentName || 'Unknown Student'
+                  const placementName = group.placementName || 'Unknown Placement'
+                  
+                  return (
+                    <div key={group.placementId} style={{ marginBottom: '18px', padding: '16px', background: '#fff', borderRadius: '8px', border: '1px solid #e9ecef' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
+                        <div>
+                          <h3 style={{ margin: '0 0 8px 0', color: '#2c3e50' }}>{placementName}</h3>
+                          <div style={{ color: '#7f8c8d', fontSize: '14px' }}>
+                            <strong>Student:</strong> {studentName}
+                          </div>
+                        </div>
+                        <div style={{ color: '#64748b', textAlign: 'right' }}>
+                          <div style={{ fontWeight: '600' }}>Weeks: {group.weeks.length}</div>
+                        </div>
+                      </div>
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '12px' }}>
+                        {group.weeks.map((w) => (
+                          <div key={w.key} style={{ padding: '12px', background: '#f7f9fc', borderRadius: '8px' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                              <div>
+                                <div style={{ fontWeight: 700 }}>Week {w.week_number}</div>
+                                <div style={{ fontSize: '13px', color: '#64748b' }}>Supervisor: {w.supervisor_score ?? 'N/A'} | Academic: {w.academic_score ?? 'N/A'}</div>
+                              </div>
+                              <div style={{ textAlign: 'right' }}>
+                                <div style={{ fontSize: '18px', fontWeight: 'bold', color: '#2563eb' }}>Total: {w.combined_score}</div>
+                                <div style={{ fontSize: '13px', color: '#64748b' }}>Grade Weight: {w.grade_weight ?? 'N/A'}</div>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                      <div style={{ marginTop: '12px', textAlign: 'right', color: '#475569' }}>
+                        <strong>Average Score:</strong> { (group.weeks.reduce((t,a)=>t+Number(a.combined_score||0),0)/group.weeks.length).toFixed(2) }
+                        <span style={{ marginLeft: '12px' }}><strong>Average Weight:</strong> { (group.weeks.reduce((t,a)=>t+Number(a.grade_weight||0),0)/group.weeks.length).toFixed(2) }</span>
                       </div>
                     </div>
-                  ))}
-                </div>
+                  )
+                })
               )}
             </div>
           )}
@@ -996,10 +1080,14 @@ function AdminDashboard() {
             <div style={{ display: 'flex', justifyContent: 'space-between', gap: '16px', alignItems: 'flex-start', marginBottom: '20px' }}>
               <div>
                 <h2 id="admin-edit-title" style={{ margin: '0 0 8px 0', color: '#0f172a' }}>
-                  {editingEntity === 'user' ? 'Edit User' : 'Edit Placement'}
+                  {editingEntity === 'user' ? 'Edit User' : placementFormMode === 'create' ? 'Create Placement' : 'Edit Placement'}
                 </h2>
                 <p style={{ margin: 0, color: '#64748b' }}>
-                  Update the record details and save the changes back to the system.
+                  {editingEntity === 'user'
+                    ? 'Update the record details and save the changes back to the system.'
+                    : placementFormMode === 'create'
+                      ? 'Assign a student, workplace supervisor, and academic supervisor to a new placement.'
+                      : 'Update the record details and save the changes back to the system.'}
                 </p>
               </div>
               <button
@@ -1395,7 +1483,7 @@ function AdminDashboard() {
                       </div>
                       <div style={{ textAlign: 'right' }}>
                         <div style={{ fontSize: '18px', fontWeight: 'bold', color: '#2563eb' }}>Total: {w.combined_score}</div>
-                        <div style={{ fontSize: '13px', color: '#64748b' }}>Grade Weight: {getScoreWeight(w.combined_score) ?? 'N/A'}</div>
+                        <div style={{ fontSize: '13px', color: '#64748b' }}>Grade Weight: {getGradeWeight(w.combined_score) ?? 'N/A'}</div>
                       </div>
                     </div>
 
@@ -1436,7 +1524,7 @@ function AdminDashboard() {
             <div style={{ marginTop: '16px', display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
               <div style={{ alignSelf: 'center', color: '#475569' }}>
                 Average: <strong style={{ fontSize: '18px', color: '#16a34a' }}>{weeklySummary.average ?? 'N/A'}</strong>
-                <span style={{ marginLeft: '10px' }}>Grade Weight: <strong>{getScoreWeight(weeklySummary.average) ?? 'N/A'}</strong></span>
+                <span style={{ marginLeft: '10px' }}>Grade Weight: <strong>{getGradeWeight(weeklySummary.average) ?? 'N/A'}</strong></span>
               </div>
             </div>
           </div>

@@ -1,8 +1,9 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import { useAuth } from "../../contexts/useAuth";
 import { evaluationsAPI, getErrorMessage, logsAPI, placementsAPI } from "../../api/api";
+import { buildWeeklyEvaluationSummaries, getGradeWeight } from "../../utils/evaluationSummary";
 import SupervisorEvaluationForm from "../components/SupervisorEvaluationForm";
 import "./AcademicSupervisorDashboard.css";
 
@@ -142,6 +143,31 @@ const AcademicSupervisorDashboard = () => {
       && evaluation.week_number === log.week_number
     ),
   );
+
+  const academicEvaluations = useMemo(() => {
+    return evaluations.filter(e => e.evaluation_type === 'academic');
+  }, [evaluations]);
+
+  const { weeklySummaries: allWeeklySummaries } = useMemo(
+    () => buildWeeklyEvaluationSummaries(academicEvaluations),
+    [academicEvaluations]
+  );
+
+  const groupedSummaries = useMemo(() => {
+    const groups = new Map();
+    allWeeklySummaries.forEach((summary) => {
+      const placementId = summary.placement_id;
+      if (!groups.has(placementId)) {
+        groups.set(placementId, {
+          placementId,
+          placementName: summary.placementName || 'Unknown Placement',
+          weeks: [],
+        });
+      }
+      groups.get(placementId).weeks.push(summary);
+    });
+    return Array.from(groups.values());
+  }, [allWeeklySummaries]);
 
   const closeEvalEditor = () => {
     setShowEvalEditor(false);
@@ -469,33 +495,117 @@ const AcademicSupervisorDashboard = () => {
 
         {activeSection === "evaluations" && (
           <>
-            <div className="section-title">Evaluations</div>
-            {recentEvaluations.length === 0 ? (
+            <div className="section-title" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span>Evaluations</span>
+              <button
+                onClick={() => {
+                  setShowEvalEditor(true);
+                  setEvalPlacement(null);
+                  setEditingEvaluation(null);
+                }}
+                style={{ padding: '8px 16px', backgroundColor: '#27AE60', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
+              >
+                Create New Evaluation
+              </button>
+            </div>
+            
+            {allWeeklySummaries.length === 0 ? (
               <div className="intern-table">
                 <div className="table-row">
                   <div style={{ gridColumn: "1 / -1" }}>No evaluations recorded yet.</div>
                 </div>
               </div>
             ) : (
-              <div className="intern-table">
-                <div className="table-header">
-                  <div>Student</div>
-                  <div>Placement</div>
-                  <div>Type</div>
-                    <div>Week</div>
-                  <div>Score</div>
-                  <div>Date</div>
-                </div>
-                {recentEvaluations.map((evaluation) => (
-                  <div className="table-row" key={evaluation.id}>
-                    <div>{evaluation.student?.full_name || evaluation.student?.username || "Unknown Student"}</div>
-                    <div>{evaluation.placement?.company_name || "Unknown placement"}</div>
-                    <div>{evaluation.evaluation_type}</div>
-                    <div>{evaluation.week_number ?? 1}</div>
-                    <div>{evaluation.score}</div>
-                    <div>{formatDate(evaluation.evaluated_at)}</div>
+              groupedSummaries.map((group) => {
+                const firstWeekData = group.weeks[0];
+                const studentName = firstWeekData?.studentName || 'Unknown Student';
+                
+                return (
+                  <div key={group.placementId} style={{ marginBottom: '18px', padding: '16px', background: '#fff', borderRadius: '8px', border: '1px solid #e9ecef' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
+                      <div>
+                        <h3 style={{ margin: '0 0 8px 0', color: '#2c3e50' }}>{group.placementName}</h3>
+                        <div style={{ color: '#7f8c8d', fontSize: '14px' }}>
+                          <strong>Student:</strong> {studentName}
+                        </div>
+                      </div>
+                      <div style={{ color: '#64748b', textAlign: 'right' }}>
+                        <div style={{ fontWeight: '600' }}>Weeks: {group.weeks.length}</div>
+                      </div>
+                    </div>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '12px' }}>
+                      {group.weeks.map((w) => (
+                        <div 
+                          key={w.key}
+                          style={{ 
+                            padding: '12px', 
+                            background: '#f7f9fc', 
+                            borderRadius: '8px',
+                            cursor: 'pointer',
+                            border: '1px solid #e2e8f0',
+                            transition: 'all 0.2s'
+                          }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.1)';
+                            e.currentTarget.style.backgroundColor = '#eef2f7';
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.boxShadow = 'none';
+                            e.currentTarget.style.backgroundColor = '#f7f9fc';
+                          }}
+                          onClick={() => {
+                            const evalToEdit = academicEvaluations.find(
+                              e => e.placement?.id === group.placementId && e.week_number === w.week_number
+                            );
+                            setEvalPlacement(placements.find(p => p.id === group.placementId));
+                            setEditingEvaluation(evalToEdit || null);
+                            setShowEvalEditor(true);
+                          }}
+                        >
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <div>
+                              <div style={{ fontWeight: 700 }}>Week {w.week_number}</div>
+                              <div style={{ fontSize: '13px', color: '#64748b', marginTop: '4px' }}>Score: {w.combined_score ?? 'N/A'}</div>
+                            </div>
+                            <div style={{ textAlign: 'right' }}>
+                              <div style={{ fontSize: '18px', fontWeight: 'bold', color: '#2563eb' }}>{w.combined_score ?? 'N/A'}</div>
+                              <div style={{ fontSize: '13px', color: '#64748b' }}>Weight: {w.grade_weight ?? 'N/A'}</div>
+                            </div>
+                          </div>
+                          <div style={{ marginTop: '8px', fontSize: '12px', color: '#475569' }}>
+                            Click to edit
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                    <div style={{ marginTop: '12px', textAlign: 'right', color: '#475569' }}>
+                      <strong>Average Score:</strong> {((group.weeks.reduce((t, a) => t + Number(a.combined_score || 0), 0) / group.weeks.length).toFixed(2))}
+                      <span style={{ marginLeft: '12px' }}><strong>Average Weight:</strong> {((group.weeks.reduce((t, a) => t + Number(a.grade_weight || 0), 0) / group.weeks.length).toFixed(2))}</span>
+                    </div>
                   </div>
-                ))}
+                );
+              })
+            )}
+            
+            {showEvalEditor && evalPlacement ? (
+              <div style={{ marginTop: '24px', padding: '16px', backgroundColor: '#f5f5f5', borderRadius: '8px' }}>
+                <h3 style={{ marginTop: 0 }}>
+                  {editingEvaluation ? `Edit Week ${editingEvaluation.week_number} Evaluation` : 'Create New Evaluation'}
+                </h3>
+                <SupervisorEvaluationForm
+                  placementId={evalPlacement.id}
+                  evaluatorId={user?.id}
+                  evaluationType="academic"
+                  existingEvaluation={editingEvaluation}
+                  initialWeekNumber={editingEvaluation?.week_number || 1}
+                  studentName={evalPlacement.student?.full_name || evalPlacement.student_name || 'Student'}
+                  onSaved={() => {
+                    toast.success('Evaluation saved successfully');
+                    closeEvalEditor();
+                    fetchData();
+                  }}
+                  onCancel={closeEvalEditor}
+                />
               </div>
             )}
           </>
