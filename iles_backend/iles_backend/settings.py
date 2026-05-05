@@ -166,5 +166,5 @@ REST_FRAMEWORK = {
 #CORS_ALLOWED_ORIGINS = [
    # "http://localhost:5173",   # Vite default port
 
-# Comment for settings.py
+
 
