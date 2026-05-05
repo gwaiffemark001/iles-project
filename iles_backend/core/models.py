@@ -250,6 +250,7 @@ class Evaluation(models.Model):
 
     placement = models.ForeignKey(InternshipPlacement, on_delete=models.CASCADE, related_name='evaluations')
     evaluator = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='given_evaluations')
+    week_number = models.PositiveIntegerField(null=True, blank=True)
     
     # Weighted evaluation criteria
     technical_skills = models.IntegerField(default=0, help_text="Technical competence and skills (1-5)")
@@ -258,7 +259,8 @@ class Evaluation(models.Model):
     initiative = models.IntegerField(default=0, help_text="Initiative and problem-solving (1-5)")
     
     # Overall computed score
-    weighted_score = models.DecimalField(max_digits=5, decimal_places=2, default=0, help_text="Computed weighted score")
+    score = models.DecimalField(max_digits=5, decimal_places=2, default=Decimal('0.00'), help_text="Stored evaluation score")
+    weighted_score = models.DecimalField(max_digits=5, decimal_places=2, default=Decimal('0.00'), help_text="Computed weighted score")
     
     evaluation_type = models.CharField(max_length=20, choices=EVALUATION_TYPES, default='supervisor')
     evaluated_at = models.DateTimeField(auto_now_add=True)
@@ -271,7 +273,7 @@ class Evaluation(models.Model):
         'initiative': 0.1,
     }
     
-    def calculate_weighted_score(self):
+    def calculate_basic_weighted_score(self):
         """Calculate weighted score based on criteria and weights"""
         scores = [
             self.technical_skills * self.CRITERIA_WEIGHTS['technical_skills'],
@@ -283,11 +285,13 @@ class Evaluation(models.Model):
     
     def save(self, *args, **kwargs):
         """Override save to calculate weighted score automatically"""
-        self.weighted_score = self.calculate_weighted_score()
+        calculated_score = Decimal(str(self.calculate_weighted_score()))
+        self.score = calculated_score
+        self.weighted_score = calculated_score
         super().save(*args, **kwargs)
 
     class Meta:
-        unique_together = [['placement', 'evaluation_type']]
+        unique_together = [['placement', 'evaluation_type', 'week_number']]
         ordering = ['-evaluated_at']
 
     def __str__(self):
@@ -340,8 +344,10 @@ class Evaluation(models.Model):
     def update_score_from_items(self):
         """Recalculate `score` from EvaluationItem entries and save the model."""
         calculated = self.calculate_weighted_score()
-        self.score = calculated
-        self.save(update_fields=['score'])
+        calculated_decimal = Decimal(str(calculated))
+        self.score = calculated_decimal
+        self.weighted_score = calculated_decimal
+        self.save(update_fields=['score', 'weighted_score'])
 
     @staticmethod
     def combined_score_for_week(placement, week_number):
