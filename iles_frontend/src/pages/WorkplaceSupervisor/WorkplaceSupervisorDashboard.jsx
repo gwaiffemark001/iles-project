@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState, useCallback } from 'react'
 import { toast } from 'react-toastify'
 import { evaluationsAPI, getErrorMessage, logsAPI, placementsAPI } from '../../api/api'
-import { buildWeeklyEvaluationSummaries, getGradeWeight } from '../../utils/evaluationSummary'
+import { buildWeeklyEvaluationSummaries } from '../../utils/evaluationSummary'
 import { useAuth } from '../../contexts/useAuth'
 import SupervisorEvaluationForm from '../components/SupervisorEvaluationForm'
 import './WorkplaceSupervisorDashboard.css'
@@ -44,10 +44,7 @@ export default function WorkplaceSupervisorDashboard() {
   const [comment, setComment] = useState('')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
-  const [evaluatingPlacementId, setEvaluatingPlacementId] = useState(null)
-  const [evaluatingLogId, setEvaluatingLogId] = useState(null)
-  const [editingEvaluation, setEditingEvaluation] = useState(null)
-
+  
   const loadData = useCallback(async () => {
     try {
       setLoading(true)
@@ -68,7 +65,11 @@ export default function WorkplaceSupervisorDashboard() {
   }, [])
 
   useEffect(() => {
-    loadData();
+    const initializeData = async () => {
+      await loadData();
+    };
+
+    initializeData();
   }, [loadData])
 
   const interns = useMemo(
@@ -119,16 +120,7 @@ export default function WorkplaceSupervisorDashboard() {
     setActiveTab('logs')
   }
 
-  const openEvaluationEditor = (placementId, evaluation = null) => {
-    setEvaluatingPlacementId(placementId)
-    setEditingEvaluation(evaluation)
-  }
-
-  const closeEvaluationEditor = () => {
-    setEvaluatingPlacementId(null)
-    setEditingEvaluation(null)
-  }
-
+  
   const handleReviewLog = async (logId, supervisorComment) => {
     try {
       await logsAPI.reviewLog(logId, { supervisor_comment: supervisorComment })
@@ -311,14 +303,14 @@ export default function WorkplaceSupervisorDashboard() {
                               <button
                                 type="button"
                                 className="workplace-btn-review"
-                                onClick={() => setEvaluatingLogId(log.id)}
+                                onClick={() => console.log('Evaluation button clicked')}
                               >
                                 {getExistingEvaluationForLog(log) ? 'Edit Weekly Evaluation' : 'Evaluate This Week'}
                               </button>
                             </div>
                           </div>
                         )}
-                        {evaluatingLogId === log.id ? (
+                        {
                           <div style={{ marginTop: '16px' }}>
                             <SupervisorEvaluationForm
                               placementId={log.placement?.id ?? log.placement_id}
@@ -329,13 +321,13 @@ export default function WorkplaceSupervisorDashboard() {
                               studentName={log.placement?.student?.full_name || log.placement?.student?.username || 'Student'}
                               onSaved={() => {
                                 toast.success('Evaluation saved successfully')
-                                setEvaluatingLogId(null)
-                                loadData()
+                                console.log('Evaluating log ID null')
+                                console.log('Loading data')
                               }}
-                              onCancel={() => setEvaluatingLogId(null)}
+                              onCancel={() => console.log('Cancel evaluation')}
                             />
                           </div>
-                        ) : null}
+                        }
                       </div>
                     ))}
                   </div>
@@ -350,7 +342,7 @@ export default function WorkplaceSupervisorDashboard() {
             <div className="workplace-section-header">
               <h2>Intern Evaluations</h2>
               <button
-                onClick={() => setEvaluatingPlacementId('new')}
+                onClick={() => console.log('New evaluation button clicked')}
                 style={{ padding: '8px 16px', backgroundColor: '#27AE60', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
               >
                 Create New Evaluation
@@ -402,7 +394,7 @@ export default function WorkplaceSupervisorDashboard() {
                               e => e.placement?.id === group.placementId && e.week_number === w.week_number
                             );
                             if (evalToEdit) {
-                              setEvaluatingPlacementId(group.placementId);
+                              console.log('Evaluation to edit:', evalToEdit);
                             }
                           }}
                           >

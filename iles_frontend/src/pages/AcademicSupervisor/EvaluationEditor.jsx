@@ -27,23 +27,23 @@ export default function EvaluationEditor({
   }, []);
 
   useEffect(() => {
-    let isMounted = true;
-    if (isMounted && existingEvaluation && Array.isArray(existingEvaluation.items)) {
-      setItems(
-        criteria.map((c) => {
-          const found = existingEvaluation.items.find((it) => it.criteria?.id === c.id || it.criteria_id === c.id);
-          return {
-            criteria_id: c.id,
-            score: found ? found.score : 0,
-          };
-        })
-      );
-    } else if (isMounted && criteria.length > 0 && !existingEvaluation) {
-      setItems(criteria.map((c) => ({ criteria_id: c.id, score: 0 })));
-    }
-    return () => {
-      isMounted = false;
+    const initializeItems = async () => {
+      if (existingEvaluation && Array.isArray(existingEvaluation.items)) {
+        setItems(
+          criteria.map((c) => {
+            const found = existingEvaluation.items.find((it) => it.criteria?.id === c.id || it.criteria_id === c.id);
+            return {
+              criteria_id: c.id,
+              score: found ? found.score : 0,
+            };
+          })
+        );
+      } else if (criteria.length > 0 && !existingEvaluation) {
+        setItems(criteria.map((c) => ({ criteria_id: c.id, score: 0 })));
+      }
     };
+
+    initializeItems();
   }, [criteria, existingEvaluation]);
 
   const setItemScore = (criteriaId, value) => {
