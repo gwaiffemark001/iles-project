@@ -87,3 +87,5 @@ urlpatterns = [
     #User Summary 
     path('api/users/<int:pk>/summary/', UserSummaryView.as_view()),
 ]
+
+# Comment for urls.py

@@ -210,3 +210,5 @@ export const AuthProvider = ({ children }) => {
     </AuthContext.Provider>
   );
 };
+
+// Comment for AuthContext.jsx
