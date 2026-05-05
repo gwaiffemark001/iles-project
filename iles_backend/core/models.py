@@ -231,7 +231,6 @@ class Evaluation(models.Model):
 
     placement = models.ForeignKey(InternshipPlacement, on_delete=models.CASCADE, related_name='evaluations')
     evaluator = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='given_evaluations')
-<<<<<<< HEAD
     
     # Weighted evaluation criteria
     technical_skills = models.IntegerField(default=0, help_text="Technical competence and skills (1-5)")
@@ -242,10 +241,6 @@ class Evaluation(models.Model):
     # Overall computed score
     weighted_score = models.DecimalField(max_digits=5, decimal_places=2, default=0, help_text="Computed weighted score")
     
-=======
-    score = models.DecimalField(max_digits=5, decimal_places=2, default=Decimal('0'))
-    week_number = models.PositiveIntegerField(default=1)
->>>>>>> 11ba525e50428be9e942ec58b23a2a9dc5bda231
     evaluation_type = models.CharField(max_length=20, choices=EVALUATION_TYPES, default='supervisor')
     evaluated_at = models.DateTimeField(auto_now_add=True)
     
