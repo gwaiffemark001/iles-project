@@ -59,6 +59,26 @@ class InternshipPlacement(models.Model):
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
     created_at = models.DateTimeField(auto_now_add =True)
 
+    def get_computed_status(self):
+        """Compute placement status based on current date and start/end dates."""
+        from datetime import date
+        today = date.today()
+        
+        # If no student assigned yet, status is pending
+        if not self.student:
+            return 'pending'
+        
+        # If today is before start date, still pending
+        if today < self.start_date:
+            return 'pending'
+        
+        # If today is on or after end date, placement is completed
+        if today >= self.end_date:
+            return 'completed'
+        
+        # Otherwise (between start and end dates), placement is active
+        return 'active'
+
     def __str__(self):
         student_username = self.student.username if self.student else "Unassigned"
         return (f"{student_username} at {self.company_name}")
@@ -226,7 +246,6 @@ class Evaluation(models.Model):
     EVALUATION_TYPES = [
         ('supervisor', 'Supervisor Assessment'),
         ('academic', 'Academic Assessment'),
-        ('logbook', 'Logbook Assessment'),
     ]
 
     placement = models.ForeignKey(InternshipPlacement, on_delete=models.CASCADE, related_name='evaluations')
@@ -278,8 +297,11 @@ class Evaluation(models.Model):
     def calculate_weighted_score(self):
         """
         Calculate the evaluation score from related EvaluationItem entries.
-        The formula used is: for each criteria, contribution = (item.score / criteria.max_score) * criteria.weight_percent
-        The method returns the aggregated percent (e.g. 85.5) and does not modify the model unless `save_calculated` is True.
+        The formula used is: for each selected criteria,
+        contribution = (item.score / criteria.max_score) * criteria.weight_percent.
+        The summed contribution is then normalized by the selected criteria total weight
+        so the returned score remains on a 0-100 scale even when evaluators score only
+        a subset of criteria.
         """
         try:
             # Use the declared related_name from EvaluationItem model
@@ -294,20 +316,26 @@ class Evaluation(models.Model):
             items_qs = []
 
         total = Decimal('0')
+        selected_weight_total = Decimal('0')
         for item in items_qs:
             crit = item.criteria
             try:
                 # Avoid division by zero
                 if crit.max_score and crit.max_score > 0:
-                    contribution = (Decimal(str(item.score)) / Decimal(str(crit.max_score))) * Decimal(str(crit.weight_percent))
+                    criterion_weight = Decimal(str(crit.weight_percent))
+                    contribution = (Decimal(str(item.score)) / Decimal(str(crit.max_score))) * criterion_weight
+                    selected_weight_total += criterion_weight
                 else:
                     contribution = Decimal('0')
             except Exception:
                 contribution = Decimal('0')
             total += Decimal(str(contribution))
 
-        # total represents percentage points according to criteria weight_percent (which should sum to 100)
-        return float(round(total, 2))
+        if selected_weight_total <= Decimal('0'):
+            return 0.0
+
+        normalized_total = (total / selected_weight_total) * Decimal('100')
+        return float(round(normalized_total, 2))
 
     def update_score_from_items(self):
         """Recalculate `score` from EvaluationItem entries and save the model."""

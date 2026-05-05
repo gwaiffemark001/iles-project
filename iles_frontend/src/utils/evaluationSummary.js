@@ -63,9 +63,21 @@ const calculateCombinedWeekScore = (supervisorEvaluation, academicEvaluation) =>
   })
 
   if (criteriaMap.size === 0) {
-    const supervisorScore = Number(supervisorEvaluation?.score ?? 0)
-    const academicScore = Number(academicEvaluation?.score ?? 0)
-    const scores = [supervisorScore, academicScore].filter((value) => !Number.isNaN(value) && value > 0)
+    const scores = []
+
+    if (supervisorEvaluation) {
+      const supervisorScore = Number(supervisorEvaluation?.score)
+      if (!Number.isNaN(supervisorScore)) {
+        scores.push(supervisorScore)
+      }
+    }
+
+    if (academicEvaluation) {
+      const academicScore = Number(academicEvaluation?.score)
+      if (!Number.isNaN(academicScore)) {
+        scores.push(academicScore)
+      }
+    }
 
     if (scores.length === 0) {
       return 0

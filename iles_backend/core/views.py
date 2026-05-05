@@ -70,6 +70,13 @@ class WeeklyLogListView(APIView):
     def post(self, request):
         serializer = WeeklyLogSerializer(data=request.data)
         if serializer.is_valid():
+            placement = serializer.validated_data.get('placement')
+            if placement and placement.get_computed_status() == 'completed':
+                return Response(
+                    {'error': 'Cannot create a weekly log for a completed placement.'},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
             log = serializer.save()
             # Set submitted_at timestamp if status is submitted
             if log.status == 'submitted':
@@ -137,6 +144,12 @@ class WeeklyLogDetailView(APIView):
                 )
 
             status_value = serializer.validated_data.get('status', log.status)
+            if status_value == 'submitted' and placement.get_computed_status() == 'completed':
+                return Response(
+                    {'error': 'Cannot submit a weekly log for a completed placement.'},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
             previous_status = log.status
             serializer.save(
                 submitted_at=timezone.now() if status_value == 'submitted' else None
@@ -430,7 +443,14 @@ class EvaluationListView(APIView):
                 {'error': 'You are not allowed to submit evaluations'},
                 status=status.HTTP_403_FORBIDDEN
             )
-        serializer = EvaluationSerializer(data=request.data, context={'request': request})
+        # Auto-set evaluation_type based on user role
+        data = request.data.copy()
+        if request.user.role == 'academic_supervisor':
+            data['evaluation_type'] = 'academic'
+        elif request.user.role == 'workplace_supervisor':
+            data['evaluation_type'] = 'supervisor'
+        
+        serializer = EvaluationSerializer(data=data, context={'request': request})
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
@@ -674,6 +694,28 @@ class EvaluationDetailView(APIView):
         serializer = EvaluationSerializer(evaluation)
         return Response(serializer.data)
 
+    def put(self, request, pk):
+        if request.user.role not in ['admin', 'workplace_supervisor', 'academic_supervisor']:
+            return Response(
+                {'error': 'You are not allowed to update evaluations'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        try:
+            evaluation = Evaluation.objects.get(pk=pk)
+        except Evaluation.DoesNotExist:
+            return Response({'error': 'Evaluation not found'}, status=status.HTTP_404_NOT_FOUND)
+        # Auto-set evaluation_type based on user role for updates too
+        data = request.data.copy()
+        if request.user.role == 'academic_supervisor':
+            data['evaluation_type'] = 'academic'
+        elif request.user.role == 'workplace_supervisor':
+            data['evaluation_type'] = 'supervisor'
+        serializer = EvaluationSerializer(evaluation, data=data, context={'request': request})
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
     def delete(self, request, pk):
         if request.user.role != 'admin':
             return Response(
@@ -771,6 +813,12 @@ class WeeklyLogSubmitView(APIView):
             return Response(
                 {'error': 'Only draft logs can be submitted'},
                 status=status.HTTP_400_BAD_REQUEST
+            )
+
+        if log.placement.get_computed_status() == 'completed':
+            return Response(
+                {'error': 'Cannot submit a weekly log for a completed placement.'},
+                status=status.HTTP_400_BAD_REQUEST,
             )
 
         from django.utils import timezone
