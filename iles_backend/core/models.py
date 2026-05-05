@@ -268,8 +268,8 @@ class Evaluation(models.Model):
         super().save(*args, **kwargs)
 
     class Meta:
-        unique_together = [['placement', 'evaluation_type', 'week_number']]
-        ordering = ['week_number', '-evaluated_at']
+        unique_together = [['placement', 'evaluation_type']]
+        ordering = ['-evaluated_at']
 
     def __str__(self):
         student_username = self.placement.student.username if self.placement.student else "Unknown"
