@@ -1,5 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser
+from django.core.exceptions import ValidationError
+from django.utils import timezone
 
 class CustomUser(AbstractUser):
     ROLE_CHOICES =[
@@ -58,6 +60,34 @@ class InternshipPlacement(models.Model):
     def __str__(self):
         return (f"{self.student.username} at {self.company_name}")
 
+    def clean(self):
+        """Validate placement data to prevent overlapping internships"""
+        # Check for overlapping placements for the same student
+        if self.student and self.start_date and self.end_date:
+            overlapping_placements = InternshipPlacement.objects.filter(
+                student=self.student,
+                status='active',
+                start_date__lte=self.end_date,
+                end_date__gte=self.start_date
+            ).exclude(pk=self.pk)
+            
+            if overlapping_placements.exists():
+                raise ValidationError({
+                    'start_date': 'Student cannot have overlapping active placements.',
+                    'end_date': 'Student cannot have overlapping active placements.'
+                })
+        
+        # Validate date logic
+        if self.start_date and self.end_date and self.start_date > self.end_date:
+            raise ValidationError({
+                'end_date': 'End date must be after start date.'
+            })
+
+    def save(self, *args, **kwargs):
+        """Override save to include validation"""
+        self.full_clean()
+        super().save(*args, **kwargs)
+
 
 class PlacementApplication(models.Model):
     STATUS_CHOICES = [
@@ -95,6 +125,7 @@ class WeeklyLog(models.Model):
         ('submitted', 'Submitted'),
         ('reviewed', 'Reviewed'),
         ('approved','Approved'),
+        ('rejected', 'Rejected'),
     ]
     placement = models.ForeignKey(InternshipPlacement, on_delete=models.CASCADE, related_name='logs')
     week_number = models.PositiveIntegerField()
@@ -105,8 +136,30 @@ class WeeklyLog(models.Model):
     supervisor_comment = models.TextField(blank=True, null=True)
     deadline= models.DateField()
     submitted_at =models.DateTimeField(blank=True, null=True)
+    reviewed_at =models.DateTimeField(blank=True, null=True)
+    approved_at =models.DateTimeField(blank=True, null=True)
+    rejected_at =models.DateTimeField(blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    
+    # Audit fields for tracking review actions
+    reviewed_by = models.ForeignKey(
+        CustomUser, 
+        on_delete=models.SET_NULL, 
+        null=True, 
+        blank=True,
+        related_name='reviewed_logs',
+        limit_choices_to={'role__in': ['workplace_supervisor', 'academic_supervisor']}
+    )
+    
+    def can_edit(self):
+        """Check if log can be edited based on status"""
+        return self.status in ['draft', 'submitted']
+    
+    def is_overdue(self):
+        """Check if log submission is overdue"""
+        from django.utils import timezone
+        return self.deadline < timezone.now().date() and self.status != 'approved'
     
     class Meta:
         unique_together =[['placement', 'week_number']]
@@ -133,9 +186,41 @@ class Evaluation(models.Model):
 
     placement = models.ForeignKey(InternshipPlacement, on_delete=models.CASCADE, related_name='evaluations')
     evaluator = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='given_evaluations')
-    score = models.DecimalField(max_digits=5, decimal_places=2, default=0)
+    
+    # Weighted evaluation criteria
+    technical_skills = models.IntegerField(default=0, help_text="Technical competence and skills (1-5)")
+    communication = models.IntegerField(default=0, help_text="Communication skills (1-5)")
+    professionalism = models.IntegerField(default=0, help_text="Professionalism and work ethic (1-5)")
+    initiative = models.IntegerField(default=0, help_text="Initiative and problem-solving (1-5)")
+    
+    # Overall computed score
+    weighted_score = models.DecimalField(max_digits=5, decimal_places=2, default=0, help_text="Computed weighted score")
+    
     evaluation_type = models.CharField(max_length=20, choices=EVALUATION_TYPES, default='supervisor')
     evaluated_at = models.DateTimeField(auto_now_add=True)
+    
+    # Weight constants for standardized scoring
+    CRITERIA_WEIGHTS = {
+        'technical_skills': 0.4,
+        'communication': 0.3,
+        'professionalism': 0.2,
+        'initiative': 0.1,
+    }
+    
+    def calculate_weighted_score(self):
+        """Calculate weighted score based on criteria and weights"""
+        scores = [
+            self.technical_skills * self.CRITERIA_WEIGHTS['technical_skills'],
+            self.communication * self.CRITERIA_WEIGHTS['communication'],
+            self.professionalism * self.CRITERIA_WEIGHTS['professionalism'],
+            self.initiative * self.CRITERIA_WEIGHTS['initiative'],
+        ]
+        return sum(scores)
+    
+    def save(self, *args, **kwargs):
+        """Override save to calculate weighted score automatically"""
+        self.weighted_score = self.calculate_weighted_score()
+        super().save(*args, **kwargs)
 
     class Meta:
         unique_together = [['placement', 'evaluation_type']]
