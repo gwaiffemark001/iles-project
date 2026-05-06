@@ -2,6 +2,11 @@
 # Built by Mugabe Gideon
 # Endpoints: WeeklyLog, Placement, Evaluation, Auth, Profile, Supervisor Workflow
 from django.db.models import Avg, Count
+from django.contrib.auth.tokens import PasswordResetTokenGenerator
+from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
+from django.utils.encoding import force_bytes, force_str
+from django.core.mail import send_mail
+import os
 from django.utils import timezone
 from rest_framework import status
 from rest_framework.permissions import AllowAny, IsAuthenticated
@@ -70,6 +75,13 @@ class WeeklyLogListView(APIView):
     def post(self, request):
         serializer = WeeklyLogSerializer(data=request.data)
         if serializer.is_valid():
+            placement = serializer.validated_data.get('placement')
+            if placement and placement.get_computed_status() == 'completed':
+                return Response(
+                    {'error': 'Cannot create a weekly log for a completed placement.'},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
             log = serializer.save()
             # Set submitted_at timestamp if status is submitted
             if log.status == 'submitted':
@@ -137,6 +149,12 @@ class WeeklyLogDetailView(APIView):
                 )
 
             status_value = serializer.validated_data.get('status', log.status)
+            if status_value == 'submitted' and placement.get_computed_status() == 'completed':
+                return Response(
+                    {'error': 'Cannot submit a weekly log for a completed placement.'},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
             previous_status = log.status
             serializer.save(
                 submitted_at=timezone.now() if status_value == 'submitted' else None
@@ -369,39 +387,80 @@ class UserRegistrationView(APIView):
         }, status=status.HTTP_201_CREATED)
 
 
-class ForgotPasswordView(APIView):
+class PasswordResetRequestView(APIView):
     permission_classes = [AllowAny]
 
     def post(self, request):
-        identifier = request.data.get('identifier')
-        username = request.data.get('username')
         email = request.data.get('email')
+        frontend_base = os.getenv('FRONTEND_URL', 'http://localhost:5173')
+
+        if not email:
+            return Response({'email': ['This field is required.']}, status=status.HTTP_400_BAD_REQUEST)
+
+        user = CustomUser.objects.filter(email__iexact=email).first()
+
+        # Always return success to avoid leaking user existence
+        if not user:
+            return Response({'message': 'If an account with that email exists, a reset link has been sent.'})
+
+        token_generator = PasswordResetTokenGenerator()
+        token = token_generator.make_token(user)
+        uid = urlsafe_base64_encode(force_bytes(user.pk))
+
+        reset_path = f"/reset-password?uid={uid}&token={token}"
+        reset_url = f"{frontend_base.rstrip('/')}{reset_path}"
+
+        subject = 'ILES password reset'
+        message = (
+            f"Hello {user.get_full_name() or user.username},\n\n"
+            f"You (or someone else) requested a password reset for your ILES account.\n"
+            f"Click the link below to reset your password:\n\n{reset_url}\n\n"
+            "If you did not request this, you can ignore this email.\n\n"
+            "Thanks,\nILES Team"
+        )
+
+        try:
+            from django.conf import settings
+            send_mail(
+                subject,
+                message,
+                settings.EMAIL_HOST_USER or settings.DEFAULT_FROM_EMAIL,
+                [user.email],
+                fail_silently=False,
+            )
+        except Exception as e:
+            # Fallback: log to console if email backend not configured or sending fails
+            print('Password reset link (development):', reset_url)
+            print('Email error:', str(e))
+
+        return Response({'message': 'If an account with that email exists, a reset link has been sent.'})
+
+
+class PasswordResetConfirmView(APIView):
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        uid = request.data.get('uid')
+        token = request.data.get('token')
         new_password = request.data.get('new_password')
         confirm_password = request.data.get('confirm_password')
 
-        if not identifier and not username and not email:
-            return Response(
-                {'identifier': ['Provide username or email.']},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+        if not uid or not token:
+            return Response({'detail': 'uid and token are required.'}, status=status.HTTP_400_BAD_REQUEST)
         if not new_password:
             return Response({'new_password': ['This field is required.']}, status=status.HTTP_400_BAD_REQUEST)
         if new_password != confirm_password:
             return Response({'confirm_password': ['Passwords do not match.']}, status=status.HTTP_400_BAD_REQUEST)
 
-        user = None
-        lookup_value = identifier or username
-        if lookup_value:
-            user = CustomUser.objects.filter(username=lookup_value).first()
-            if not user:
-                user = CustomUser.objects.filter(email=lookup_value).first()
-        if not user and email:
-            user = CustomUser.objects.filter(email=email).first()
-        if not user:
-            return Response({'identifier': ['User not found.']}, status=status.HTTP_404_NOT_FOUND)
+        try:
+            uid_decoded = force_str(urlsafe_base64_decode(uid))
+            user = CustomUser.objects.get(pk=uid_decoded)
+        except Exception:
+            return Response({'detail': 'Invalid uid.'}, status=status.HTTP_400_BAD_REQUEST)
 
-        if email and user.email and user.email.lower() != str(email).lower():
-            return Response({'email': ['Email does not match this account.']}, status=status.HTTP_400_BAD_REQUEST)
+        token_generator = PasswordResetTokenGenerator()
+        if not token_generator.check_token(user, token):
+            return Response({'detail': 'Invalid or expired token.'}, status=status.HTTP_400_BAD_REQUEST)
 
         user.set_password(new_password)
         user.save(update_fields=['password'])
@@ -430,7 +489,14 @@ class EvaluationListView(APIView):
                 {'error': 'You are not allowed to submit evaluations'},
                 status=status.HTTP_403_FORBIDDEN
             )
-        serializer = EvaluationSerializer(data=request.data, context={'request': request})
+        # Auto-set evaluation_type based on user role
+        data = request.data.copy()
+        if request.user.role == 'academic_supervisor':
+            data['evaluation_type'] = 'academic'
+        elif request.user.role == 'workplace_supervisor':
+            data['evaluation_type'] = 'supervisor'
+        
+        serializer = EvaluationSerializer(data=data, context={'request': request})
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
@@ -674,6 +740,28 @@ class EvaluationDetailView(APIView):
         serializer = EvaluationSerializer(evaluation)
         return Response(serializer.data)
 
+    def put(self, request, pk):
+        if request.user.role not in ['admin', 'workplace_supervisor', 'academic_supervisor']:
+            return Response(
+                {'error': 'You are not allowed to update evaluations'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        try:
+            evaluation = Evaluation.objects.get(pk=pk)
+        except Evaluation.DoesNotExist:
+            return Response({'error': 'Evaluation not found'}, status=status.HTTP_404_NOT_FOUND)
+        # Auto-set evaluation_type based on user role for updates too
+        data = request.data.copy()
+        if request.user.role == 'academic_supervisor':
+            data['evaluation_type'] = 'academic'
+        elif request.user.role == 'workplace_supervisor':
+            data['evaluation_type'] = 'supervisor'
+        serializer = EvaluationSerializer(evaluation, data=data, context={'request': request})
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
     def delete(self, request, pk):
         if request.user.role != 'admin':
             return Response(
@@ -773,6 +861,12 @@ class WeeklyLogSubmitView(APIView):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
+        if log.placement.get_computed_status() == 'completed':
+            return Response(
+                {'error': 'Cannot submit a weekly log for a completed placement.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
         from django.utils import timezone
         import datetime
         if log.deadline and datetime.date.today() > log.deadline:
@@ -861,3 +955,4 @@ class UserListView(APIView):
             return Response({'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+

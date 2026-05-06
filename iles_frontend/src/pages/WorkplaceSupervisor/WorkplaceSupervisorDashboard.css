@@ -1,62 +1,57 @@
-@import url("https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;700&display=swap");
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap');
 
 .workplace-dashboard {
-  --workplace-bg: #f4f7fb;
-  --workplace-panel: rgba(255, 255, 255, 0.82);
-  --workplace-panel-border: rgba(22, 39, 78, 0.08);
-  --workplace-text: #16274e;
-  --workplace-muted: #66748f;
-  --workplace-sidebar: #0f1b36;
-  --workplace-accent: #1f7a6a;
-  --workplace-accent-soft: #d9f0eb;
-  --workplace-blue: #2563eb;
-  --workplace-green: #14866d;
-  --workplace-amber: #b86a10;
-  --workplace-violet: #6d49c6;
+  --workplace-bg: #F4F7F9;
+  --workplace-panel: white;
+  --workplace-panel-border: #E2E8F0;
+  --workplace-text: #0A1D37;
+  --workplace-muted: #64748B;
+  --workplace-sidebar: #0A1D37;
+  --workplace-accent: #0E6245;
+  --workplace-accent-soft: #DCFCE7;
+  --workplace-blue: #0A1D37;
+  --workplace-green: #0E6245;
+  --workplace-amber: #D97706;
+  --workplace-violet: #0E6245;
   display: flex;
   min-height: 100vh;
   width: 100vw;
   margin-left: calc(50% - 50vw);
-  background:
-    radial-gradient(circle at top left, rgba(29, 134, 109, 0.18), transparent 26%),
-    radial-gradient(circle at top right, rgba(37, 99, 235, 0.16), transparent 24%),
-    linear-gradient(180deg, #f7fafc 0%, var(--workplace-bg) 100%);
+  background: #F4F7F9;
   color: var(--workplace-text);
-  font-family: "Manrope", sans-serif;
+  font-family: 'Inter', sans-serif;
   text-align: left;
 }
 
 .workplace-sidebar {
-  width: 250px;
+  width: 220px;
   min-height: 100vh;
-  padding: 28px 18px;
-  background:
-    linear-gradient(180deg, rgba(65, 108, 255, 0.14), transparent 18%),
-    var(--workplace-sidebar);
-  color: #f0f5ff;
+  padding: 24px 16px;
+  background: #0A1D37;
+  color: #FFFFFF;
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 8px;
   position: sticky;
   top: 0;
 }
 
 .workplace-brand {
-  font-family: "Space Grotesk", sans-serif;
-  font-size: 1.15rem;
-  font-weight: 700;
-  letter-spacing: 0.02em;
+  font-family: 'Inter', sans-serif;
+  font-size: 18px;
+  font-weight: 600;
+  letter-spacing: 0;
 }
 
 .workplace-role {
-  margin-top: 6px;
-  color: rgba(214, 225, 255, 0.76);
-  font-size: 0.8rem;
+  margin-top: 4px;
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 11px;
 }
 
 .workplace-sidebar-divider {
-  height: 1px;
-  background: rgba(173, 194, 255, 0.14);
+  height: 0.5px;
+  background: rgba(255, 255, 255, 0.1);
 }
 
 .workplace-sidebar-nav,
@@ -73,40 +68,36 @@
 .workplace-nav-item {
   width: 100%;
   border: 0;
-  border-radius: 14px;
+  border-radius: 8px;
   background: transparent;
-  color: rgba(228, 236, 255, 0.84);
+  color: rgba(255, 255, 255, 0.7);
   font: inherit;
-  padding: 12px 14px;
+  font-size: 13px;
+  font-weight: 400;
+  padding: 10px 12px;
   cursor: pointer;
-  transition: background-color 0.2s ease, transform 0.2s ease, color 0.2s ease;
+  transition: background-color 0.2s ease, color 0.2s ease;
   text-align: left;
 }
 
 .workplace-nav-item:hover,
 .workplace-nav-item.active {
-  background: rgba(113, 153, 255, 0.18);
+  background: #0E6245;
   color: #ffffff;
-  transform: translateX(2px);
+  transform: none;
 }
 
 .workplace-nav-item.logout {
-  color: #ffb8b0;
+  color: #f09595;
 }
 
 .workplace-nav-item.logout:hover {
-  background: rgba(255, 122, 89, 0.16);
-}
-
-.workplace-sidebar-user {
-  color: rgba(214, 225, 255, 0.76);
-  font-size: 0.8rem;
-  padding: 8px 14px;
+  background: rgba(240, 149, 149, 0.1);
 }
 
 .workplace-main {
   flex: 1;
-  padding: 32px;
+  padding: 28px;
   min-width: 0;
 }
 
@@ -114,28 +105,26 @@
   display: flex;
   justify-content: space-between;
   gap: 24px;
-  align-items: flex-start;
+  align-items: center;
   margin-bottom: 24px;
 }
 
 .workplace-kicker {
-  text-transform: uppercase;
-  letter-spacing: 0.12em;
-  font-size: 0.72rem;
-  font-weight: 700;
-  color: #1a7a67;
+  display: none;
 }
 
 .workplace-topbar h1 {
-  font-family: "Space Grotesk", sans-serif;
+  font-family: 'Inter', sans-serif;
   color: var(--workplace-text);
-  margin: 8px 0 6px;
-  font-size: clamp(2rem, 3vw, 2.8rem);
+  margin-bottom: 4px;
+  font-size: 20px;
+  font-weight: 600;
   line-height: 1;
 }
 
 .workplace-subtitle {
   color: var(--workplace-muted);
+  font-size: 13px;
 }
 
 .workplace-profile {
@@ -164,20 +153,22 @@
 
 .workplace-profile-copy strong {
   color: var(--workplace-text);
+  font-size: 13px;
 }
 
 .workplace-avatar {
-  width: 52px;
-  height: 52px;
-  border-radius: 16px;
-  background: linear-gradient(135deg, #1f7a6a 0%, #2563eb 100%);
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: #0A1D37;
   color: #fff;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-weight: 800;
-  letter-spacing: 0.04em;
-  box-shadow: 0 18px 30px rgba(37, 99, 235, 0.18);
+  font-weight: 500;
+  font-size: 13px;
+  letter-spacing: 0;
+  box-shadow: none;
 }
 
 .workplace-profile-menu {
@@ -186,8 +177,8 @@
   right: 0;
   min-width: 220px;
   padding: 10px;
-  border-radius: 18px;
-  border: 1px solid rgba(22, 39, 78, 0.08);
+  border-radius: 12px;
+  border: 1px solid var(--workplace-panel-border);
   background: rgba(255, 255, 255, 0.95);
   box-shadow: 0 22px 40px rgba(18, 30, 58, 0.12);
   backdrop-filter: blur(18px);
@@ -221,62 +212,64 @@
 }
 
 .workplace-stat-card {
-  border: 1px solid transparent;
-  border-radius: 22px;
+  border: 1px solid #E2E8F0;
+  border-radius: 12px;
   padding: 20px;
   background: #fff;
   text-align: left;
   cursor: pointer;
-  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
-  box-shadow: 0 18px 40px rgba(18, 30, 58, 0.08);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  box-shadow: none;
 }
 
 .workplace-stat-card.blue {
-  border-color: rgba(37, 99, 235, 0.12);
-  background: linear-gradient(180deg, rgba(37, 99, 235, 0.08), #fff);
+  border-color: #E2E8F0;
+  background: #fff;
 }
 
 .workplace-stat-card.green {
-  border-color: rgba(20, 134, 109, 0.12);
-  background: linear-gradient(180deg, rgba(20, 134, 109, 0.08), #fff);
+  border-color: #E2E8F0;
+  background: #fff;
 }
 
 .workplace-stat-card.amber {
-  border-color: rgba(184, 106, 16, 0.12);
-  background: linear-gradient(180deg, rgba(184, 106, 16, 0.08), #fff);
+  border-color: #E2E8F0;
+  background: #fff;
 }
 
 .workplace-stat-card.violet {
-  border-color: rgba(109, 73, 198, 0.12);
-  background: linear-gradient(180deg, rgba(109, 73, 198, 0.08), #fff);
+  border-color: #E2E8F0;
+  background: #fff;
 }
 
 .workplace-stat-label {
   display: block;
   color: var(--workplace-muted);
-  font-size: 0.86rem;
+  font-size: 12px;
+  margin-bottom: 8px;
 }
 
 .workplace-stat-value {
   display: block;
-  margin: 10px 0 8px;
-  font-size: clamp(1.8rem, 2.7vw, 2.6rem);
+  margin: 0;
+  font-size: 28px;
+  font-weight: 600;
   color: var(--workplace-text);
 }
 
 .workplace-stat-hint {
   color: var(--workplace-muted);
-  font-size: 0.82rem;
+  font-size: 12px;
 }
 
 /* Panels */
 .workplace-panel,
 .workplace-hero-panel {
-  border-radius: 24px;
+  border-radius: 12px;
   border: 1px solid var(--workplace-panel-border);
   background: var(--workplace-panel);
-  box-shadow: 0 22px 60px rgba(18, 30, 58, 0.08);
-  backdrop-filter: blur(18px);
+  box-shadow: none;
+  backdrop-filter: none;
 }
 
 .workplace-hero-panel {
@@ -289,10 +282,12 @@
 }
 
 .workplace-hero-panel h2 {
-  font-family: "Space Grotesk", sans-serif;
+  font-family: 'Inter', sans-serif;
   color: var(--workplace-text);
-  margin: 8px 0 10px;
-  font-size: clamp(1.45rem, 2vw, 2rem);
+  margin-bottom: 10px;
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1;
 }
 
 .workplace-hero-actions {
@@ -303,30 +298,36 @@
 
 .workplace-primary-btn,
 .workplace-secondary-btn {
-  border-radius: 14px;
-  padding: 12px 18px;
+  border-radius: 6px;
+  padding: 6px 14px;
   font: inherit;
-  font-weight: 700;
+  font-weight: 500;
+  font-size: 12px;
   cursor: pointer;
-  transition: transform 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+  transition: background-color 0.2s ease;
 }
 
 .workplace-primary-btn {
   border: none;
-  background: linear-gradient(135deg, #1f7a6a 0%, #2563eb 100%);
+  background: #0A1D37;
   color: #fff;
-  box-shadow: 0 18px 30px rgba(37, 99, 235, 0.16);
+  box-shadow: none;
+}
+
+.workplace-primary-btn:hover {
+  background: #0E6245;
+  transform: none;
 }
 
 .workplace-secondary-btn {
-  border: 1px solid rgba(37, 99, 235, 0.12);
+  border: 1px solid #E2E8F0;
   background: #ffffff;
   color: var(--workplace-text);
 }
 
-.workplace-primary-btn:hover,
 .workplace-secondary-btn:hover {
-  transform: translateY(-2px);
+  background: #f5f5f5;
+  transform: none;
 }
 
 /* Tabs */
@@ -336,9 +337,9 @@
   margin-bottom: 24px;
   background: white;
   padding: 6px;
-  border-radius: 12px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
-  border: 1px solid rgba(22, 39, 78, 0.06);
+  border-radius: 8px;
+  box-shadow: none;
+  border: 1px solid #E2E8F0;
 }
 
 .workplace-tab {
@@ -346,22 +347,22 @@
   padding: 12px 24px;
   border: none;
   background: transparent;
-  border-radius: 8px;
-  font-size: 14px;
+  border-radius: 6px;
+  font-size: 13px;
   font-weight: 500;
-  color: #66748f;
+  color: #64748B;
   cursor: pointer;
-  transition: all 0.2s;
-  font-family: "Manrope", sans-serif;
+  transition: background-color 0.2s ease, color 0.2s ease;
+  font-family: 'Inter', sans-serif;
 }
 
 .workplace-tab:hover {
-  background: #f0f4fa;
-  color: #1a2340;
+  background: #f5f5f5;
+  color: #0A1D37;
 }
 
 .workplace-tab.active {
-  background: linear-gradient(135deg, #1f7a6a 0%, #2563eb 100%);
+  background: #0A1D37;
   color: white;
 }
 
@@ -374,27 +375,27 @@
 }
 
 .workplace-section-header h2 {
-  font-family: "Space Grotesk", sans-serif;
-  font-size: 18px;
+  font-family: 'Inter', sans-serif;
+  font-size: 15px;
   font-weight: 600;
-  color: #1a2340;
+  color: #0A1D37;
   margin: 0;
 }
 
 .workplace-filter-select {
   padding: 8px 16px;
-  border: 1px solid rgba(22, 39, 78, 0.12);
+  border: 1px solid #E2E8F0;
   border-radius: 8px;
-  font-size: 14px;
-  color: #1a2340;
+  font-size: 13px;
+  color: #0A1D37;
   background: white;
   cursor: pointer;
-  font-family: "Manrope", sans-serif;
+  font-family: 'Inter', sans-serif;
 }
 
 .workplace-filter-select:focus {
   outline: none;
-  border-color: #4a7fd4;
+  border-color: #0A1D37;
 }
 
 /* Interns Grid */
@@ -406,22 +407,35 @@
 
 .workplace-intern-card {
   background: white;
-  border-radius: 16px;
+  border-radius: 12px;
   padding: 20px;
-  box-shadow: 0 18px 40px rgba(18, 30, 58, 0.08);
-  border: 1px solid rgba(22, 39, 78, 0.06);
+  box-shadow: none;
+  border: 1px solid #E2E8F0;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: border-color 0.2s ease;
 }
 
 .workplace-intern-card:hover {
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  transform: translateY(-2px);
+  border-color: #0A1D37;
+  transform: none;
 }
 
 .workplace-intern-card.selected {
-  border: 2px solid #4a7fd4;
-  background: #f8faff;
+  border: 2px solid #0A1D37;
+  background: #f8f8f8;
+}
+
+.workplace-intern-avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 8px;
+  background: #0A1D37;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  font-weight: 600;
 }
 
 .workplace-intern-header {
@@ -431,70 +445,57 @@
   margin-bottom: 16px;
 }
 
-.workplace-intern-avatar {
-  width: 48px;
-  height: 48px;
-  border-radius: 14px;
-  background: linear-gradient(135deg, #1f7a6a 0%, #2563eb 100%);
-  color: white;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 18px;
-  font-weight: 600;
-}
-
 .workplace-intern-info h3 {
-  font-size: 16px;
+  font-size: 15px;
   font-weight: 600;
-  color: #1a2340;
+  color: #0A1D37;
   margin: 0;
 }
 
 .workplace-intern-department {
-  font-size: 13px;
-  color: #66748f;
+  font-size: 12px;
+  color: #64748B;
   margin: 4px 0 0 0;
 }
 
 .workplace-intern-details {
   margin-bottom: 16px;
   padding-bottom: 16px;
-  border-bottom: 1px solid rgba(22, 39, 78, 0.08);
+  border-bottom: 1px solid #E2E8F0;
 }
 
 .workplace-intern-details p {
-  font-size: 13px;
-  color: #66748f;
+  font-size: 12px;
+  color: #64748B;
   margin: 6px 0;
 }
 
 .workplace-intern-details strong {
-  color: #1a2340;
+  color: #0A1D37;
 }
 
 .workplace-status-badge {
   display: inline-block;
-  padding: 2px 8px;
-  border-radius: 4px;
-  font-size: 12px;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 11px;
   font-weight: 500;
   text-transform: capitalize;
 }
 
 .workplace-status-badge.active {
-  background: #d1fae5;
-  color: #065f46;
+  background: #DCFCE7;
+  color: #166534;
 }
 
 .workplace-status-badge.pending {
-  background: #fef3c7;
-  color: #92400e;
+  background: #FEF3C7;
+  color: #92400E;
 }
 
 .workplace-status-badge.completed {
-  background: #e0e7ff;
-  color: #3730a3;
+  background: #DDD6FE;
+  color: #4C1D95;
 }
 
 .workplace-intern-stats {
@@ -509,73 +510,73 @@
 .workplace-intern-stat .stat-number {
   display: block;
   font-size: 20px;
-  font-weight: 700;
-  color: #1a2340;
+  font-weight: 600;
+  color: #0A1D37;
 }
 
 .workplace-intern-stat .stat-label {
-  font-size: 12px;
-  color: #66748f;
+  font-size: 11px;
+  color: #64748B;
 }
 
 .workplace-intern-stat.pending .stat-number {
-  color: #b86a10;
+  color: #D97706;
 }
 
 .workplace-intern-stat.approved .stat-number {
-  color: #14866d;
+  color: #0E6245;
 }
 
 /* Logs Section */
 .workplace-logs-section {
   background: white;
-  border-radius: 16px;
+  border-radius: 12px;
   padding: 24px;
-  box-shadow: 0 18px 40px rgba(18, 30, 58, 0.08);
-  border: 1px solid rgba(22, 39, 78, 0.06);
+  box-shadow: none;
+  border: 1px solid #E2E8F0;
 }
 
 .workplace-no-selection,
 .workplace-no-logs {
   text-align: center;
   padding: 48px;
-  color: #66748f;
+  color: #64748B;
 }
 
 .workplace-selected-intern-header {
   margin-bottom: 24px;
   padding-bottom: 16px;
-  border-bottom: 1px solid rgba(22, 39, 78, 0.08);
+  border-bottom: 1px solid #E2E8F0;
 }
 
 .workplace-selected-intern-header h3 {
-  font-family: "Space Grotesk", sans-serif;
-  font-size: 18px;
+  font-family: 'Inter', sans-serif;
+  font-size: 15px;
   font-weight: 600;
-  color: #1a2340;
+  color: #0A1D37;
   margin: 0 0 4px 0;
 }
 
 .workplace-selected-intern-header p {
-  font-size: 14px;
-  color: #66748f;
+  font-size: 13px;
+  color: #64748B;
   margin: 0;
 }
 
 .workplace-back-button {
   padding: 8px 16px;
-  border: 1px solid rgba(22, 39, 78, 0.12);
-  border-radius: 8px;
+  border: 1px solid #E2E8F0;
+  border-radius: 6px;
   background: white;
-  color: #1a2340;
-  font-size: 14px;
+  color: #0A1D37;
+  font-size: 13px;
   cursor: pointer;
-  transition: all 0.2s;
-  font-family: "Manrope", sans-serif;
+  transition: background-color 0.2s ease;
+  font-family: 'Inter', sans-serif;
 }
 
 .workplace-back-button:hover {
-  background: #f0f4fa;
+  background: #f5f5f5;
 }
 
 /* Log Cards */
@@ -586,18 +587,18 @@
 }
 
 .workplace-log-card {
-  border: 1px solid rgba(22, 39, 78, 0.08);
-  border-radius: 16px;
+  border: 1px solid #E2E8F0;
+  border-radius: 12px;
   padding: 20px;
-  transition: all 0.2s;
+  transition: border-color 0.2s ease;
 }
 
 .workplace-log-card:hover {
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  border-color: #0A1D37;
 }
 
 .workplace-log-card.approved {
-  border-left: 4px solid #14866d;
+  border-left: 4px solid #0E6245;
 }
 
 .workplace-log-card.rejected {
@@ -605,7 +606,7 @@
 }
 
 .workplace-log-card.submitted {
-  border-left: 4px solid #b86a10;
+  border-left: 4px solid #D97706;
 }
 
 .workplace-log-header {
@@ -616,38 +617,38 @@
 }
 
 .workplace-log-header h3 {
-  font-family: "Space Grotesk", sans-serif;
-  font-size: 16px;
+  font-family: 'Inter', sans-serif;
+  font-size: 15px;
   font-weight: 600;
-  color: #1a2340;
+  color: #0A1D37;
   margin: 0;
 }
 
 .workplace-log-status {
   padding: 4px 12px;
   border-radius: 20px;
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 500;
   text-transform: capitalize;
 }
 
 .workplace-log-status.submitted {
-  background: #fef3c7;
-  color: #92400e;
+  background: #FEF3C7;
+  color: #92400E;
 }
 
 .workplace-log-status.approved {
-  background: #d1fae5;
-  color: #065f46;
+  background: #DCFCE7;
+  color: #166534;
 }
 
 .workplace-log-status.rejected {
-  background: #fee2e2;
-  color: #991b1b;
+  background: #FEE2E2;
+  color: #A32D2D;
 }
 
 .workplace-log-status.draft {
-  background: #e5e7eb;
+  background: #f3f4f6;
   color: #374151;
 }
 
@@ -665,52 +666,52 @@
 
 .workplace-log-field strong {
   display: block;
-  font-size: 12px;
-  color: #66748f;
+  font-size: 11px;
+  color: #64748B;
   margin-bottom: 4px;
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
 
 .workplace-log-field p {
-  font-size: 14px;
-  color: #1a2340;
+  font-size: 13px;
+  color: #0A1D37;
   margin: 0;
   line-height: 1.6;
 }
 
 .workplace-log-field.supervisor-comment {
-  background: #eef2ff;
-  border: 1px solid #c7d2fe;
+  background: #F0F4F8;
+  border: 1px solid #E2E8F0;
 }
 
 .workplace-log-field.supervisor-comment strong {
-  color: #4a7fd4;
+  color: #0A1D37;
 }
 
 /* Log Actions */
 .workplace-log-actions {
   margin-top: 16px;
   padding-top: 16px;
-  border-top: 1px solid rgba(22, 39, 78, 0.08);
+  border-top: 1px solid #E2E8F0;
 }
 
 .workplace-comment-input {
   width: 100%;
   min-height: 80px;
   padding: 12px;
-  border: 1px solid rgba(22, 39, 78, 0.12);
+  border: 1px solid #E2E8F0;
   border-radius: 8px;
-  font-size: 14px;
-  font-family: "Manrope", sans-serif;
+  font-size: 13px;
+  font-family: 'Inter', sans-serif;
   resize: vertical;
   margin-bottom: 12px;
 }
 
 .workplace-comment-input:focus {
   outline: none;
-  border-color: #4a7fd4;
-  box-shadow: 0 0 0 3px rgba(74, 127, 212, 0.1);
+  border-color: #0A1D37;
+  box-shadow: 0 0 0 3px rgba(10, 29, 55, 0.1);
 }
 
 .workplace-action-buttons {
@@ -720,41 +721,41 @@
 }
 
 .workplace-action-buttons button {
-  padding: 10px 20px;
+  padding: 6px 14px;
   border: none;
-  border-radius: 8px;
-  font-size: 14px;
+  border-radius: 6px;
+  font-size: 12px;
   font-weight: 500;
   cursor: pointer;
-  transition: all 0.2s;
-  font-family: "Manrope", sans-serif;
+  transition: background-color 0.2s ease;
+  font-family: 'Inter', sans-serif;
 }
 
 .workplace-btn-review {
-  background: #b86a10;
+  background: #D97706;
   color: white;
 }
 
 .workplace-btn-review:hover {
-  background: #9a5710;
+  background: #B45309;
 }
 
 .workplace-btn-approve {
-  background: #14866d;
+  background: #0E6245;
   color: white;
 }
 
 .workplace-btn-approve:hover {
-  background: #107456;
+  background: #0A4F37;
 }
 
 .workplace-btn-reject {
-  background: #dc2626;
+  background: #DC2626;
   color: white;
 }
 
 .workplace-btn-reject:hover {
-  background: #b91c1c;
+  background: #B91C1C;
 }
 
 /* Evaluations Section */
@@ -770,10 +771,10 @@
 
 .workplace-evaluation-card {
   background: white;
-  border-radius: 16px;
+  border-radius: 12px;
   padding: 20px;
-  box-shadow: 0 18px 40px rgba(18, 30, 58, 0.08);
-  border: 1px solid rgba(22, 39, 78, 0.06);
+  box-shadow: none;
+  border: 1px solid #E2E8F0;
 }
 
 .workplace-evaluation-header {
@@ -784,27 +785,27 @@
 }
 
 .workplace-evaluation-header h3 {
-  font-family: "Space Grotesk", sans-serif;
-  font-size: 16px;
+  font-family: 'Inter', sans-serif;
+  font-size: 15px;
   font-weight: 600;
-  color: #1a2340;
+  color: #0A1D37;
   margin: 0;
 }
 
 .workplace-evaluation-details {
   margin-bottom: 16px;
   padding-bottom: 16px;
-  border-bottom: 1px solid rgba(22, 39, 78, 0.08);
+  border-bottom: 1px solid #E2E8F0;
 }
 
 .workplace-evaluation-details p {
-  font-size: 13px;
-  color: #66748f;
+  font-size: 12px;
+  color: #64748B;
   margin: 6px 0;
 }
 
 .workplace-evaluation-details strong {
-  color: #1a2340;
+  color: #0A1D37;
 }
 
 .workplace-evaluation-score {
@@ -812,8 +813,8 @@
 }
 
 .workplace-evaluation-score p {
-  font-size: 13px;
-  color: #66748f;
+  font-size: 12px;
+  color: #64748B;
   margin-bottom: 8px;
 }
 
@@ -825,28 +826,28 @@
 
 .workplace-score-value {
   font-size: 28px;
-  font-weight: 700;
-  color: #1a7a67;
+  font-weight: 600;
+  color: #0E6245;
 }
 
 .workplace-score-date {
-  font-size: 12px;
-  color: #66748f;
+  font-size: 11px;
+  color: #64748B;
 }
 
 .workplace-no-evaluation {
-  color: #66748f;
+  color: #64748B;
   font-style: italic;
 }
 
 .workplace-log-summary {
   padding-top: 16px;
-  border-top: 1px solid rgba(22, 39, 78, 0.08);
+  border-top: 1px solid #E2E8F0;
 }
 
 .workplace-log-summary p {
-  font-size: 13px;
-  color: #66748f;
+  font-size: 12px;
+  color: #64748B;
   margin-bottom: 8px;
 }
 
@@ -857,11 +858,11 @@
 }
 
 .workplace-log-stats span {
-  font-size: 12px;
+  font-size: 11px;
   padding: 4px 8px;
-  background: #f0f4fa;
+  background: #F3F4F6;
   border-radius: 4px;
-  color: #1a2340;
+  color: #0A1D37;
 }
 
 /* Loading and Error States */
@@ -871,12 +872,12 @@
   align-items: center;
   justify-content: center;
   min-height: 50vh;
-  font-size: 18px;
-  color: #66748f;
+  font-size: 16px;
+  color: #64748B;
 }
 
 .workplace-dashboard .error {
-  color: #dc2626;
+  color: #DC2626;
 }
 
 /* Loading and Error States */
@@ -886,11 +887,11 @@
   justify-content: center;
   min-height: 400px;
   font-size: 16px;
-  color: #66748f;
+  color: #64748B;
 }
 
 .error {
-  color: #dc2626;
+  color: #DC2626;
 }
 
 /* Responsive */

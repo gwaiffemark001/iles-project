@@ -3,6 +3,7 @@ import axios from 'axios'
 import { useAuth } from '../auth/useAuth'
 import { criteriaAPI, evaluationsAPI, placementsAPI } from '../api/api'
 import { buildWeeklyEvaluationSummaries, getGradeWeight } from '../utils/evaluationSummary'
+import './AdminDashboard.css'
 
 const userRoles = [
   { value: 'student', label: 'Student' },
@@ -41,7 +42,7 @@ function AdminDashboard() {
   // Criteria management state
   const [criteria, setCriteria] = useState([])
   const [showCriteriaForm, setShowCriteriaForm] = useState(false)
-  const [criteriaFormData, setCriteriaFormData] = useState({ name: '', description: '', max_score: '', supervisor_share: '', academic_share: '' })
+  const [criteriaFormData, setCriteriaFormData] = useState({ name: '', description: '', max_score: '', supervisor_share: '40', academic_share: '60' })
   const [editingCriteria, setEditingCriteria] = useState(null)
   const [criteriaSaving, setCriteriaSaving] = useState(false)
   const [criteriaError, setCriteriaError] = useState('')
@@ -114,7 +115,6 @@ function AdminDashboard() {
       company_address: selectedPlacement.company_address || '',
       start_date: selectedPlacement.start_date || '',
       end_date: selectedPlacement.end_date || '',
-      status: selectedPlacement.status || 'pending',
     })
   }
 
@@ -131,7 +131,6 @@ function AdminDashboard() {
       company_address: '',
       start_date: '',
       end_date: '',
-      status: 'pending',
     })
   }
 
@@ -344,7 +343,7 @@ function AdminDashboard() {
   // Criteria handlers
   const handleAddCriteria = () => {
     setEditingCriteria(null)
-    setCriteriaFormData({ name: '', description: '', max_score: '', supervisor_share: '', academic_share: '' })
+    setCriteriaFormData({ name: '', description: '', max_score: '', supervisor_share: '40', academic_share: '60' })
     setShowCriteriaForm(true)
     setCriteriaError('')
   }
@@ -368,12 +367,32 @@ function AdminDashboard() {
     setCriteriaError('')
     
     try {
+      const maxScore = Number(criteriaFormData.max_score)
+      const supervisorShare = Number(criteriaFormData.supervisor_share)
+      const academicShare = Number(criteriaFormData.academic_share)
+
+      if (!criteriaFormData.name.trim()) {
+        throw new Error('Criteria name is required.')
+      }
+
+      if (Number.isNaN(maxScore) || maxScore <= 0) {
+        throw new Error('Max score must be greater than 0.')
+      }
+
+      if (Number.isNaN(supervisorShare) || Number.isNaN(academicShare)) {
+        throw new Error('Supervisor and Academic share values are required.')
+      }
+
+      if (Math.round((supervisorShare + academicShare) * 100) / 100 !== 100) {
+        throw new Error('Supervisor share and Academic share must add up to 100%.')
+      }
+
       const payload = {
         name: criteriaFormData.name.trim(),
         description: criteriaFormData.description.trim(),
-        max_score: Number(criteriaFormData.max_score),
-        supervisor_share: Number(criteriaFormData.supervisor_share),
-        academic_share: Number(criteriaFormData.academic_share),
+        max_score: maxScore,
+        supervisor_share: supervisorShare,
+        academic_share: academicShare,
       }
 
       if (editingCriteria) {
@@ -385,11 +404,26 @@ function AdminDashboard() {
       }
 
       setShowCriteriaForm(false)
-      setCriteriaFormData({ name: '', description: '', max_score: '', supervisor_share: '', academic_share: '' })
+      setCriteriaFormData({ name: '', description: '', max_score: '', supervisor_share: '40', academic_share: '60' })
       setEditingCriteria(null)
       await fetchDashboardData()
     } catch (err) {
-      setCriteriaError(err.response?.data?.message || 'Error saving criteria')
+      const responseData = err?.response?.data
+      const firstFieldMessage = responseData && typeof responseData === 'object'
+        ? Object.values(responseData).find((value) => Array.isArray(value) && value.length > 0)?.[0]
+        : null
+      const firstStringMessage = responseData && typeof responseData === 'object'
+        ? Object.values(responseData).find((value) => typeof value === 'string')
+        : null
+
+      setCriteriaError(
+        err?.message
+        || responseData?.detail
+        || responseData?.error
+        || firstFieldMessage
+        || firstStringMessage
+        || 'Error saving criteria'
+      )
     } finally {
       setCriteriaSaving(false)
     }
@@ -922,8 +956,12 @@ function AdminDashboard() {
                         ))}
                       </div>
                       <div style={{ marginTop: '12px', textAlign: 'right', color: '#475569' }}>
-                        <strong>Average Score:</strong> { (group.weeks.reduce((t,a)=>t+Number(a.combined_score||0),0)/group.weeks.length).toFixed(2) }
-                        <span style={{ marginLeft: '12px' }}><strong>Average Weight:</strong> { (group.weeks.reduce((t,a)=>t+Number(a.grade_weight||0),0)/group.weeks.length).toFixed(2) }</span>
+                        {(() => {
+                          const placement = placements.find(p => p.id === group.placementId);
+                          const avgScore = placement?.average_score != null ? Number(placement.average_score).toFixed(2) : (group.weeks.length ? (group.weeks.reduce((t,a)=>t+Number(a.combined_score||0),0)/group.weeks.length).toFixed(2) : '0.00');
+                          const avgWeight = placement?.average_weight != null ? Number(placement.average_weight).toFixed(2) : (group.weeks.length ? (group.weeks.reduce((t,a)=>t+Number(a.grade_weight||0),0)/group.weeks.length).toFixed(2) : '0.00');
+                          return (<><strong>Average Score:</strong> {avgScore}<span style={{ marginLeft: '12px' }}><strong>Average Weight:</strong> {avgWeight}</span></>);
+                        })()}
                       </div>
                     </div>
                   )
@@ -1027,7 +1065,7 @@ function AdminDashboard() {
                       <h3 style={{ margin: '0 0 8px 0', color: '#2c3e50' }}>{crit.name}</h3>
                       <p style={{ margin: '4px 0', color: '#7f8c8d', fontSize: '14px' }}>{crit.description}</p>
                       <p style={{ margin: '8px 0', color: '#2c3e50' }}>
-                        Max Score by Each Supervisor: <strong>{crit.max_score}</strong> | Weight: <strong>{crit.weight_percent}%</strong>
+                        Max Score by Each Supervisor: <strong>{crit.max_score}</strong>
                         <br />Supervisor Share: <strong>{crit.supervisor_share}%</strong> | Academic Share: <strong>{crit.academic_share}%</strong>
                       </p>
                       <div style={{ display: 'flex', gap: '8px', marginTop: '12px' }}>
@@ -1234,39 +1272,6 @@ function AdminDashboard() {
                       <span style={{ color: '#475569', fontSize: '14px' }}>End Date</span>
                       <input name="end_date" type="date" value={editFormData.end_date || ''} onChange={handleEditFieldChange} disabled={editSaving} style={editInputStyle} />
                     </label>
-                    <label style={{ display: 'grid', gap: '8px' }}>
-                      <span style={{ color: '#475569', fontSize: '14px' }}>Status</span>
-                      <select name="status" value={editFormData.status || 'pending'} onChange={handleEditFieldChange} disabled={editSaving} style={editInputStyle}>
-                        {placementStatuses.map((statusOption) => (
-                          <option key={statusOption.value} value={statusOption.value}>{statusOption.label}</option>
-                        ))}
-                      </select>
-                    </label>
-                  </div>
-
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
-                    <label>
-                      Supervisor Share (%)
-                      <input
-                        type="number"
-                        step="0.5"
-                        value={criteriaFormData.supervisor_share}
-                        onChange={(e) => setCriteriaFormData(prev => ({ ...prev, supervisor_share: e.target.value }))}
-                        required
-                        style={{ width: '100%', padding: '8px', marginTop: '4px' }}
-                      />
-                    </label>
-                    <label>
-                      Academic Share (%)
-                      <input
-                        type="number"
-                        step="0.5"
-                        value={criteriaFormData.academic_share}
-                        onChange={(e) => setCriteriaFormData(prev => ({ ...prev, academic_share: e.target.value }))}
-                        required
-                        style={{ width: '100%', padding: '8px', marginTop: '4px' }}
-                      />
-                    </label>
                   </div>
                 </>
               )}
@@ -1388,7 +1393,7 @@ function AdminDashboard() {
                       <div key={idx} style={{ padding: '12px', backgroundColor: '#f5f5f5', borderRadius: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                         <div>
                           <p style={{ margin: '0 0 4px 0', fontWeight: 'bold', color: '#0f172a' }}>{item.criteria?.name || 'Unknown Criteria'}</p>
-                          <p style={{ margin: 0, fontSize: '12px', color: '#64748b' }}>Max: {item.criteria?.max_score} | Weight: {item.criteria?.weight_percent}%</p>
+                          <p style={{ margin: 0, fontSize: '12px', color: '#64748b' }}>Max: {item.criteria?.max_score}</p>
                         </div>
                         <p style={{ margin: 0, fontSize: '18px', fontWeight: 'bold', color: '#2563eb' }}>{item.score}</p>
                       </div>
@@ -1494,7 +1499,7 @@ function AdminDashboard() {
                           <div key={cb.criteria_id} style={{ padding: '10px', background: '#fff', borderRadius: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', border: '1px solid #eef2f7' }}>
                             <div style={{ flex: 1 }}>
                               <div style={{ fontWeight: 600, color: '#0f172a' }}>{cb.criteria_name}</div>
-                              <div style={{ fontSize: '12px', color: '#64748b' }}>Max: {cb.max_score} | Weight: {cb.weight_percent}%</div>
+                              <div style={{ fontSize: '12px', color: '#64748b' }}>Max: {cb.max_score}</div>
                             </div>
                             <div style={{ display: 'flex', gap: '12px', alignItems: 'center', minWidth: '260px', justifyContent: 'flex-end' }}>
                               <div style={{ textAlign: 'right' }}>
