@@ -31,7 +31,7 @@ const StudentLogViewer = () => {
   };
 
   return (
-    <Layout role="Academic Supervisor" userName="Dr. Susan">
+    <Layout role="Academic" userName="Dr. Susan">
 
       {/* Top Bar */}
       <div className="topbar">
