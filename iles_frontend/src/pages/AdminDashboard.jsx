@@ -374,11 +374,11 @@ function AdminDashboard() {
       }
 
       if (Number.isNaN(supervisorShare) || Number.isNaN(academicShare)) {
-        throw new Error('Supervisor and Academic share values are required.')
+        throw new Error('Workplace and Academic share values are required.')
       }
 
       if (Math.round((supervisorShare + academicShare) * 100) / 100 !== 100) {
-        throw new Error('Supervisor share and Academic share must add up to 100%.')
+        throw new Error('Workplace share and Academic share must add up to 100%.')
       }
 
       const payload = {
@@ -484,6 +484,10 @@ function AdminDashboard() {
     }
   }, [authHeaders])
 
+  const activePlacementsCount = useMemo(() => {
+    return Array.isArray(placements) ? placements.filter((p) => (p.status || '').toLowerCase() === 'active').length : 0
+  }, [placements])
+
   useEffect(() => {
     const initializeDashboard = async () => {
       await fetchDashboardData();
@@ -497,6 +501,14 @@ function AdminDashboard() {
     [user?.first_name, user?.last_name].filter(Boolean).join(' ') ||
     user?.username ||
     'Unknown'
+
+  const getRoleLabel = (role) => {
+    if (role === 'academic_supervisor') return 'Academic Supervisor'
+    if (role === 'workplace_supervisor') return 'Workplace Supervisor'
+    if (role === 'student') return 'Student'
+    if (role === 'admin') return 'Admin'
+    return role || 'Unknown'
+  }
 
   const formatDate = (value) => {
     if (!value) return 'Not available'
@@ -689,7 +701,7 @@ function AdminDashboard() {
                   onMouseEnter={(e) => e.target.style.border = '2px solid #fff'}
                   onMouseLeave={(e) => e.target.style.border = '2px solid transparent'}
                 >
-                  <div style={{ fontSize: '32px', fontWeight: 'bold' }}>{stats?.active_placements || 0}</div>
+                  <div style={{ fontSize: '32px', fontWeight: 'bold' }}>{activePlacementsCount}</div>
                   <div style={{ fontSize: '14px', marginTop: '5px' }}>Active Placements</div>
                   <div style={{ fontSize: '12px', marginTop: '5px', opacity: 0.8 }}>Click to manage →</div>
                 </div>
@@ -808,8 +820,8 @@ function AdminDashboard() {
                 >
                   <option value="all">All Roles</option>
                   <option value="student">Students</option>
-                  <option value="academic_supervisor">Academic Supervisors</option>
-                  <option value="workplace_supervisor">Workplace Supervisors</option>
+                  <option value="academic_supervisor">Academic Supervisor</option>
+                  <option value="workplace_supervisor">Workplace Supervisor</option>
                   <option value="admin">Admins</option>
                 </select>
                 <button onClick={fetchDashboardData} style={{ padding: '8px 16px', backgroundColor: '#3498DB', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>
@@ -823,7 +835,7 @@ function AdminDashboard() {
                   {filteredUsers.map((user) => (
                     <div key={user.id} style={{ backgroundColor: 'white', padding: '20px', borderRadius: '8px', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>
                       <h3 style={{ margin: '0 0 10px 0', color: '#2c3e50' }}>{getFullName(user)}</h3>
-                      <p style={{ margin: '5px 0', color: '#7f8c8d' }}>Role: <span style={{ backgroundColor: '#27AE60', color: 'white', padding: '2px 6px', borderRadius: '4px', fontSize: '12px' }}>{user.role}</span></p>
+                      <p style={{ margin: '5px 0', color: '#7f8c8d' }}>Role: <span style={{ backgroundColor: '#27AE60', color: 'white', padding: '2px 6px', borderRadius: '4px', fontSize: '12px' }}>{getRoleLabel(user.role)}</span></p>
                       <p style={{ margin: '5px 0', color: '#7f8c8d' }}>Email: {user.email}</p>
                       {user.student_number && <p style={{ margin: '5px 0', color: '#7f8c8d' }}>Student #: {user.student_number}</p>}
                       {user.department && <p style={{ margin: '5px 0', color: '#7f8c8d' }}>Department: {user.department}</p>}
@@ -939,7 +951,7 @@ function AdminDashboard() {
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                               <div>
                                 <div style={{ fontWeight: 700 }}>Week {w.week_number}</div>
-                                <div style={{ fontSize: '13px', color: '#64748b' }}>Supervisor: {w.supervisor_score ?? 'N/A'} | Academic: {w.academic_score ?? 'N/A'}</div>
+                                <div style={{ fontSize: '13px', color: '#64748b' }}>Workplace: {w.supervisor_score ?? 'N/A'} | Academic: {w.academic_score ?? 'N/A'}</div>
                               </div>
                               <div style={{ textAlign: 'right' }}>
                                 <div style={{ fontSize: '18px', fontWeight: 'bold', color: '#2563eb' }}>Total: {w.combined_score}</div>
@@ -997,7 +1009,7 @@ function AdminDashboard() {
                       />
                     </label>
                     <label>
-                      Max Score by Each Supervisor
+                      Max Score by Each Workplace
                       <input
                         type="number"
                         step="0.5"
@@ -1009,7 +1021,7 @@ function AdminDashboard() {
                     </label>
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
                       <label>
-                        Supervisor Share (%)
+                        Workplace Share (%)
                         <input
                           type="number"
                           step="0.5"
@@ -1059,8 +1071,8 @@ function AdminDashboard() {
                       <h3 style={{ margin: '0 0 8px 0', color: '#2c3e50' }}>{crit.name}</h3>
                       <p style={{ margin: '4px 0', color: '#7f8c8d', fontSize: '14px' }}>{crit.description}</p>
                       <p style={{ margin: '8px 0', color: '#2c3e50' }}>
-                        Max Score by Each Supervisor: <strong>{crit.max_score}</strong>
-                        <br />Supervisor Share: <strong>{crit.supervisor_share}%</strong> | Academic Share: <strong>{crit.academic_share}%</strong>
+                        Max Score by Each Workplace: <strong>{crit.max_score}</strong>
+                        <br />Workplace Share: <strong>{crit.supervisor_share}%</strong> | Academic Share: <strong>{crit.academic_share}%</strong>
                       </p>
                       <div style={{ display: 'flex', gap: '8px', marginTop: '12px' }}>
                         <button onClick={() => handleEditCriteria(crit)} style={{ padding: '6px 12px', backgroundColor: '#3498DB', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '12px' }}>
@@ -1118,7 +1130,7 @@ function AdminDashboard() {
                   {editingEntity === 'user'
                     ? 'Update the record details and save the changes back to the system.'
                     : placementFormMode === 'create'
-                      ? 'Assign a student, workplace supervisor, and academic supervisor to a new placement.'
+                      ? 'Assign a student, Workplace Supervisor, and academic supervisor to a new placement.'
                       : 'Update the record details and save the changes back to the system.'}
                 </p>
               </div>
@@ -1237,7 +1249,7 @@ function AdminDashboard() {
                       </select>
                     </label>
                     <label style={{ display: 'grid', gap: '8px' }}>
-                      <span style={{ color: '#475569', fontSize: '14px' }}>Academic Supervisor</span>
+                      <span style={{ color: '#475569', fontSize: '14px' }}>Academic</span>
                       <select name="academic_supervisor_id" value={editFormData.academic_supervisor_id || ''} onChange={handleEditFieldChange} disabled={editSaving} style={editInputStyle}>
                         <option value="">Select supervisor</option>
                         {users.filter((candidate) => candidate.role === 'academic_supervisor').map((candidate) => (
@@ -1478,7 +1490,7 @@ function AdminDashboard() {
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                       <div>
                         <div style={{ fontWeight: 700 }}>Week {w.week_number}</div>
-                        <div style={{ fontSize: '13px', color: '#64748b' }}>Supervisor: {w.supervisor_score ?? 'N/A'} | Academic: {w.academic_score ?? 'N/A'}</div>
+                                <div style={{ fontSize: '13px', color: '#64748b' }}>Workplace: {w.supervisor_score ?? 'N/A'} | Academic: {w.academic_score ?? 'N/A'}</div>
                       </div>
                       <div style={{ textAlign: 'right' }}>
                         <div style={{ fontSize: '18px', fontWeight: 'bold', color: '#2563eb' }}>Total: {w.combined_score}</div>
