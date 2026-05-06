@@ -23,6 +23,19 @@ const formatDisplayDate = (value) => {
   return new Date(value).toLocaleDateString();
 };
 
+const MS_PER_DAY = 24 * 60 * 60 * 1000
+
+const computeCurrentWeekForPlacement = (placement, today = new Date()) => {
+  if (!placement || !placement.start_date) return 1
+  const start = new Date(placement.start_date)
+  if (Number.isNaN(start.getTime())) return 1
+
+  const end = placement.end_date ? new Date(placement.end_date) : null
+  const effectiveDate = end && end < today ? end : today
+  const elapsedDays = Math.max(0, Math.floor((effectiveDate.getTime() - start.getTime()) / MS_PER_DAY))
+  return Math.max(1, Math.floor(elapsedDays / 7) + 1)
+}
+
 const getUserInitials = (user) => {
   const firstInitial = user?.first_name?.[0] || '';
   const lastInitial = user?.last_name?.[0] || '';
@@ -105,12 +118,13 @@ const StudentDashboard = () => {
         }
 
         const activePlacement = loggablePlacements.find((placement) => placement.status === 'active') || loggablePlacements[0];
-        return createInitialLogForm(activePlacement.id);
+        const currentWeek = computeCurrentWeekForPlacement(activePlacement)
+        return { ...createInitialLogForm(activePlacement.id), week_number: String(currentWeek) };
       });
     };
 
     updateFormData();
-  }, [loggablePlacements]);
+  }, [loggablePlacements, logs]);
 
   const resetForm = () => {
     const activePlacement = loggablePlacements.find((placement) => placement.status === 'active') || loggablePlacements[0];
@@ -138,6 +152,21 @@ const StudentDashboard = () => {
       setFormError('Enter a valid week number before saving your log.');
       return;
     }
+
+      // Enforce week boundaries based on placement timeline
+      const selectedPlacementObj = placements.find((p) => String(p.id) === String(formData.placement_id));
+      const currentWeekForPlacement = computeCurrentWeekForPlacement(selectedPlacementObj);
+      const submittedWeek = Number(formData.week_number);
+
+      if (submittedWeek > currentWeekForPlacement) {
+        setFormError('Cannot submit a log for a future week. The week counter is enforced automatically.');
+        return;
+      }
+
+      if (nextStatus === 'submitted' && submittedWeek < currentWeekForPlacement) {
+        setFormError('Cannot submit a log for a previous week; missed weeks are recorded automatically as zero.');
+        return;
+      }
 
     if (!formData.activities.trim()) {
       setFormError('Activities are required for each weekly log.');
@@ -329,10 +358,10 @@ const StudentDashboard = () => {
                           type="number"
                           min="1"
                           name="week_number"
-                          value={formData.week_number}
-                          onChange={handleFormChange}
-                          placeholder="e.g. 4"
-                          disabled={saving}
+                            value={formData.week_number}
+                            onChange={handleFormChange}
+                            placeholder="e.g. 4"
+                            disabled={saving || !editingLogId}
                         />
                       </label>
 
