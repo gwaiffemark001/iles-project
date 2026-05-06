@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '../../contexts/useAuth';
 import { logsAPI, placementsAPI, evaluationsAPI, criteriaAPI } from '@/api/api';
 import { getErrorMessage } from '@/api/api';
+import { buildWeeklyEvaluationSummaries } from '@/utils/evaluationSummary';
 import './StudentDashboard.css';
 
 const createInitialLogForm = (defaultPlacementId = '') => ({
@@ -14,54 +15,6 @@ const createInitialLogForm = (defaultPlacementId = '') => ({
 });
 
 const getPlacementId = (log) => log.placement?.id ?? log.placement_id ?? '';
-
-const getWeeklyEvaluationSummaries = (evaluationsList) => {
-  const groups = new Map();
-
-  evaluationsList.forEach((evaluation) => {
-    const placementId = evaluation.placement?.id ?? evaluation.placement_id ?? 'unknown-placement';
-    const weekNumber = evaluation.week_number ?? 1;
-    const groupKey = `${placementId}-${weekNumber}`;
-
-    if (!groups.has(groupKey)) {
-      groups.set(groupKey, {
-        key: groupKey,
-        placementName: evaluation.placement?.company_name || 'Placement not available',
-        week_number: weekNumber,
-        supervisor_score: null,
-        academic_score: null,
-        scores: [],
-      });
-    }
-
-    const entry = groups.get(groupKey);
-    const numericScore = Number(evaluation.score);
-    if (!Number.isNaN(numericScore)) {
-      entry.scores.push(numericScore);
-    }
-
-    if (evaluation.evaluation_type === 'supervisor') {
-      entry.supervisor_score = evaluation.score;
-    }
-
-    if (evaluation.evaluation_type === 'academic') {
-      entry.academic_score = evaluation.score;
-    }
-  });
-
-  return Array.from(groups.values())
-    .map((entry) => {
-      const combined = entry.scores.length > 0
-        ? entry.scores.reduce((total, score) => total + score, 0) / entry.scores.length
-        : 0;
-
-      return {
-        ...entry,
-        combined_score: Number(combined.toFixed(2)),
-      };
-    })
-    .sort((firstEntry, secondEntry) => secondEntry.week_number - firstEntry.week_number);
-};
 
 const formatDisplayDate = (value) => {
   if (!value) {
@@ -91,7 +44,10 @@ const StudentDashboard = () => {
   const [saving, setSaving] = useState(false);
   const [pageError, setPageError] = useState('');
   const [loading, setLoading] = useState(true);
-  const weeklyEvaluationSummaries = useMemo(() => getWeeklyEvaluationSummaries(evaluations), [evaluations]);
+  const weeklyEvaluationSummaries = useMemo(
+    () => buildWeeklyEvaluationSummaries(evaluations, placements, logs).weeklySummaries,
+    [evaluations, placements, logs],
+  );
   const loggablePlacements = useMemo(
     () => placements.filter((placement) => placement.status !== 'completed'),
     [placements],
@@ -546,8 +502,9 @@ const StudentDashboard = () => {
                     <div key={summary.key} className="evaluation-card">
                       <h3>Week {summary.week_number} Summary</h3>
                       <p>Placement: {summary.placementName}</p>
-                      <p>Workplace Supervisor Score: {summary.supervisor_score ?? 'Not yet submitted'}</p>
-                      <p>Academic Score: {summary.academic_score ?? 'Not yet submitted'}</p>
+                      <p>Workplace Supervisor Score: {summary.log_status === 'missing' ? 0 : (summary.supervisor_score ?? 'Not yet submitted')}</p>
+                      <p>Academic Score: {summary.log_status === 'missing' ? 0 : (summary.academic_score ?? 'Not yet submitted')}</p>
+                      {summary.log_status === 'missing' ? <p style={{ color: '#b45309' }}><strong>No log submitted for this week.</strong> Scores are zero.</p> : null}
                       <p><strong>Combined Week Score:</strong> {summary.combined_score}</p>
                     </div>
                   ))
