@@ -7,7 +7,6 @@ export default function SupervisorEvaluationForm({
   evaluatorId,
   evaluationType,
   existingEvaluation = null,
-  initialWeekNumber = 1,
   studentName = '',
   onSaved = () => {},
   onCancel = () => {},
@@ -20,7 +19,6 @@ export default function SupervisorEvaluationForm({
     : user?.role === 'workplace_supervisor' 
       ? 'supervisor' 
       : evaluationType;
-  const [weekNumber, setWeekNumber] = useState(existingEvaluation?.week_number || initialWeekNumber || 1);
   const [criteria, setCriteria] = useState([]);
   const [items, setItems] = useState([]);
   const [selectedCriteriaId, setSelectedCriteriaId] = useState(null);
@@ -79,10 +77,6 @@ export default function SupervisorEvaluationForm({
     };
   }, [criteria, existingEvaluation]);
 
-  useEffect(() => {
-    setWeekNumber(existingEvaluation?.week_number || initialWeekNumber || 1);
-  }, [existingEvaluation, initialWeekNumber]);
-
   const setItemScore = (criteriaId, value) => {
     setItems((prev) =>
       prev.map((it) =>
@@ -107,9 +101,10 @@ export default function SupervisorEvaluationForm({
     selectedItems.forEach((item) => {
       const crit = criteria.find((c) => c.id === item.criteria_id);
       if (crit && crit.max_score > 0) {
-const score = item.score === '' ? 0 : Number(item.score);
+        const score = item.score === '' ? 0 : Number(item.score);
         const contribution = (score / Number(crit.max_score)) * Number(crit.weight_percent);
-        total += contribution;
+        weightedTotal += contribution;
+        selectedWeight += 1;
       }
     });
 
@@ -138,16 +133,14 @@ const score = item.score === '' ? 0 : Number(item.score);
 
     if (hasInvalidScore) {
       setError('Please provide valid scores for all selected criteria.');
->>>>>>> a1faed1e7adee9e7a2503a7e96e6020a88a25670
       setSaving(false);
       return;
     }
 
-    const totalScore = calculateTotalScore();
     const payload = {
       placement_id: placementId,
       evaluator_id: evaluatorId,
-evaluation_type: evaluationType,
+      evaluation_type: determinedEvaluationType,
       items: items.map((i) => ({ criteria_id: i.criteria_id, score: Number(i.score) })),
     };
 

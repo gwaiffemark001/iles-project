@@ -12,12 +12,6 @@ const userRoles = [
   { value: 'admin', label: 'Admin' },
 ]
 
-const placementStatuses = [
-  { value: 'pending', label: 'Pending' },
-  { value: 'active', label: 'Active' },
-  { value: 'completed', label: 'Completed' },
-]
-
 // use shared helper for weekly summaries and grade weights
 
 function AdminDashboard() {
