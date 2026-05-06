@@ -546,7 +546,7 @@ const StudentDashboard = () => {
                     <div key={summary.key} className="evaluation-card">
                       <h3>Week {summary.week_number} Summary</h3>
                       <p>Placement: {summary.placementName}</p>
-                      <p>Supervisor Score: {summary.supervisor_score ?? 'Not yet submitted'}</p>
+                      <p>Workplace Supervisor Score: {summary.supervisor_score ?? 'Not yet submitted'}</p>
                       <p>Academic Score: {summary.academic_score ?? 'Not yet submitted'}</p>
                       <p><strong>Combined Week Score:</strong> {summary.combined_score}</p>
                     </div>
@@ -584,7 +584,7 @@ const StudentDashboard = () => {
                       <h3>{crit.name}</h3>
                       {crit.description ? <p>{crit.description}</p> : null}
                       <p><strong>Max Score:</strong> {crit.max_score}</p>
-                      <p><strong>Supervisor Share:</strong> {crit.supervisor_share}%</p>
+                      <p><strong>Workplace Share:</strong> {crit.supervisor_share}%</p>
                       <p><strong>Academic Share:</strong> {crit.academic_share}%</p>
                     </div>
                   ))}
