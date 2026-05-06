@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Layout from "../../components/Layout";
-import "./AssignedStudents.css";
+import "./AcademicSupervisorSubpages.css";
 
 const AssignedStudents = () => {
   const [search, setSearch] = useState("");

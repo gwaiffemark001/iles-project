@@ -3,6 +3,7 @@ import axios from 'axios'
 import { useAuth } from '../auth/useAuth'
 import { criteriaAPI, evaluationsAPI, placementsAPI } from '../api/api'
 import { buildWeeklyEvaluationSummaries, getGradeWeight } from '../utils/evaluationSummary'
+import './AdminDashboard.css'
 
 const userRoles = [
   { value: 'student', label: 'Student' },
