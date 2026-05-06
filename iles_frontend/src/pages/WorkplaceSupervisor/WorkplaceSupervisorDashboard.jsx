@@ -95,8 +95,8 @@ export default function WorkplaceSupervisorDashboard() {
 
   // Build weekly summaries from all evaluation types so both scores appear on each card.
   const { weeklySummaries: allWeeklySummaries } = useMemo(
-    () => buildWeeklyEvaluationSummaries(evaluations),
-    [evaluations]
+    () => buildWeeklyEvaluationSummaries(evaluations, placements, logs),
+    [evaluations, placements, logs]
   );
 
   const groupedSummaries = useMemo(() => {
@@ -115,16 +115,16 @@ export default function WorkplaceSupervisorDashboard() {
       }
       groups.get(placementId).weeks.push(summary);
     });
+    // calculate placement-level averages from weeks
     const results = Array.from(groups.values());
     results.forEach((g) => {
-      const placement = placements.find((p) => p.id === g.placementId);
-      if (placement) {
-        g.placementAverageScore = placement.average_score ?? null;
-        g.placementAverageWeight = placement.average_weight ?? null;
+      if (g.weeks.length > 0) {
+        g.placementAverageScore = Number((g.weeks.reduce((t, w) => t + Number(w.combined_score || 0), 0) / g.weeks.length).toFixed(2));
+        g.placementAverageWeight = Number((g.weeks.reduce((t, w) => t + Number(w.grade_weight || 0), 0) / g.weeks.length).toFixed(2));
       }
     });
     return results;
-  }, [allWeeklySummaries, placements]);
+  }, [allWeeklySummaries]);
 
   const workplaceStudentCards = useMemo(() => {
     return placements.map((placement) => {
@@ -135,7 +135,7 @@ export default function WorkplaceSupervisorDashboard() {
         .map((log) => Number(log.week_number || 1))
         .filter((weekNumber, index, array) => array.indexOf(weekNumber) === index)
         .sort((left, right) => left - right);
-      const evaluatedWeeks = new Set(placementWeeks.map((week) => Number(week.week_number)));
+      const evaluatedWeeks = new Set(placementWeeks.filter((week) => week.has_evaluation).map((week) => Number(week.week_number)));
       const nextWeekNumber = placementLogWeeks.find((weekNumber) => !evaluatedWeeks.has(weekNumber))
         || (placementLogWeeks.length ? placementLogWeeks[placementLogWeeks.length - 1] + 1 : 1);
 
@@ -179,7 +179,7 @@ export default function WorkplaceSupervisorDashboard() {
 
   const handleReviewLog = async (logId, supervisorComment) => {
     try {
-      await logsAPI.reviewLog(logId, { supervisor_comment: supervisorComment })
+      await logsAPI.reviewLog(logId, { comment: supervisorComment })
       toast.success('Log reviewed successfully')
       setComment('')
       await loadData()
@@ -209,8 +209,9 @@ export default function WorkplaceSupervisorDashboard() {
 
   const handleRejectLog = async (logId, supervisorComment) => {
     try {
-      await logsAPI.updateLog(logId, { status: 'rejected', supervisor_comment: supervisorComment })
-      toast.success('Log rejected')
+      // Send to revise endpoint (supervisor requests revision)
+      await logsAPI.reviseLog(logId, { comment: supervisorComment })
+      toast.success('Revision requested (sent back to draft)')
       setComment('')
       await loadData()
     } catch (requestError) {
@@ -347,13 +348,17 @@ export default function WorkplaceSupervisorDashboard() {
                           {log.submitted_at ? <div className="workplace-log-field"><strong>Submitted:</strong><p>{new Date(log.submitted_at).toLocaleString()}</p></div> : null}
                           {log.supervisor_comment ? <div className="workplace-log-field supervisor-comment"><strong>Your Comment:</strong><p>{log.supervisor_comment}</p></div> : null}
                         </div>
-                        {log.status === 'submitted' && (
+                        {(log.status === 'submitted' || log.status === 'reviewed') && (
                           <div className="workplace-log-actions">
                             <textarea placeholder="Add your comment..." value={comment} onChange={(event) => setComment(event.target.value)} className="workplace-comment-input" />
                             <div className="workplace-action-buttons">
-                              <button type="button" className="workplace-btn-review" onClick={() => handleReviewLog(log.id, comment)}>Review</button>
-                              <button type="button" className="workplace-btn-approve" onClick={() => handleApproveLog(log.id)}>Approve</button>
-                              <button type="button" className="workplace-btn-reject" onClick={() => handleRejectLog(log.id, comment)}>Reject</button>
+                              {log.status === 'submitted' && (
+                                <button type="button" className="workplace-btn-review" onClick={() => handleReviewLog(log.id, comment)}>Review</button>
+                              )}
+                              {log.status === 'reviewed' && (
+                                <button type="button" className="workplace-btn-approve" onClick={() => handleApproveLog(log.id)}>Approve</button>
+                              )}
+                              <button type="button" className="workplace-btn-reject" onClick={() => handleRejectLog(log.id, comment)}>Request Revision</button>
                             </div>
                             <div style={{ marginTop: '12px' }}>
                               <button
@@ -416,7 +421,20 @@ export default function WorkplaceSupervisorDashboard() {
                       <button
                         type="button"
                         className="eval-btn"
-                        onClick={() => openEvaluationEditor(group.placement, group.nextWeekNumber, null)}
+                        disabled={!logs.find((log) => (log.placement?.id ?? log.placement_id) === group.placementId && Number(log.week_number) === group.nextWeekNumber)}
+                        onClick={() => {
+                          const logExists = logs.find((log) => (log.placement?.id ?? log.placement_id) === group.placementId && Number(log.week_number) === group.nextWeekNumber);
+                          if (logExists) {
+                            openEvaluationEditor(group.placement, group.nextWeekNumber, null);
+                          } else {
+                            toast.error('A log must exist for this week before adding an evaluation');
+                          }
+                        }}
+                        style={{
+                          opacity: !logs.find((log) => (log.placement?.id ?? log.placement_id) === group.placementId && Number(log.week_number) === group.nextWeekNumber) ? 0.6 : 1,
+                          cursor: !logs.find((log) => (log.placement?.id ?? log.placement_id) === group.placementId && Number(log.week_number) === group.nextWeekNumber) ? 'not-allowed' : 'pointer',
+                        }}
+                        title={!logs.find((log) => (log.placement?.id ?? log.placement_id) === group.placementId && Number(log.week_number) === group.nextWeekNumber) ? 'A log must exist for this week' : 'Add evaluation for the next week'}
                       >
                         Add Evaluation
                       </button>
@@ -446,11 +464,14 @@ export default function WorkplaceSupervisorDashboard() {
                             <div style={{ marginBottom: '8px' }}>
                               <div style={{ fontWeight: 700, marginBottom: '8px' }}>Week {w.week_number}</div>
                               <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '4px' }}>
-                                Workplace: <strong>{w.supervisor_score ?? 'N/A'}</strong>
+                                Workplace: <strong>{w.log_status === 'missing' ? 0 : (w.supervisor_score ?? 'N/A')}</strong>
                               </div>
                               <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '4px' }}>
-                                Academic: <strong>{w.academic_score ?? 'N/A'}</strong>
+                                Academic: <strong>{w.log_status === 'missing' ? 0 : (w.academic_score ?? 'N/A')}</strong>
                               </div>
+                              {w.log_status === 'missing' ? (
+                                <div style={{ fontSize: '12px', color: '#b45309', marginTop: '4px' }}>No log submitted for this week. Scores are zero.</div>
+                              ) : null}
                             </div>
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '8px', borderTop: '1px solid #e2e8f0' }}>
                               <div>
@@ -462,15 +483,17 @@ export default function WorkplaceSupervisorDashboard() {
                                 <div style={{ fontSize: '16px', fontWeight: 'bold', color: '#059669' }}>{w.grade_weight ?? 'N/A'}</div>
                               </div>
                             </div>
-                            <div style={{ marginTop: '8px', display: 'flex', gap: '8px' }}>
-                              <button
-                                type="button"
-                                className="eval-btn"
-                                onClick={() => openEvaluationEditor(group.placement, w.week_number, evalToEdit || null)}
-                              >
-                                {evalToEdit ? 'Edit Evaluation' : 'Add Evaluation'}
-                              </button>
-                            </div>
+                            {w.log_status !== 'missing' && evalToEdit ? (
+                              <div style={{ marginTop: '8px', display: 'flex', gap: '8px' }}>
+                                <button
+                                  type="button"
+                                  className="eval-btn"
+                                  onClick={() => openEvaluationEditor(group.placement, w.week_number, evalToEdit || null)}
+                                >
+                                  Edit Evaluation
+                                </button>
+                              </div>
+                            ) : null}
                             <div style={{ marginTop: '8px', fontSize: '12px', color: '#475569' }}>
                               <div><strong>Your evaluation:</strong> {evalToEdit ? 'Edit' : 'Add'}</div>
                               <div><strong>Other workplace evaluation:</strong> {otherSupervisorSubmitted ? 'Already submitted' : 'Not yet submitted'}</div>
@@ -483,8 +506,8 @@ export default function WorkplaceSupervisorDashboard() {
 
                     {group.weeks.length ? (
                       <div style={{ marginTop: '12px', textAlign: 'right', color: '#475569' }}>
-                        <strong>Average Score:</strong> {group.placementAverageScore != null ? (Number(group.placementAverageScore).toFixed(2)) : ((group.weeks.reduce((t, a) => t + Number(a.combined_score || 0), 0) / group.weeks.length).toFixed(2))}
-                        <span style={{ marginLeft: '12px' }}><strong>Average Weight:</strong> {group.placementAverageWeight != null ? (Number(group.placementAverageWeight).toFixed(2)) : ((group.weeks.reduce((t, a) => t + Number(a.grade_weight || 0), 0) / group.weeks.length).toFixed(2))}</span>
+                        <strong>Average Score:</strong> {group.placementAverageScore != null ? group.placementAverageScore.toFixed(2) : '0.00'}
+                        <span style={{ marginLeft: '12px' }}><strong>Average Weight:</strong> {group.placementAverageWeight != null ? group.placementAverageWeight.toFixed(2) : '0.00'}</span>
                       </div>
                     ) : null}
                     </div>
