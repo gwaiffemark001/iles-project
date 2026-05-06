@@ -176,11 +176,11 @@ class EvaluationCriteria(models.Model):
     name = models.CharField(max_length=100)
     description = models.TextField(blank=True, null=True)
     max_score =models.DecimalField(max_digits=5, decimal_places=2)
-    weight_percent=models.DecimalField(max_digits=5, decimal_places=2, default=Decimal('0.00'))
+    weight_percent=models.DecimalField(max_digits=5, decimal_places=2, default=Decimal('0.0'))
     # How the criterion's weight is split between supervisors.
     # These represent the share of the criterion's weight assigned to each role (values are percentages and should sum to 100).
-    supervisor_share = models.DecimalField(max_digits=5, decimal_places=2, default=Decimal('40.00'))
-    academic_share = models.DecimalField(max_digits=5, decimal_places=2, default=Decimal('60.00'))
+    supervisor_share = models.DecimalField(max_digits=5, decimal_places=2, default=Decimal('40.0'))
+    academic_share = models.DecimalField(max_digits=5, decimal_places=2, default=Decimal('60.0'))
 
     def clean(self):
         super().clean()
@@ -231,41 +231,13 @@ class Evaluation(models.Model):
 
     placement = models.ForeignKey(InternshipPlacement, on_delete=models.CASCADE, related_name='evaluations')
     evaluator = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='given_evaluations')
-    
-    # Weighted evaluation criteria
-    technical_skills = models.IntegerField(default=0, help_text="Technical competence and skills (1-5)")
-    communication = models.IntegerField(default=0, help_text="Communication skills (1-5)")
-    professionalism = models.IntegerField(default=0, help_text="Professionalism and work ethic (1-5)")
-    initiative = models.IntegerField(default=0, help_text="Initiative and problem-solving (1-5)")
-    
     # Overall computed score
     weighted_score = models.DecimalField(max_digits=5, decimal_places=2, default=0, help_text="Computed weighted score")
-    
     evaluation_type = models.CharField(max_length=20, choices=EVALUATION_TYPES, default='supervisor')
     evaluated_at = models.DateTimeField(auto_now_add=True)
     
-    # Weight constants for standardized scoring
-    CRITERIA_WEIGHTS = {
-        'technical_skills': 0.4,
-        'communication': 0.3,
-        'professionalism': 0.2,
-        'initiative': 0.1,
-    }
-    
     def calculate_weighted_score(self):
-        """Calculate weighted score based on criteria and weights"""
-        scores = [
-            self.technical_skills * self.CRITERIA_WEIGHTS['technical_skills'],
-            self.communication * self.CRITERIA_WEIGHTS['communication'],
-            self.professionalism * self.CRITERIA_WEIGHTS['professionalism'],
-            self.initiative * self.CRITERIA_WEIGHTS['initiative'],
-        ]
-        return sum(scores)
-    
-    def save(self, *args, **kwargs):
-        """Override save to calculate weighted score automatically"""
-        self.weighted_score = self.calculate_weighted_score()
-        super().save(*args, **kwargs)
+        """Calculate weighted score from related EvaluationItem entries"""
 
     class Meta:
         unique_together = [['placement', 'evaluation_type']]
@@ -310,10 +282,10 @@ class Evaluation(models.Model):
         return float(round(total, 2))
 
     def update_score_from_items(self):
-        """Recalculate `score` from EvaluationItem entries and save the model."""
+        """Recalculate `weighted_score` from EvaluationItem entries and save the model."""
         calculated = self.calculate_weighted_score()
-        self.score = calculated
-        self.save(update_fields=['score'])
+        self.weighted_score = calculated
+        self.save(update_fields=['weighted_score'])
 
     @staticmethod
     def combined_score_for_week(placement, week_number):
