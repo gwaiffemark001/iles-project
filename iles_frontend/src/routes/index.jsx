@@ -2,6 +2,7 @@ import { Navigate, Route, Routes } from 'react-router-dom'
 
 import Firstpage from '../Firstpage'
 import ForgotPassword from '../pages/Login/ForgotPassword'
+import ResetPassword from '../pages/Login/ResetPassword'
 import Signup from '../pages/Signup/Signup'
 import StudentDashboard from '../pages/Student/StudentDashboard'
 import PlacementsList from '../pages/Student/PlacementsList'
@@ -25,6 +26,7 @@ export default function AppRoutes() {
       <Route path="/" element={<Firstpage />} />
       <Route path="/signup" element={<Signup />} />
       <Route path="/forgot-password" element={<ForgotPassword />} />
+      <Route path="/reset-password" element={<ResetPassword />} />
 
       {/* Legacy paths (keep until Signup/Login are refactored) */}
       <Route path="/studentdashboard" element={<Navigate to="/app/student" replace />} />

@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { criteriaAPI, evaluationsAPI, getErrorMessage } from '../../api/api';
+import { useAuth } from '../../contexts/useAuth';
 
 export default function SupervisorEvaluationForm({
   placementId,
@@ -11,9 +12,18 @@ export default function SupervisorEvaluationForm({
   onSaved = () => {},
   onCancel = () => {},
 }) {
+  const { user } = useAuth();
+  
+  // Auto-determine evaluation type based on user role
+  const determinedEvaluationType = user?.role === 'academic_supervisor' 
+    ? 'academic' 
+    : user?.role === 'workplace_supervisor' 
+      ? 'supervisor' 
+      : evaluationType;
   const [weekNumber, setWeekNumber] = useState(existingEvaluation?.week_number || initialWeekNumber || 1);
   const [criteria, setCriteria] = useState([]);
   const [items, setItems] = useState([]);
+  const [selectedCriteriaId, setSelectedCriteriaId] = useState(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
   const [loadingCriteria, setLoadingCriteria] = useState(true);
@@ -43,7 +53,11 @@ export default function SupervisorEvaluationForm({
   }, []);
 
   useEffect(() => {
-    const initializeItems = async () => {
+    let isMounted = true;
+    if (isMounted && criteria.length > 0) {
+      // Require explicit user selection each time; do not preselect criteria.
+      setSelectedCriteriaId(null);
+
       if (existingEvaluation && Array.isArray(existingEvaluation.items)) {
         setItems(
           criteria.map((c) => {
@@ -56,20 +70,17 @@ export default function SupervisorEvaluationForm({
             };
           })
         );
-      } else if (criteria.length > 0 && !existingEvaluation) {
+} else if (criteria.length > 0 && !existingEvaluation) {
         setItems(criteria.map((c) => ({ criteria_id: c.id, score: '' })));
       }
+    }
+    return () => {
+      isMounted = false;
     };
-
-    initializeItems();
   }, [criteria, existingEvaluation]);
 
   useEffect(() => {
-    const initializeWeekNumber = async () => {
-      setWeekNumber(existingEvaluation?.week_number || initialWeekNumber || 1);
-    };
-
-    initializeWeekNumber();
+    setWeekNumber(existingEvaluation?.week_number || initialWeekNumber || 1);
   }, [existingEvaluation, initialWeekNumber]);
 
   const setItemScore = (criteriaId, value) => {
@@ -80,28 +91,54 @@ export default function SupervisorEvaluationForm({
     );
   };
 
+  const toggleCriteriaSelection = (criteriaId) => {
+    // select a single criterion (no multi-select)
+    setSelectedCriteriaId(criteriaId);
+  };
+
   const calculateTotalScore = () => {
     if (criteria.length === 0 || items.length === 0) return 0;
 
-    let total = 0;
-    items.forEach((item) => {
+    const selectedItems = items.filter((item) => item.criteria_id === selectedCriteriaId);
+    if (selectedItems.length === 0) return 0;
+
+    let weightedTotal = 0;
+    let selectedWeight = 0;
+    selectedItems.forEach((item) => {
       const crit = criteria.find((c) => c.id === item.criteria_id);
       if (crit && crit.max_score > 0) {
-        const score = item.score === '' ? 0 : Number(item.score);
+const score = item.score === '' ? 0 : Number(item.score);
         const contribution = (score / Number(crit.max_score)) * Number(crit.weight_percent);
         total += contribution;
       }
     });
-    return Math.round(total * 100) / 100;
+
+    if (selectedWeight <= 0) return 0;
+    const normalizedTotal = (weightedTotal / selectedWeight) * 100;
+    return Math.round(normalizedTotal * 100) / 100;
   };
 
   const handleSave = async () => {
     setSaving(true);
     setError(null);
 
-    // Validate that all criteria have scores
-    if (items.some((it) => it.score === '' || it.score === null)) {
-      setError('Please provide scores for all criteria');
+    if (!selectedCriteriaId) {
+      setError('Select a criterion before saving.');
+      setSaving(false);
+      return;
+    }
+
+    const selectedItems = items.filter((item) => item.criteria_id === selectedCriteriaId);
+    const hasInvalidScore = selectedItems.some((item) => {
+      const criterion = criteria.find((c) => c.id === item.criteria_id);
+      const numericScore = Number(item.score);
+      const maxScore = Number(criterion?.max_score || 0);
+      return Number.isNaN(numericScore) || numericScore < 0 || numericScore > maxScore;
+    });
+
+    if (hasInvalidScore) {
+      setError('Please provide valid scores for all selected criteria.');
+>>>>>>> a1faed1e7adee9e7a2503a7e96e6020a88a25670
       setSaving(false);
       return;
     }
@@ -110,7 +147,7 @@ export default function SupervisorEvaluationForm({
     const payload = {
       placement_id: placementId,
       evaluator_id: evaluatorId,
-      evaluation_type: evaluationType,
+evaluation_type: evaluationType,
       items: items.map((i) => ({ criteria_id: i.criteria_id, score: Number(i.score) })),
     };
 
@@ -157,8 +194,8 @@ export default function SupervisorEvaluationForm({
         <h3 style={{ marginBottom: '4px', color: '#0f172a' }}>
           Evaluate: {studentName}
         </h3>
-        <p style={{ margin: 0, fontSize: '12px', color: '#64748b', textTransform: 'capitalize' }}>
-          Evaluation Type: {evaluationType}
+        <p style={{ margin: '0 0 12px 0', fontSize: '12px', color: '#64748b', textTransform: 'capitalize' }}>
+          Evaluation Type: <strong>{determinedEvaluationType === 'academic' ? 'Academic Supervisor' : 'Workplace Supervisor'}</strong>
         </p>
       </div>
 
@@ -176,8 +213,50 @@ export default function SupervisorEvaluationForm({
         </div>
       )}
 
+      <div
+        style={{
+          marginBottom: '16px',
+          padding: '12px',
+          borderRadius: '6px',
+          border: '1px solid #e2e8f0',
+          backgroundColor: '#f8fafc',
+        }}
+      >
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+          <div style={{ fontWeight: 600, color: '#0f172a' }}>Select Criterion to Evaluate</div>
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '8px' }}>
+          {criteria.map((c) => (
+            <label
+              key={c.id}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                padding: '8px',
+                borderRadius: '6px',
+                border: '1px solid #e2e8f0',
+                backgroundColor: '#fff',
+                fontSize: '13px',
+                color: '#0f172a',
+                cursor: saving ? 'not-allowed' : 'pointer',
+              }}
+            >
+              <input
+                type="radio"
+                name="selectedCriterion"
+                checked={selectedCriteriaId === c.id}
+                onChange={() => toggleCriteriaSelection(c.id)}
+                disabled={saving}
+              />
+              <span>{c.name}</span>
+            </label>
+          ))}
+        </div>
+      </div>
+
       <div style={{ display: 'grid', gap: '12px', marginBottom: '16px' }}>
-        {criteria.map((c) => {
+{criteria.map((c) => {
           const itemScore = items.find((it) => it.criteria_id === c.id)?.score || '';
           const maxScore = Number(c.max_score);
           const percent = maxScore > 0 && itemScore !== '' ? ((Number(itemScore) / maxScore) * 100).toFixed(0) : 0;
@@ -195,9 +274,6 @@ export default function SupervisorEvaluationForm({
               <div style={{ marginBottom: '8px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
                   <div style={{ fontWeight: 600, color: '#0f172a' }}>{c.name}</div>
-                  <div style={{ fontSize: '12px', color: '#64748b' }}>
-                    Weight: {c.weight_percent}%
-                  </div>
                 </div>
                 {c.description && (
                   <p

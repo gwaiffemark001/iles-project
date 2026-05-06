@@ -59,6 +59,26 @@ class InternshipPlacement(models.Model):
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
     created_at = models.DateTimeField(auto_now_add =True)
 
+    def get_computed_status(self):
+        """Compute placement status based on current date and start/end dates."""
+        from datetime import date
+        today = date.today()
+        
+        # If no student assigned yet, status is pending
+        if not self.student:
+            return 'pending'
+        
+        # If today is before start date, still pending
+        if today < self.start_date:
+            return 'pending'
+        
+        # If today is on or after end date, placement is completed
+        if today >= self.end_date:
+            return 'completed'
+        
+        # Otherwise (between start and end dates), placement is active
+        return 'active'
+
     def __str__(self):
         student_username = self.student.username if self.student else "Unassigned"
         return (f"{student_username} at {self.company_name}")
@@ -226,11 +246,11 @@ class Evaluation(models.Model):
     EVALUATION_TYPES = [
         ('supervisor', 'Supervisor Assessment'),
         ('academic', 'Academic Assessment'),
-        ('logbook', 'Logbook Assessment'),
     ]
 
     placement = models.ForeignKey(InternshipPlacement, on_delete=models.CASCADE, related_name='evaluations')
     evaluator = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='given_evaluations')
+    
     # Overall computed score
     weighted_score = models.DecimalField(max_digits=5, decimal_places=2, default=0, help_text="Computed weighted score")
     evaluation_type = models.CharField(max_length=20, choices=EVALUATION_TYPES, default='supervisor')
@@ -238,38 +258,20 @@ class Evaluation(models.Model):
     
     def calculate_weighted_score(self):
         """Calculate weighted score from related EvaluationItem entries"""
-
-    class Meta:
-        unique_together = [['placement', 'evaluation_type']]
-        ordering = ['-evaluated_at']
-
-    def __str__(self):
-        student_username = self.placement.student.username if self.placement.student else "Unknown"
-        return f"{student_username} - {self.evaluation_type}: {self.score}"
-
-    def calculate_weighted_score(self):
-        """
-        Calculate the evaluation score from related EvaluationItem entries.
-        The formula used is: for each criteria, contribution = (item.score / criteria.max_score) * criteria.weight_percent
-        The method returns the aggregated percent (e.g. 85.5) and does not modify the model unless `save_calculated` is True.
-        """
         try:
             # Use the declared related_name from EvaluationItem model
-            # getattr handles cases where the relation may not be initialized
             items_qs = getattr(self, 'evaluation_items', None)
             if items_qs is None:
                 items_qs = []
             else:
                 items_qs = items_qs.all() if hasattr(items_qs, 'all') else []
         except (AttributeError, Exception):
-            # fallback to an empty iterable if the relation isn't available
             items_qs = []
 
         total = Decimal('0')
         for item in items_qs:
             crit = item.criteria
             try:
-                # Avoid division by zero
                 if crit.max_score and crit.max_score > 0:
                     contribution = (Decimal(str(item.score)) / Decimal(str(crit.max_score))) * Decimal(str(crit.weight_percent))
                 else:
@@ -278,7 +280,6 @@ class Evaluation(models.Model):
                 contribution = Decimal('0')
             total += Decimal(str(contribution))
 
-        # total represents percentage points according to criteria weight_percent (which should sum to 100)
         return float(round(total, 2))
 
     def update_score_from_items(self):
@@ -286,6 +287,14 @@ class Evaluation(models.Model):
         calculated = self.calculate_weighted_score()
         self.weighted_score = calculated
         self.save(update_fields=['weighted_score'])
+
+    class Meta:
+        unique_together = [['placement', 'evaluation_type']]
+        ordering = ['-evaluated_at']
+
+    def __str__(self):
+        student_username = self.placement.student.username if self.placement.student else "Unknown"
+        return f"{student_username} - {self.evaluation_type}: {self.weighted_score}"
 
     @staticmethod
     def combined_score_for_week(placement, week_number):
@@ -494,4 +503,5 @@ class Notification(models.Model):
 
     def __str__(self):
         return f"{self.recipient.username} - {self.title}"
-    
+
+

@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import './ILES.css'
+import './pages/Login/Login.css'
 import { createApiClient } from './api/client'
 import AdminDashboard from './pages/AdminDashboard'
 import StudentDashboard from './pages/Student/StudentDashboard'
@@ -484,3 +484,4 @@ export function ILES() {
 }
 
 export default ILES
+

@@ -1,0 +1,449 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap');
+
+/* Shared styles for AssignedStudents and StudentLogViewer subpages */
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Inter', sans-serif; }
+
+/* Topbar */
+.topbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.topbar-left {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.topbar h1 {
+  font-size: 20px;
+  font-weight: 600;
+  color: #1a2340;
+  margin-bottom: 4px;
+}
+
+.topbar p { 
+  font-size: 13px; 
+  color: #888; 
+}
+
+/* Navigation & Buttons */
+.back-btn {
+  padding: 8px 16px;
+  background: white;
+  color: #4a7fd4;
+  border: 1px solid #4a7fd4;
+  border-radius: 8px;
+  font-size: 13px;
+  cursor: pointer;
+  font-family: 'Inter', sans-serif;
+  font-weight: 500;
+  white-space: nowrap;
+  transition: background-color 0.2s;
+}
+
+.back-btn:hover { 
+  background: #f0f5ff; 
+}
+
+/* Avatar */
+.avatar,
+.student-avatar {
+  border-radius: 50%;
+  background: #4a7fd4;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-weight: 500;
+}
+
+.avatar {
+  width: 40px;
+  height: 40px;
+  font-size: 13px;
+}
+
+.student-avatar {
+  width: 52px;
+  height: 52px;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+/* Student Info Card */
+.student-info-card {
+  background: white;
+  border-radius: 12px;
+  border: 0.5px solid #e0e6f0;
+  padding: 20px 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.student-info-left {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.student-name {
+  font-size: 16px;
+  font-weight: 600;
+  color: #1a2340;
+  margin-bottom: 4px;
+}
+
+.student-detail {
+  font-size: 12px;
+  color: #888;
+  margin-bottom: 2px;
+}
+
+.student-info-right {
+  display: flex;
+  gap: 32px;
+}
+
+.info-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.info-label {
+  font-size: 11px;
+  color: #888;
+  font-weight: 500;
+}
+
+.info-value {
+  font-size: 13px;
+  color: #1a2340;
+  font-weight: 500;
+}
+
+/* Search and Filter */
+.search-bar,
+.logs-filters {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.search-input {
+  height: 40px;
+  border: 1.5px solid #dde1ea;
+  border-radius: 8px;
+  padding: 0 16px;
+  font-size: 14px;
+  font-family: 'Inter', sans-serif;
+  color: #1a2340;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.search-bar .search-input {
+  flex: 1;
+}
+
+.logs-filters .search-input {
+  width: 200px;
+  height: 36px;
+  font-size: 13px;
+  padding: 0 12px;
+}
+
+.search-input:focus { 
+  border-color: #4a7fd4; 
+}
+
+.filter-select {
+  height: 40px;
+  border: 1.5px solid #dde1ea;
+  border-radius: 8px;
+  padding: 0 12px;
+  font-size: 14px;
+  font-family: 'Inter', sans-serif;
+  color: #1a2340;
+  outline: none;
+  background: white;
+  cursor: pointer;
+  transition: border-color 0.2s;
+}
+
+.logs-filters .filter-select {
+  height: 36px;
+  font-size: 13px;
+}
+
+.filter-select:focus { 
+  border-color: #4a7fd4; 
+}
+
+/* Section Title */
+.section-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: #1a2340;
+  margin-bottom: 12px;
+}
+
+.logs-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+/* Tables */
+.students-table,
+.logs-table {
+  background: white;
+  border-radius: 12px;
+  border: 0.5px solid #e0e6f0;
+  overflow: hidden;
+  margin-bottom: 24px;
+}
+
+.table-header {
+  display: grid;
+  padding: 12px 16px;
+  background: #f8faff;
+  border-bottom: 0.5px solid #e0e6f0;
+  font-size: 12px;
+  font-weight: 500;
+  color: #888;
+}
+
+.table-row {
+  display: grid;
+  padding: 14px 16px;
+  border-bottom: 0.5px solid #f0f4fa;
+  font-size: 13px;
+  color: #1a2340;
+  align-items: center;
+  transition: background-color 0.2s;
+}
+
+.table-row:last-child { 
+  border-bottom: none; 
+}
+
+.table-row:hover { 
+  background: #f8faff; 
+}
+
+/* Grid templates for AssignedStudents table */
+.students-table .table-header {
+  grid-template-columns: 1.5fr 1fr 1.5fr 1.5fr 1fr 1fr 1.5fr;
+}
+
+.students-table .table-row {
+  grid-template-columns: 1.5fr 1fr 1.5fr 1.5fr 1fr 1fr 1.5fr;
+}
+
+/* Grid templates for StudentLogViewer table */
+.logs-table .table-header {
+  grid-template-columns: 0.5fr 1fr 3fr 0.5fr 1fr 1.5fr;
+}
+
+.logs-table .table-row {
+  grid-template-columns: 0.5fr 1fr 3fr 0.5fr 1fr 1.5fr;
+}
+
+.log-summary {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 300px;
+}
+
+/* Statistics Cards */
+.log-stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.log-stat-card {
+  background: white;
+  border-radius: 12px;
+  padding: 16px 20px;
+  border: 0.5px solid #e0e6f0;
+}
+
+.stat-label { 
+  font-size: 12px; 
+  color: #888; 
+  margin-bottom: 8px; 
+}
+
+.stat-num { 
+  font-size: 28px; 
+  font-weight: 600; 
+  color: #1a2340; 
+}
+
+.stat-num.blue { 
+  color: #4a7fd4; 
+}
+
+.stat-num.green { 
+  color: #1D9E75; 
+}
+
+.stat-num.amber { 
+  color: #BA7517; 
+}
+
+.stat-num.red { 
+  color: #A32D2D; 
+}
+
+/* Badges */
+.badge {
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 500;
+  display: inline-block;
+}
+
+.badge.pending { 
+  background: #faeeda; 
+  color: #854F0B; 
+}
+
+.badge.reviewed { 
+  background: #e1f5ee; 
+  color: #0F6E56; 
+}
+
+.badge.overdue { 
+  background: #fcebeb; 
+  color: #A32D2D; 
+}
+
+/* Action Buttons */
+.action-btns {
+  display: flex;
+  gap: 6px;
+}
+
+.btn-view,
+.btn-evaluate {
+  padding: 5px 10px;
+  border-radius: 6px;
+  font-size: 11px;
+  cursor: pointer;
+  font-family: 'Inter', sans-serif;
+  font-weight: 500;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.btn-view {
+  background: white;
+  color: #4a7fd4;
+  border: 1px solid #4a7fd4;
+}
+
+.btn-view:hover { 
+  background: #f0f5ff; 
+}
+
+.btn-evaluate {
+  background: #4a7fd4;
+  color: white;
+  border: none;
+}
+
+.btn-evaluate:hover { 
+  background: #3a6bc4; 
+}
+
+/* Logs Section */
+.logs-section { 
+  margin-bottom: 24px; 
+}
+
+/* Modal Styles */
+.log-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.log-modal {
+  background: white;
+  border-radius: 16px;
+  width: 500px;
+  max-width: 90%;
+  padding: 28px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #e0e6f0;
+}
+
+.modal-header h2 {
+  font-size: 18px;
+  font-weight: 600;
+  color: #1a2340;
+}
+
+.close-modal {
+  background: none;
+  border: none;
+  font-size: 24px;
+  cursor: pointer;
+  color: #888;
+}
+
+.close-modal:hover {
+  color: #1a2340;
+}
+
+.modal-content {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.modal-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.modal-field label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #1a2340;
+}
+
+.modal-field p {
+  font-size: 13px;
+  color: #555;
+  line-height: 1.5;
+}
