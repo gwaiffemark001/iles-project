@@ -182,7 +182,7 @@ const AcademicSupervisorDashboard = () => {
       }
     });
     return results;
-  }, [allWeeklySummaries]);
+  }, [allWeeklySummaries, placements]);
 
   const academicStudentCards = useMemo(() => {
     return placements.map((placement) => {

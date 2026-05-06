@@ -124,7 +124,7 @@ export default function WorkplaceSupervisorDashboard() {
       }
     });
     return results;
-  }, [allWeeklySummaries]);
+  }, [allWeeklySummaries, placements]);
 
   const workplaceStudentCards = useMemo(() => {
     return placements.map((placement) => {
