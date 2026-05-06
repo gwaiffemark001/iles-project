@@ -85,19 +85,12 @@ class InternshipPlacement(models.Model):
 
     def clean(self):
         """Validate placement data to prevent overlapping internships"""
-        # Check for overlapping placements for the same student
-        if self.student and self.start_date and self.end_date:
-            overlapping_placements = InternshipPlacement.objects.filter(
-                student=self.student,
-                status='active',
-                start_date__lte=self.end_date,
-                end_date__gte=self.start_date
-            ).exclude(pk=self.pk)
-            
-            if overlapping_placements.exists():
+        # A student can only have one placement record.
+        if self.student:
+            existing_placements = InternshipPlacement.objects.filter(student=self.student).exclude(pk=self.pk)
+            if existing_placements.exists():
                 raise ValidationError({
-                    'start_date': 'Student cannot have overlapping active placements.',
-                    'end_date': 'Student cannot have overlapping active placements.'
+                    'student': 'A student can only have one placement.'
                 })
         
         # Validate date logic
@@ -105,6 +98,15 @@ class InternshipPlacement(models.Model):
             raise ValidationError({
                 'end_date': 'End date must be after start date.'
             })
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=['student'],
+                condition=models.Q(student__isnull=False),
+                name='unique_student_placement',
+            )
+        ]
 
     def save(self, *args, **kwargs):
         """Override save to include validation"""
@@ -178,11 +180,48 @@ class WeeklyLog(models.Model):
     def can_edit(self):
         """Check if log can be edited based on status"""
         return self.status in ['draft', 'submitted']
+
+    def calculate_deadline(self):
+        """Return the automatic deadline for this week based on placement dates."""
+        from datetime import timedelta
+
+        if not self.placement_id or not self.week_number:
+            return self.deadline
+
+        placement_start = self.placement.start_date
+        placement_end = self.placement.end_date
+        computed_deadline = placement_start + timedelta(days=(int(self.week_number) * 7) - 1)
+        if placement_end and computed_deadline > placement_end:
+            computed_deadline = placement_end
+        return computed_deadline
+
+    def refresh_deadline(self):
+        self.deadline = self.calculate_deadline()
+        return self.deadline
     
     def is_overdue(self):
         """Check if log submission is overdue"""
         from django.utils import timezone
         return self.deadline < timezone.now().date() and self.status != 'approved'
+
+    def clean(self):
+        super().clean()
+
+        if self.placement_id and self.week_number:
+            self.deadline = self.calculate_deadline()
+
+        if self.pk:
+            previous = WeeklyLog.objects.filter(pk=self.pk).first()
+            if previous and previous.status == 'approved':
+                raise ValidationError({'status': 'No editing logs after approval'})
+
+        if self.deadline and self.deadline < self.placement.start_date:
+            raise ValidationError({'deadline': 'Deadline cannot be before placement start date.'})
+
+    def save(self, *args, **kwargs):
+        self.refresh_deadline()
+        self.full_clean()
+        super().save(*args, **kwargs)
     
     class Meta:
         unique_together =[['placement', 'week_number']]
@@ -250,9 +289,13 @@ class Evaluation(models.Model):
 
     placement = models.ForeignKey(InternshipPlacement, on_delete=models.CASCADE, related_name='evaluations')
     evaluator = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='given_evaluations')
-    
-    # Overall computed score
-    weighted_score = models.DecimalField(max_digits=5, decimal_places=2, default=0, help_text="Computed weighted score")
+
+    # Link evaluation to a week (one evaluation per placement/evaluation_type/week)
+    week_number = models.PositiveIntegerField(default=1)
+
+    # Optional raw evaluator score (0-100 scale) and computed weighted score stored here
+    score = models.DecimalField(max_digits=6, decimal_places=2, null=True, blank=True, help_text="Evaluator raw score (0-100)")
+    weighted_score = models.DecimalField(max_digits=6, decimal_places=2, default=0, help_text="Computed weighted score")
     evaluation_type = models.CharField(max_length=20, choices=EVALUATION_TYPES, default='supervisor')
     evaluated_at = models.DateTimeField(auto_now_add=True)
     
@@ -268,6 +311,37 @@ class Evaluation(models.Model):
         except (AttributeError, Exception):
             items_qs = []
 
+        # Special-case: supervisor evaluations use fixed three-category weights if those items exist
+        try:
+            if self.evaluation_type == 'supervisor' and items_qs:
+                # Map expected criteria names to their weights (percent out of 100)
+                name_to_weight = {
+                    'Technical Skills': Decimal('0.4'),
+                    'Communication': Decimal('0.3'),
+                    'Professionalism': Decimal('0.3'),
+                }
+                found = {name: None for name in name_to_weight.keys()}
+                for item in items_qs:
+                    crit_name = (item.criteria.name or '').strip()
+                    if crit_name in found:
+                        # Normalize score to 0-100 if max_score provided
+                        try:
+                            max_s = Decimal(str(item.criteria.max_score)) if item.criteria.max_score else Decimal('100')
+                            score_val = (Decimal(str(item.score)) / max_s) * Decimal('100')
+                        except Exception:
+                            score_val = Decimal(str(item.score))
+                        found[crit_name] = score_val
+
+                # Only compute special weighted score if all three categories present
+                if all(found[name] is not None for name in name_to_weight):
+                    total_score = Decimal('0')
+                    for name, weight in name_to_weight.items():
+                        total_score += (found[name] * weight)
+                    return float(round(total_score, 2))
+        except Exception:
+            pass
+
+        # Generic per-criteria weighted percent fallback (uses criteria.weight_percent as percent total)
         total = Decimal('0')
         for item in items_qs:
             crit = item.criteria
@@ -289,7 +363,7 @@ class Evaluation(models.Model):
         self.save(update_fields=['weighted_score'])
 
     class Meta:
-        unique_together = [['placement', 'evaluation_type']]
+        unique_together = [['placement', 'evaluation_type', 'week_number']]
         ordering = ['-evaluated_at']
 
     def __str__(self):
@@ -306,6 +380,30 @@ class Evaluation(models.Model):
         Returns a dict with per-role scores and the combined total.
         """
         from django.db.models import Q
+
+        log = WeeklyLog.objects.filter(placement=placement, week_number=week_number).first()
+        if log is None:
+            deadline = WeeklyLog(placement=placement, week_number=week_number).calculate_deadline()
+            if deadline and timezone.now().date() > deadline:
+                return {
+                    'week_number': week_number,
+                    'supervisor_score': 0.0,
+                    'academic_score': 0.0,
+                    'combined_score': 0.0,
+                    'criteria_breakdown': [],
+                    'log_status': 'missing',
+                    'missing_log': True,
+                }
+
+            return {
+                'week_number': week_number,
+                'supervisor_score': None,
+                'academic_score': None,
+                'combined_score': 0.0,
+                'criteria_breakdown': [],
+                'log_status': 'pending',
+                'missing_log': False,
+            }
 
         sup_eval = Evaluation.objects.filter(
             placement=placement, evaluation_type='supervisor', week_number=week_number
@@ -431,6 +529,8 @@ class Evaluation(models.Model):
             'academic_score': float(acad_total) if acad_total is not None else None,
             'combined_score': float(round(total, 2)),
             'criteria_breakdown': crit_breakdown,
+            'log_status': log.status,
+            'missing_log': False,
         }
 
     @staticmethod
@@ -444,6 +544,16 @@ class Evaluation(models.Model):
             week_numbers.add(log.week_number)
         for ev in placement.evaluations.all():
             week_numbers.add(ev.week_number)
+
+        today = timezone.now().date()
+        if placement.start_date and placement.end_date:
+            total_days = max(1, (placement.end_date - placement.start_date).days + 1)
+            total_weeks = max(1, ((total_days - 1) // 7) + 1)
+            if placement.get_computed_status() == 'completed':
+                week_numbers.update(range(1, total_weeks + 1))
+            elif today >= placement.start_date:
+                overdue_weeks = min(total_weeks, max(0, (today - placement.start_date).days // 7))
+                week_numbers.update(range(1, overdue_weeks + 1))
 
         week_list = sorted(list(week_numbers))
         summaries = []
