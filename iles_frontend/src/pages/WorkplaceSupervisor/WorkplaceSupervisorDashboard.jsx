@@ -239,7 +239,6 @@ export default function WorkplaceSupervisorDashboard() {
            <button className={`workplace-nav-item ${activeTab === 'criteria' ? 'active' : ''}`} onClick={() => setActiveTab('criteria')}>Criteria</button>
         </div>
         <div className="workplace-sidebar-bottom">
-          <div className="workplace-sidebar-user">{user?.username}</div>
           <button className="workplace-nav-item logout" onClick={logout}>Logout</button>
         </div>
       </aside>
