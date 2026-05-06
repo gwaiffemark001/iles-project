@@ -129,9 +129,21 @@ export function ILES() {
         },
         { auth: false },
       )
-      setStatus('Account created. Sign in with your username and password.')
-      setActiveForm(FORM_LOGIN)
-      setLoginUsername(registerData.username)
+      const loginPayload = await api.post(
+        '/api/token/',
+        { username: registerData.username, password: registerData.password },
+        { auth: false },
+      )
+      const nextSession = {
+        access: loginPayload.access || '',
+        refresh: loginPayload.refresh || '',
+        user: session.user || '',
+      }
+      setSession(nextSession)
+      localStorage.setItem('access_token', nextSession.access)
+      localStorage.setItem('refresh_token', nextSession.refresh)
+      await loadProfile(nextSession.access)
+      setStatus('Account created successfully.')
       setRegisterData(emptyRegister())
     } catch (err) {
       setError(err.message || 'Account creation failed')
