@@ -330,6 +330,21 @@ class WeeklyLogSerializer(serializers.ModelSerializer):
         week_number = attrs.get('week_number') if attrs.get('week_number') is not None else getattr(self.instance, 'week_number', None)
         request = self.context.get('request')
 
+        # Auto-assign week_number on creation when not provided by client
+        if request and request.method == 'POST' and week_number is None:
+            if not placement:
+                raise serializers.ValidationError({'placement_id': ['Placement is required to determine current week.']})
+            start_date = placement.start_date
+            if not start_date:
+                raise serializers.ValidationError({'placement_id': ['Placement must have a start date.']})
+            today = timezone.now().date()
+            end_date = placement.end_date
+            effective = end_date if end_date and end_date < today else today
+            days_elapsed = max(0, (effective - start_date).days)
+            current_week = max(1, (days_elapsed // 7) + 1)
+            attrs['week_number'] = current_week
+            week_number = current_week
+
         if not placement:
             raise serializers.ValidationError({'placement_id': ['Placement is required.']})
 
