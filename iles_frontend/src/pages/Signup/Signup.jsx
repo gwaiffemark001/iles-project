@@ -1,6 +1,7 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { useState } from 'react';
 import { useAuth } from '../../contexts/useAuth';
+import { roleToHomePath } from '../../routes/roleRedirect';
 import '../Login/Login.css';
 
 function Signup() {
@@ -13,7 +14,7 @@ function Signup() {
     const [registrationNumber, setRegistrationNumber] = useState('');
 
     const navigate = useNavigate();
-    const { register } = useAuth();
+    const { register, login } = useAuth();
     const handleSignup = async (e) => {
         e.preventDefault();
         setErrorMessage('');
@@ -41,8 +42,15 @@ function Signup() {
                 return;
             }
 
-            setSuccessMessage('Account created successfully. Please log in.');
-            navigate('/');
+            const loginResult = await login({ usernameOrEmail: username, password });
+
+            if (!loginResult.success) {
+                setErrorMessage(loginResult.error || 'Account created, but sign-in failed.');
+                return;
+            }
+
+            setSuccessMessage('Account created successfully. Redirecting to your dashboard.');
+            navigate(roleToHomePath(loginResult.user?.role), { replace: true });
         } catch {
             setErrorMessage('Unable to reach the server. Please try again later.');
         }

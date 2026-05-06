@@ -16,7 +16,7 @@ function Signup() {
     const [submitting, setSubmitting] = useState(false)
 
     const navigate = useNavigate();
-    const { register } = useAuth()
+    const { register, login } = useAuth()
     // student email domains are put here
     const universityDomains = ['@students.mak.ac.ug'];
 
@@ -47,8 +47,21 @@ function Signup() {
                     : {}),
             })
 
+            if (!profile.success) {
+                setErrorMessage(profile.error || 'Unable to create your account.')
+                return
+            }
+
+            const username = email.includes('@') ? email.split('@')[0] : email
+            const loginResult = await login({ usernameOrEmail: username, password })
+
+            if (!loginResult.success) {
+                setErrorMessage(loginResult.error || 'Account created, but sign-in failed.')
+                return
+            }
+
             setSuccessMessage('Account created successfully.')
-            navigate(roleToHomePath(profile?.role), { replace: true })
+            navigate(roleToHomePath(loginResult.user?.role), { replace: true })
         } catch (error) {
             setErrorMessage(error?.message || 'Unable to reach the server. Please try again later.');
         } finally {
