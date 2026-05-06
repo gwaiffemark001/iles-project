@@ -8,7 +8,7 @@ const menuItems = {
         {label: "Evaluate Logs", path: "/workplace-supervisor/evaluate"},
         {label: "Evaluation history", path: "/workplace-supervisor/history"},
     ],
-    "Academic Supervisor": [
+    "Academic": [
         {label: "Dashboard", path: "/academic-supervisor/dashboard"},
         {label: "Assigned Students", path: "/academic-supervisor/assigned-students"},
         {label: "View evaluations", path: "/academic-supervisor/evaluations"},
