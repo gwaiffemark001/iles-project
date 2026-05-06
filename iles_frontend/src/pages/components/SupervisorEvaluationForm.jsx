@@ -8,6 +8,7 @@ export default function SupervisorEvaluationForm({
   evaluationType,
   existingEvaluation = null,
   studentName = '',
+  initialWeekNumber = 1,
   onSaved = () => {},
   onCancel = () => {},
 }) {
@@ -53,10 +54,8 @@ export default function SupervisorEvaluationForm({
   useEffect(() => {
     let isMounted = true;
     if (isMounted && criteria.length > 0) {
-      // Require explicit user selection each time; do not preselect criteria.
-      setSelectedCriteriaId(null);
-
       if (existingEvaluation && Array.isArray(existingEvaluation.items)) {
+        setSelectedCriteriaId(existingEvaluation.items[0]?.criteria?.id || existingEvaluation.items[0]?.criteria_id || null);
         setItems(
           criteria.map((c) => {
             const found = existingEvaluation.items.find(
@@ -68,8 +67,9 @@ export default function SupervisorEvaluationForm({
             };
           })
         );
-} else if (criteria.length > 0 && !existingEvaluation) {
+      } else if (criteria.length > 0 && !existingEvaluation) {
         setItems(criteria.map((c) => ({ criteria_id: c.id, score: '' })));
+        setSelectedCriteriaId(null);
       }
     }
     return () => {
@@ -78,9 +78,14 @@ export default function SupervisorEvaluationForm({
   }, [criteria, existingEvaluation]);
 
   const setItemScore = (criteriaId, value) => {
+    // Enforce max score of 100
+    let numericValue = value === '' ? '' : Number(value) || 0;
+    if (numericValue > 100) {
+      numericValue = 100;
+    }
     setItems((prev) =>
       prev.map((it) =>
-        it.criteria_id === criteriaId ? { ...it, score: Number(value) || 0 } : it
+        it.criteria_id === criteriaId ? { ...it, score: numericValue } : it
       )
     );
   };
@@ -91,26 +96,19 @@ export default function SupervisorEvaluationForm({
   };
 
   const calculateTotalScore = () => {
-    if (criteria.length === 0 || items.length === 0) return 0;
+    if (criteria.length === 0 || items.length === 0 || !selectedCriteriaId) return 0;
 
-    const selectedItems = items.filter((item) => item.criteria_id === selectedCriteriaId);
-    if (selectedItems.length === 0) return 0;
+    const selectedItem = items.find((item) => item.criteria_id === selectedCriteriaId);
+    const crit = criteria.find((c) => c.id === selectedCriteriaId);
+    if (!selectedItem || !crit) return 0;
 
-    let weightedTotal = 0;
-    let selectedWeight = 0;
-    selectedItems.forEach((item) => {
-      const crit = criteria.find((c) => c.id === item.criteria_id);
-      if (crit && crit.max_score > 0) {
-        const score = item.score === '' ? 0 : Number(item.score);
-        const contribution = (score / Number(crit.max_score)) * Number(crit.weight_percent);
-        weightedTotal += contribution;
-        selectedWeight += 1;
-      }
-    });
+    const score = selectedItem.score === '' ? 0 : Number(selectedItem.score);
+    const maxScore = Number(crit.max_score || 100);
+    const weightPercent = Number(crit.weight_percent || 0);
+    if (maxScore <= 0) return 0;
 
-    if (selectedWeight <= 0) return 0;
-    const normalizedTotal = (weightedTotal / selectedWeight) * 100;
-    return Math.round(normalizedTotal * 100) / 100;
+    const weightedTotal = (score / maxScore) * weightPercent;
+    return Math.round(weightedTotal * 100) / 100;
   };
 
   const handleSave = async () => {
@@ -123,16 +121,15 @@ export default function SupervisorEvaluationForm({
       return;
     }
 
-    const selectedItems = items.filter((item) => item.criteria_id === selectedCriteriaId);
-    const hasInvalidScore = selectedItems.some((item) => {
-      const criterion = criteria.find((c) => c.id === item.criteria_id);
-      const numericScore = Number(item.score);
-      const maxScore = Number(criterion?.max_score || 0);
-      return Number.isNaN(numericScore) || numericScore < 0 || numericScore > maxScore;
-    });
+    const selectedItem = items.find((item) => item.criteria_id === selectedCriteriaId);
+    const selectedCriterion = criteria.find((c) => c.id === selectedCriteriaId);
+    const numericScore = Number(selectedItem?.score);
+    const maxScore = Number(selectedCriterion?.max_score || 100);
+    const hasInvalidScore =
+      !selectedItem || Number.isNaN(numericScore) || numericScore < 0 || numericScore > maxScore;
 
     if (hasInvalidScore) {
-      setError('Please provide valid scores for all selected criteria.');
+      setError(`Please provide a valid score for ${selectedCriterion?.name || 'the selected'} criteria.`);
       setSaving(false);
       return;
     }
@@ -141,7 +138,8 @@ export default function SupervisorEvaluationForm({
       placement_id: placementId,
       evaluator_id: evaluatorId,
       evaluation_type: determinedEvaluationType,
-      items: items.map((i) => ({ criteria_id: i.criteria_id, score: Number(i.score) })),
+      week_number: existingEvaluation?.week_number || initialWeekNumber,
+      items: [{ criteria_id: selectedItem.criteria_id, score: numericScore }],
     };
 
     try {
@@ -185,7 +183,7 @@ export default function SupervisorEvaluationForm({
     >
       <div style={{ marginBottom: '16px' }}>
         <h3 style={{ marginBottom: '4px', color: '#0f172a' }}>
-          Evaluate: {studentName}
+          {existingEvaluation ? `Edit Week ${existingEvaluation.week_number}` : `Create Evaluation for Week ${initialWeekNumber}`}: {studentName}
         </h3>
         <p style={{ margin: '0 0 12px 0', fontSize: '12px', color: '#64748b', textTransform: 'capitalize' }}>
           Evaluation Type: <strong>{determinedEvaluationType === 'academic' ? 'Academic Supervisor' : 'Workplace Supervisor'}</strong>
@@ -249,10 +247,13 @@ export default function SupervisorEvaluationForm({
       </div>
 
       <div style={{ display: 'grid', gap: '12px', marginBottom: '16px' }}>
-{criteria.map((c) => {
+        {selectedCriteriaId ? (() => {
+          const c = criteria.find((criterion) => criterion.id === selectedCriteriaId);
+          if (!c) return null;
+
           const itemScore = items.find((it) => it.criteria_id === c.id)?.score || '';
-          const maxScore = Number(c.max_score);
-          const percent = maxScore > 0 && itemScore !== '' ? ((Number(itemScore) / maxScore) * 100).toFixed(0) : 0;
+          const maxScore = 100;
+          const weightPercent = Number(c.weight_percent || 0);
 
           return (
             <div
@@ -266,7 +267,10 @@ export default function SupervisorEvaluationForm({
             >
               <div style={{ marginBottom: '8px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
-                  <div style={{ fontWeight: 600, color: '#0f172a' }}>{c.name}</div>
+                  <div style={{ fontWeight: 600, color: '#0f172a' }}>{c.name} criteria</div>
+                </div>
+                <div style={{ marginTop: '4px', fontSize: '12px', color: '#64748b' }}>
+                  Weight from admin criteria: <strong>{weightPercent.toFixed(2)}%</strong>
                 </div>
                 {c.description && (
                   <p
@@ -286,9 +290,15 @@ export default function SupervisorEvaluationForm({
                   type="number"
                   step="0.1"
                   min="0"
-                  max={maxScore}
+                  max="100"
                   value={itemScore}
-                  onChange={(e) => setItemScore(c.id, e.target.value)}
+                  onChange={(e) => {
+                    let v = e.target.value;
+                    if (v !== '' && Number(v) > 100) {
+                      v = '100';
+                    }
+                    setItemScore(c.id, v);
+                  }}
                   disabled={saving}
                   style={{
                     flex: 1,
@@ -299,24 +309,26 @@ export default function SupervisorEvaluationForm({
                     fontSize: '14px',
                   }}
                 />
-                <div style={{ fontSize: '12px', color: '#64748b', minWidth: '80px' }}>
-                  {itemScore === '' ? '-' : itemScore} / {maxScore}
-                </div>
+                <div style={{ fontSize: '12px', color: '#64748b', minWidth: '80px' }}>{itemScore === '' ? '-' : itemScore} / {maxScore}</div>
                 <div
                   style={{
                     fontSize: '12px',
                     fontWeight: 'bold',
-                    color: percent >= 70 ? '#27ae60' : percent >= 50 ? '#f39c12' : '#e74c3c',
+                    color: totalScore >= 70 ? '#27ae60' : totalScore >= 50 ? '#f39c12' : '#e74c3c',
                     minWidth: '50px',
                     textAlign: 'right',
                   }}
                 >
-                  {percent}%
+                  {totalScore.toFixed(2)}
                 </div>
               </div>
             </div>
           );
-        })}
+        })() : (
+          <div style={{ padding: '12px', color: '#64748b', border: '1px dashed #cbd5e1', borderRadius: '6px' }}>
+            Select a criterion above to enter its score.
+          </div>
+        )}
       </div>
 
       <div
