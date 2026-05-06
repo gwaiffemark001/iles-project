@@ -1,3 +1,4 @@
+from django.utils import timezone
 from rest_framework import serializers
 from .models import (
     CustomUser,
@@ -302,6 +303,7 @@ class WeeklyLogSerializer(serializers.ModelSerializer):
         required=False,
     )
     student_name = serializers.SerializerMethodField(read_only=True)
+    deadline = serializers.DateField(read_only=True)
 
     class Meta:
         model = WeeklyLog
@@ -324,6 +326,36 @@ class WeeklyLogSerializer(serializers.ModelSerializer):
 
     def get_student_name(self, obj):
         return CustomUserSerializer(obj.placement.student).data["full_name"]
+
+    def validate(self, attrs):
+        placement = attrs.get('placement') or getattr(self.instance, 'placement', None)
+        week_number = attrs.get('week_number') if attrs.get('week_number') is not None else getattr(self.instance, 'week_number', None)
+        request = self.context.get('request')
+
+        if not placement:
+            raise serializers.ValidationError({'placement_id': ['Placement is required.']})
+
+        if request and placement.student_id != request.user.id and request.user.role != 'admin':
+            raise serializers.ValidationError({'placement_id': ['You can only create or edit logs for your own placement.']})
+
+        if week_number is None:
+            raise serializers.ValidationError({'week_number': ['Week number is required.']})
+
+        if self.instance and self.instance.status == 'approved':
+            raise serializers.ValidationError({'status': ['No editing logs after approval']})
+
+        if placement.get_computed_status() == 'completed' and attrs.get('status', getattr(self.instance, 'status', None)) == 'submitted':
+            raise serializers.ValidationError({'status': ['Cannot submit a weekly log for a completed placement.']})
+
+        if placement and week_number is not None:
+            deadline = WeeklyLog(placement=placement, week_number=week_number).calculate_deadline()
+            if request and request.method == 'POST' and deadline and timezone.now().date() > deadline:
+                raise serializers.ValidationError({'deadline': ['Cannot submit after deadline']})
+
+        if self.instance is None and WeeklyLog.objects.filter(placement=placement, week_number=week_number).exists():
+            raise serializers.ValidationError({'week_number': ['A weekly log for this placement and week already exists.']})
+
+        return attrs
 
 
 class EvaluationCriteriaSerializer(serializers.ModelSerializer):
@@ -385,6 +417,8 @@ class EvaluationSerializer(serializers.ModelSerializer):
     )
     evaluator_name = serializers.SerializerMethodField(read_only=True)
     items = serializers.SerializerMethodField(read_only=True)
+    week_number = serializers.IntegerField(required=True)
+    score = serializers.DecimalField(max_digits=6, decimal_places=2, required=False, allow_null=True)
 
     class Meta:
         model = Evaluation
@@ -396,15 +430,15 @@ class EvaluationSerializer(serializers.ModelSerializer):
             "evaluator_id",
             "evaluator_name",
             "items",
+            "week_number",
+            "score",
             "weighted_score",
             "evaluation_type",
             "evaluated_at",
-            "weighted_score",
         ]
         extra_kwargs = {
             "evaluation_type": {"default": "supervisor"},
             "placement": {"required": True},
-            "score": {"read_only": True},
             "weighted_score": {"read_only": True},
         }
 
@@ -418,11 +452,23 @@ class EvaluationSerializer(serializers.ModelSerializer):
     def validate(self, attrs):
         placement = attrs.get("placement") or getattr(self.instance, "placement", None)
         evaluation_type = attrs.get("evaluation_type") or getattr(self.instance, "evaluation_type", None)
+        week_number = attrs.get('week_number') if attrs.get('week_number') is not None else getattr(self.instance, 'week_number', None)
+        request = self.context.get('request')
 
-        if placement and evaluation_type:
+        if request and request.user.role in ['workplace_supervisor', 'academic_supervisor']:
+            expected_type = 'supervisor' if request.user.role == 'workplace_supervisor' else 'academic'
+            attrs['evaluation_type'] = expected_type
+            evaluation_type = expected_type
+
+        if placement and evaluation_type and week_number:
+            # Ensure weekly log exists for this placement/week
+            if not WeeklyLog.objects.filter(placement=placement, week_number=week_number).exists():
+                raise serializers.ValidationError({'week_number': ['Weekly log for this placement and week does not exist.']})
+
             duplicate_qs = Evaluation.objects.filter(
                 placement=placement,
                 evaluation_type=evaluation_type,
+                week_number=week_number,
             )
             if self.instance:
                 duplicate_qs = duplicate_qs.exclude(pk=self.instance.pk)
@@ -444,6 +490,10 @@ class EvaluationSerializer(serializers.ModelSerializer):
         items_data = None
         if request is not None:
             items_data = request.data.get('items')
+
+        # Default evaluator to request.user when not provided
+        if 'evaluator' not in validated_data and request is not None:
+            validated_data['evaluator'] = request.user
 
         evaluation = Evaluation.objects.create(**validated_data)
 
