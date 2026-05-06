@@ -156,16 +156,14 @@ class InternshipPlacementSerializer(serializers.ModelSerializer):
             return None
 
     def get_average_weight(self, obj):
-        """Return the average criterion weight percent across all criteria.
-        This provides a canonical average weight (usually 100 / num_criteria).
-        """
+        """Return the average grade weight across all weeks for this placement."""
         try:
-            criteria = EvaluationCriteria.objects.all()
-            if not criteria.exists():
+            summary = Evaluation.weekly_summary_for_placement(obj)
+            weeks = summary.get('weeks') or []
+            weights = [Decimal(str(week.get('grade_weight', 0) or 0)) for week in weeks if week.get('grade_weight') is not None]
+            if not weights:
                 return None
-            total = sum([c.weight_percent for c in criteria])
-            avg = float(round((total / criteria.count()), 2))
-            return avg
+            return float(round((sum(weights) / len(weights)), 2))
         except Exception:
             return None
 
@@ -348,7 +346,30 @@ class WeeklyLogSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError({'status': ['Cannot submit a weekly log for a completed placement.']})
 
         if placement and week_number is not None:
+            # compute automatic deadline and current week index based on placement start
             deadline = WeeklyLog(placement=placement, week_number=week_number).calculate_deadline()
+            # current effective date
+            today = timezone.now().date()
+            start_date = placement.start_date
+            end_date = placement.end_date
+            if not start_date:
+                raise serializers.ValidationError({'placement_id': ['Placement must have a start date.']})
+            effective = end_date if end_date and end_date < today else today
+            # weeks elapsed since start: floor(days_elapsed/7)
+            days_elapsed = max(0, (effective - start_date).days)
+            current_week = max(1, (days_elapsed // 7) + 1)
+
+            # prevent creating logs for future weeks
+            if week_number > current_week:
+                raise serializers.ValidationError({'week_number': ['Cannot create a log for a future week.']})
+
+            # prevent submitting logs for previous weeks once the current week advanced
+            # allow saving drafts for past weeks but disallow submission
+            if request and request.method == 'POST' and attrs.get('status') == 'submitted':
+                if week_number < current_week:
+                    raise serializers.ValidationError({'week_number': ['Cannot submit a log for a previous week; missed weeks are recorded automatically as zero.']})
+
+            # existing deadline check
             if request and request.method == 'POST' and deadline and timezone.now().date() > deadline:
                 raise serializers.ValidationError({'deadline': ['Cannot submit after deadline']})
 
