@@ -34,12 +34,12 @@ export default function EvaluationEditor({
             const found = existingEvaluation.items.find((it) => it.criteria?.id === c.id || it.criteria_id === c.id);
             return {
               criteria_id: c.id,
-              score: found ? found.score : 0,
+              score: found ? Number(found.score) : '',
             };
           })
         );
       } else if (criteria.length > 0 && !existingEvaluation) {
-        setItems(criteria.map((c) => ({ criteria_id: c.id, score: 0 })));
+        setItems(criteria.map((c) => ({ criteria_id: c.id, score: '' })));
       }
     };
 
@@ -53,6 +53,14 @@ export default function EvaluationEditor({
   const handleSave = async () => {
     setSaving(true);
     setError(null);
+    
+    // Validate that all criteria have scores
+    if (items.some((it) => it.score === '' || it.score === null)) {
+      setError('Please provide scores for all criteria');
+      setSaving(false);
+      return;
+    }
+
     const payload = {
       placement_id: placementId,
       evaluator_id: evaluatorId,
@@ -101,7 +109,7 @@ export default function EvaluationEditor({
                 step="0.1"
                 min="0"
                 max={c.max_score}
-                value={(items.find((it) => it.criteria_id === c.id) || {}).score ?? 0}
+                value={items.find((it) => it.criteria_id === c.id)?.score || ''}
                 onChange={(e) => setItemScore(c.id, e.target.value)}
                 style={{ width: 90, padding: '6px 8px' }}
               />
