@@ -76,9 +76,28 @@ class WeeklyLogListView(APIView):
         serializer = WeeklyLogSerializer(data=request.data)
         if serializer.is_valid():
             placement = serializer.validated_data.get('placement')
+            week_number = serializer.validated_data.get('week_number')
+            if placement and placement.student != request.user:
+                return Response(
+                    {'error': 'You can only create logs for your own placement'},
+                    status=status.HTTP_403_FORBIDDEN,
+                )
             if placement and placement.get_computed_status() == 'completed':
                 return Response(
                     {'error': 'Cannot create a weekly log for a completed placement.'},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+            if WeeklyLog.objects.filter(placement=placement, week_number=week_number).exists():
+                return Response(
+                    {'error': 'A weekly log for this placement and week already exists.'},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+            deadline = WeeklyLog(placement=placement, week_number=week_number).calculate_deadline()
+            if serializer.validated_data.get('status') == 'submitted' and deadline and timezone.now().date() > deadline:
+                return Response(
+                    {'error': 'Cannot submit after deadline'},
                     status=status.HTTP_400_BAD_REQUEST,
                 )
 
@@ -141,7 +160,7 @@ class WeeklyLogDetailView(APIView):
         serializer = WeeklyLogSerializer(log, data=request.data)
                                 
         if serializer.is_valid():
-            placement = serializer.validated_data['placement']
+            placement = serializer.validated_data.get('placement', log.placement)
             if placement.student != request.user:
                 return Response(
                     {'error': 'You can only update logs for your own placement'},
@@ -149,6 +168,9 @@ class WeeklyLogDetailView(APIView):
                 )
 
             status_value = serializer.validated_data.get('status', log.status)
+            deadline = log.calculate_deadline()
+            if status_value == 'submitted' and deadline and timezone.now().date() > deadline:
+                return Response({'error': 'Cannot submit after deadline'}, status=status.HTTP_400_BAD_REQUEST)
             if status_value == 'submitted' and placement.get_computed_status() == 'completed':
                 return Response(
                     {'error': 'Cannot submit a weekly log for a completed placement.'},
@@ -498,6 +520,24 @@ class EvaluationListView(APIView):
             data['evaluation_type'] = 'academic'
         elif request.user.role == 'workplace_supervisor':
             data['evaluation_type'] = 'supervisor'
+
+        # Enforce that evaluations are attached to an existing weekly log for that placement/week.
+        placement_id = data.get('placement') or data.get('placement_id')
+        week_number = data.get('week_number')
+        if placement_id and week_number:
+            if not WeeklyLog.objects.filter(placement_id=placement_id, week_number=week_number).exists():
+                return Response(
+                    {'error': 'No weekly log exists for this placement and week.'},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+        if request.user.role == 'workplace_supervisor' and data.get('score') is not None:
+            try:
+                score_value = float(data.get('score'))
+            except (TypeError, ValueError):
+                return Response({'error': 'score must be a number'}, status=status.HTTP_400_BAD_REQUEST)
+            if score_value < 0 or score_value > 100:
+                return Response({'error': 'score must be between 0 and 100'}, status=status.HTTP_400_BAD_REQUEST)
         
         serializer = EvaluationSerializer(data=data, context={'request': request})
         if serializer.is_valid():
@@ -759,6 +799,23 @@ class EvaluationDetailView(APIView):
             data['evaluation_type'] = 'academic'
         elif request.user.role == 'workplace_supervisor':
             data['evaluation_type'] = 'supervisor'
+
+        if data.get('score') is not None:
+            try:
+                score_value = float(data.get('score'))
+            except (TypeError, ValueError):
+                return Response({'error': 'score must be a number'}, status=status.HTTP_400_BAD_REQUEST)
+            if score_value < 0 or score_value > 100:
+                return Response({'error': 'score must be between 0 and 100'}, status=status.HTTP_400_BAD_REQUEST)
+
+        placement_id = data.get('placement') or data.get('placement_id') or getattr(evaluation.placement, 'id', None)
+        week_number = data.get('week_number') or getattr(evaluation, 'week_number', None)
+        if placement_id and week_number:
+            if not WeeklyLog.objects.filter(placement_id=placement_id, week_number=week_number).exists():
+                return Response(
+                    {'error': 'No weekly log exists for this placement and week.'},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
         serializer = EvaluationSerializer(evaluation, data=data, context={'request': request})
         if serializer.is_valid():
             serializer.save()
@@ -870,9 +927,7 @@ class WeeklyLogSubmitView(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        from django.utils import timezone
-        import datetime
-        if log.deadline and datetime.date.today() > log.deadline:
+        if log.calculate_deadline() and timezone.now().date() > log.calculate_deadline():
             return Response(
                 {'error': 'Cannot submit after deadline'},
                 status=status.HTTP_400_BAD_REQUEST
