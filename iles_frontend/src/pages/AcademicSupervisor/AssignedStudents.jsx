@@ -26,8 +26,8 @@ const filteredStudents = students.filter((s) => {
     return matchesSearch && matchFilter;
 });
 
-  return (
-    <Layout role="Academic Supervisor" userName="Dr. Susan">
+    return (
+        <Layout role="Academic" userName="Dr. Susan">
 
         {/*Top Bar */}
         <div className="topbar">
