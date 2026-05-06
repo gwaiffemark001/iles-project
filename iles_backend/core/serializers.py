@@ -300,6 +300,22 @@ class EvaluationItemSerializer(serializers.ModelSerializer):
             'score',
         ]
 
+    def validate(self, attrs):
+        criteria = attrs.get('criteria')
+        score = attrs.get('score')
+        
+        if criteria and score is not None:
+            if score > criteria.max_score:
+                raise serializers.ValidationError({
+                    'score': f'Score cannot exceed maximum score of {criteria.max_score}'
+                })
+            if score < 0:
+                raise serializers.ValidationError({
+                    'score': 'Score cannot be negative'
+                })
+        
+        return attrs
+
 
 class EvaluationSerializer(serializers.ModelSerializer):
     placement = InternshipPlacementSerializer(read_only=True)
@@ -329,8 +345,7 @@ class EvaluationSerializer(serializers.ModelSerializer):
             "evaluator_id",
             "evaluator_name",
             "items",
-            "week_number",
-            "score",
+            "weighted_score",
             "evaluation_type",
             "evaluated_at",
         ]
@@ -345,13 +360,11 @@ class EvaluationSerializer(serializers.ModelSerializer):
     def validate(self, attrs):
         placement = attrs.get("placement") or getattr(self.instance, "placement", None)
         evaluation_type = attrs.get("evaluation_type") or getattr(self.instance, "evaluation_type", None)
-        week_number = attrs.get("week_number") or getattr(self.instance, "week_number", None)
 
-        if placement and evaluation_type and week_number:
+        if placement and evaluation_type:
             duplicate_qs = Evaluation.objects.filter(
                 placement=placement,
                 evaluation_type=evaluation_type,
-                week_number=week_number,
             )
             if self.instance:
                 duplicate_qs = duplicate_qs.exclude(pk=self.instance.pk)
@@ -359,8 +372,8 @@ class EvaluationSerializer(serializers.ModelSerializer):
             if duplicate_qs.exists():
                 raise serializers.ValidationError(
                     {
-                        "week_number": [
-                            "Only one evaluation can be created for this student, week, and supervisor type."
+                        "evaluation_type": [
+                            "Only one evaluation can be created for this student and supervisor type."
                         ]
                     }
                 )
