@@ -321,10 +321,13 @@ class InternshipPlacementDetailView(APIView):
         except InternshipPlacement.DoesNotExist:
             return Response({'error': 'Placement not found'}, status=status.HTTP_404_NOT_FOUND)
         previous_status = placement.status
+        requested_status = request.data.get('status', placement.status)
+        if requested_status != placement.status:
+            placement.status = requested_status
         serializer = InternshipPlacementSerializer(placement, data=request.data)
         if serializer.is_valid():
             updated_placement = serializer.save()
-            if previous_status != updated_placement.status:
+            if previous_status != requested_status:
                 notify_placement_status_updated(updated_placement, previous_status, actor=request.user)
             return Response(serializer.data)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
