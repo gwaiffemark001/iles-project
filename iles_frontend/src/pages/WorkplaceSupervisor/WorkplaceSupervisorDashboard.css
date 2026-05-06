@@ -95,13 +95,6 @@
   background: rgba(240, 149, 149, 0.1);
 }
 
-.workplace-sidebar-user {
-  color: rgba(255, 255, 255, 0.6);
-  font-size: 12px;
-  padding: 8px 12px;
-  margin-bottom: 4px;
-}
-
 .workplace-main {
   flex: 1;
   padding: 28px;
@@ -451,6 +444,8 @@
   gap: 12px;
   margin-bottom: 16px;
 }
+
+.workplace-intern-info h3 {
   font-size: 15px;
   font-weight: 600;
   color: #0A1D37;
