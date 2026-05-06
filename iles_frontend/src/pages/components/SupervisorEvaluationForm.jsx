@@ -52,12 +52,12 @@ export default function SupervisorEvaluationForm({
             );
             return {
               criteria_id: c.id,
-              score: found ? Number(found.score) : 0,
+              score: found ? Number(found.score) : '',
             };
           })
         );
       } else if (criteria.length > 0 && !existingEvaluation) {
-        setItems(criteria.map((c) => ({ criteria_id: c.id, score: 0 })));
+        setItems(criteria.map((c) => ({ criteria_id: c.id, score: '' })));
       }
     };
 
@@ -87,7 +87,8 @@ export default function SupervisorEvaluationForm({
     items.forEach((item) => {
       const crit = criteria.find((c) => c.id === item.criteria_id);
       if (crit && crit.max_score > 0) {
-        const contribution = (Number(item.score) / Number(crit.max_score)) * Number(crit.weight_percent);
+        const score = item.score === '' ? 0 : Number(item.score);
+        const contribution = (score / Number(crit.max_score)) * Number(crit.weight_percent);
         total += contribution;
       }
     });
@@ -99,7 +100,7 @@ export default function SupervisorEvaluationForm({
     setError(null);
 
     // Validate that all criteria have scores
-    if (items.some((it) => it.score === 0 || it.score === '' || it.score === null)) {
+    if (items.some((it) => it.score === '' || it.score === null)) {
       setError('Please provide scores for all criteria');
       setSaving(false);
       return;
@@ -110,20 +111,13 @@ export default function SupervisorEvaluationForm({
       placement_id: placementId,
       evaluator_id: evaluatorId,
       evaluation_type: evaluationType,
-      week_number: Number(weekNumber || 1),
-      score: totalScore,
       items: items.map((i) => ({ criteria_id: i.criteria_id, score: Number(i.score) })),
     };
 
     try {
       let res;
-      // Check if we're updating an existing evaluation for the same week
-      // If week_number changed, create new instead of updating
-      const shouldUpdate = existingEvaluation 
-        && existingEvaluation.id 
-        && Number(existingEvaluation.week_number) === Number(weekNumber);
-      
-      if (shouldUpdate) {
+      // Update existing evaluation if it exists, otherwise create new
+      if (existingEvaluation && existingEvaluation.id) {
         res = await evaluationsAPI.updateEvaluation(existingEvaluation.id, payload);
       } else {
         res = await evaluationsAPI.createEvaluation(payload);
@@ -166,19 +160,6 @@ export default function SupervisorEvaluationForm({
         <p style={{ margin: 0, fontSize: '12px', color: '#64748b', textTransform: 'capitalize' }}>
           Evaluation Type: {evaluationType}
         </p>
-        <div style={{ marginTop: 8 }}>
-          <label style={{ fontSize: 12, color: '#475569' }}>
-            Week Number
-            <input
-              type="number"
-              min="1"
-              value={weekNumber}
-              onChange={(e) => setWeekNumber(Number(e.target.value))}
-              disabled={saving}
-              style={{ marginLeft: 8, padding: '6px 8px', borderRadius: 6, border: '1px solid #cbd5e1' }}
-            />
-          </label>
-        </div>
       </div>
 
       {error && (
@@ -197,9 +178,9 @@ export default function SupervisorEvaluationForm({
 
       <div style={{ display: 'grid', gap: '12px', marginBottom: '16px' }}>
         {criteria.map((c) => {
-          const itemScore = items.find((it) => it.criteria_id === c.id)?.score || 0;
+          const itemScore = items.find((it) => it.criteria_id === c.id)?.score || '';
           const maxScore = Number(c.max_score);
-          const percent = maxScore > 0 ? ((itemScore / maxScore) * 100).toFixed(0) : 0;
+          const percent = maxScore > 0 && itemScore !== '' ? ((Number(itemScore) / maxScore) * 100).toFixed(0) : 0;
 
           return (
             <div
@@ -250,7 +231,7 @@ export default function SupervisorEvaluationForm({
                   }}
                 />
                 <div style={{ fontSize: '12px', color: '#64748b', minWidth: '80px' }}>
-                  {itemScore} / {maxScore}
+                  {itemScore === '' ? '-' : itemScore} / {maxScore}
                 </div>
                 <div
                   style={{
