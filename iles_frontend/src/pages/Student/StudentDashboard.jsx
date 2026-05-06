@@ -11,7 +11,6 @@ const createInitialLogForm = (defaultPlacementId = '') => ({
   activities: '',
   challenges: '',
   learning: '',
-  deadline: '',
 });
 
 const getPlacementId = (log) => log.placement?.id ?? log.placement_id ?? '';
@@ -145,19 +144,6 @@ const StudentDashboard = () => {
       return;
     }
 
-    if (!formData.deadline) {
-      setFormError('Choose a deadline for this weekly log.');
-      return;
-    }
-
-    // Enhanced validation for CSC 1202 requirements
-    const today = new Date();
-    const deadlineDate = new Date(formData.deadline);
-    if (deadlineDate < today && nextStatus === 'submitted') {
-      setFormError('Cannot submit log with past deadline. Choose a future date.');
-      return;
-    }
-
     setSaving(true);
     setFormError('');
     setFormSuccess('');
@@ -168,7 +154,6 @@ const StudentDashboard = () => {
       activities: formData.activities.trim(),
       challenges: formData.challenges.trim(),
       learning: formData.learning.trim(),
-      deadline: formData.deadline,
       status: nextStatus,
     };
 
@@ -220,7 +205,6 @@ const StudentDashboard = () => {
       activities: log.activities ?? '',
       challenges: log.challenges ?? '',
       learning: log.learning ?? '',
-      deadline: log.deadline ?? '',
     });
   };
 
@@ -352,16 +336,7 @@ const StudentDashboard = () => {
                         />
                       </label>
 
-                      <label className="form-field">
-                        <span>Deadline</span>
-                        <input
-                          type="date"
-                          name="deadline"
-                          value={formData.deadline}
-                          onChange={handleFormChange}
-                          disabled={saving}
-                        />
-                      </label>
+
                     </div>
 
                     <label className="form-field">
@@ -496,38 +471,88 @@ const StudentDashboard = () => {
           {activeTab === 'evaluations' && (
             <div className="evaluations-section">
               <h2>My Evaluations</h2>
-              <div className="evaluations-list" style={{ marginBottom: '24px' }}>
-                {weeklyEvaluationSummaries.length ? (
-                  weeklyEvaluationSummaries.map((summary) => (
-                    <div key={summary.key} className="evaluation-card">
-                      <h3>Week {summary.week_number} Summary</h3>
-                      <p>Placement: {summary.placementName}</p>
-                      <p>Workplace Supervisor Score: {summary.log_status === 'missing' ? 0 : (summary.supervisor_score ?? 'Not yet submitted')}</p>
-                      <p>Academic Score: {summary.log_status === 'missing' ? 0 : (summary.academic_score ?? 'Not yet submitted')}</p>
-                      {summary.log_status === 'missing' ? <p style={{ color: '#b45309' }}><strong>No log submitted for this week.</strong> Scores are zero.</p> : null}
-                      <p><strong>Combined Week Score:</strong> {summary.combined_score}</p>
-                    </div>
-                  ))
-                ) : null}
-              </div>
-              <div className="evaluations-list">
-                {evaluations.length ? (
-                  evaluations.map((evaluation) => (
-                    <div key={evaluation.id} className="evaluation-card">
-                      <h3>{evaluation.evaluation_type} Assessment</h3>
-                      <p>Week: {evaluation.week_number ?? 1}</p>
-                      <p>Placement: {evaluation.placement?.company_name || 'Placement not available'}</p>
-                      <p>Score: {evaluation.score}</p>
-                      <p>Evaluator: {evaluation.evaluator_name || evaluation.evaluator?.full_name || 'Not available'}</p>
-                      <p>Date: {formatDisplayDate(evaluation.evaluated_at)}</p>
-                    </div>
-                  ))
-                ) : (
-                  <div className="empty-state">
-                    <p>No evaluations have been recorded yet.</p>
+              {weeklyEvaluationSummaries.length ? (
+                <>
+                  <div className="evaluations-list" style={{ marginBottom: '24px' }}>
+                    {[...weeklyEvaluationSummaries].sort((a, b) => a.week_number - b.week_number).map((summary) => {
+                      const supervisorCriteria = summary.supervisorEvaluation?.items?.[0]?.criteria?.name || 'Not specified';
+                      const academicCriteria = summary.academicEvaluation?.items?.[0]?.criteria?.name || 'Not specified';
+                      return (
+                        <div
+                          key={summary.key}
+                          style={{
+                            padding: '16px',
+                            background: '#f7f9fc',
+                            borderRadius: '8px',
+                            border: '1px solid #e2e8f0',
+                            marginBottom: '12px',
+                          }}
+                        >
+                          <div style={{ marginBottom: '12px' }}>
+                            <div style={{ fontWeight: 700, fontSize: '16px', marginBottom: '8px' }}>Week {summary.week_number}</div>
+                            <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '4px' }}>
+                              Placement: <strong>{summary.placementName}</strong>
+                            </div>
+                            {summary.log_status === 'missing' ? (
+                              <div style={{ fontSize: '12px', color: '#b45309', marginTop: '4px' }}>
+                                <strong>No log submitted for this week.</strong> Scores are zero.
+                              </div>
+                            ) : null}
+                          </div>
+
+                          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '12px' }}>
+                            <div style={{ padding: '8px', background: '#fff', borderRadius: '6px', border: '1px solid #e2e8f0' }}>
+                              <div style={{ fontSize: '11px', color: '#64748b', marginBottom: '4px' }}>Workplace Supervisor</div>
+                              <div style={{ fontSize: '14px', fontWeight: '600', color: '#1e40af', marginBottom: '2px' }}>
+                                {summary.log_status === 'missing' ? 0 : (summary.supervisor_score ?? 'Not yet submitted')}
+                              </div>
+                              {summary.supervisorEvaluation && (
+                                <div style={{ fontSize: '11px', color: '#7c3aed' }}>({supervisorCriteria})</div>
+                              )}
+                            </div>
+
+                            <div style={{ padding: '8px', background: '#fff', borderRadius: '6px', border: '1px solid #e2e8f0' }}>
+                              <div style={{ fontSize: '11px', color: '#64748b', marginBottom: '4px' }}>Academic Supervisor</div>
+                              <div style={{ fontSize: '14px', fontWeight: '600', color: '#1e40af', marginBottom: '2px' }}>
+                                {summary.log_status === 'missing' ? 0 : (summary.academic_score ?? 'Not yet submitted')}
+                              </div>
+                              {summary.academicEvaluation && (
+                                <div style={{ fontSize: '11px', color: '#7c3aed' }}>({academicCriteria})</div>
+                              )}
+                            </div>
+                          </div>
+
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '8px', borderTop: '1px solid #e2e8f0' }}>
+                            <div>
+                              <div style={{ fontSize: '11px', color: '#64748b' }}>Combined Score</div>
+                              <div style={{ fontSize: '18px', fontWeight: 'bold', color: '#2563eb' }}>{summary.combined_score ?? 'N/A'}</div>
+                            </div>
+                            <div style={{ textAlign: 'right' }}>
+                              <div style={{ fontSize: '11px', color: '#64748b' }}>Weight</div>
+                              <div style={{ fontSize: '18px', fontWeight: 'bold', color: '#059669' }}>{summary.grade_weight ?? 'N/A'}</div>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
-                )}
-              </div>
+
+                  {weeklyEvaluationSummaries.length > 0 && (
+                    <div style={{ paddingTop: '16px', borderTop: '2px solid #e2e8f0', textAlign: 'right', color: '#475569' }}>
+                      <div style={{ marginBottom: '8px' }}>
+                        <strong>Average Score:</strong> {(weeklyEvaluationSummaries.reduce((total, week) => total + Number(week.combined_score || 0), 0) / weeklyEvaluationSummaries.length).toFixed(2)}
+                      </div>
+                      <div>
+                        <strong>Average Weight:</strong> {(weeklyEvaluationSummaries.reduce((total, week) => total + Number(week.grade_weight || 0), 0) / weeklyEvaluationSummaries.length).toFixed(2)}
+                      </div>
+                    </div>
+                  )}
+                </>
+              ) : (
+                <div className="empty-state">
+                  <p>No evaluations have been recorded yet.</p>
+                </div>
+              )}
             </div>
           )}
 
