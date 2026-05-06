@@ -102,7 +102,11 @@ const AcademicSupervisorDashboard = () => {
     return {
       assignedStudents: students.length,
       logsSubmitted: students.reduce((acc, student) => acc + student.logs, 0),
-      evaluationsCompleted: evaluations.length,
+      evaluationsCompleted: evaluations.filter(
+        (evaluation) =>
+          evaluation.evaluation_type === 'academic'
+          && Number(evaluation.evaluator?.id ?? evaluation.evaluator_id) === Number(user?.id),
+      ).length,
       pendingReviews: students.reduce((acc, student) => acc + student.pendingLogs, 0),
       reviewedLogs: students.reduce((acc, student) => acc + student.reviewedLogs, 0),
       approvedLogs: students.reduce((acc, student) => acc + student.approvedLogs, 0),
@@ -144,17 +148,23 @@ const AcademicSupervisorDashboard = () => {
     (evaluation) => (
       Number(evaluation.placement?.id ?? evaluation.placement_id) === Number(log.placement?.id ?? log.placement_id)
       && evaluation.evaluation_type === 'academic'
+      && Number(evaluation.evaluator?.id ?? evaluation.evaluator_id) === Number(user?.id)
       && Number(evaluation.week_number) === Number(log.week_number)
     ),
   );
 
   const academicEvaluations = useMemo(() => {
-    return evaluations.filter(e => e.evaluation_type === 'academic');
-  }, [evaluations]);
+    return evaluations.filter(
+      (evaluation) => (
+        evaluation.evaluation_type === 'academic'
+        && Number(evaluation.evaluator?.id ?? evaluation.evaluator_id) === Number(user?.id)
+      ),
+    );
+  }, [evaluations, user?.id]);
 
   const { weeklySummaries: allWeeklySummaries } = useMemo(
-    () => buildWeeklyEvaluationSummaries(evaluations),
-    [evaluations]
+    () => buildWeeklyEvaluationSummaries(evaluations, placements, logs),
+    [evaluations, placements, logs]
   );
 
   const groupedSummaries = useMemo(() => {
@@ -173,17 +183,16 @@ const AcademicSupervisorDashboard = () => {
       }
       groups.get(placementId).weeks.push(summary);
     });
-    // attach any placement-level canonical averages if available
+    // calculate placement-level averages from weeks
     const results = Array.from(groups.values());
     results.forEach((g) => {
-      const placement = placements.find((p) => p.id === g.placementId);
-      if (placement) {
-        g.placementAverageScore = placement.average_score ?? null;
-        g.placementAverageWeight = placement.average_weight ?? null;
+      if (g.weeks.length > 0) {
+        g.placementAverageScore = Number((g.weeks.reduce((t, w) => t + Number(w.combined_score || 0), 0) / g.weeks.length).toFixed(2));
+        g.placementAverageWeight = Number((g.weeks.reduce((t, w) => t + Number(w.grade_weight || 0), 0) / g.weeks.length).toFixed(2));
       }
     });
     return results;
-  }, [allWeeklySummaries, placements]);
+  }, [allWeeklySummaries]);
 
   const academicStudentCards = useMemo(() => {
     return placements.map((placement) => {
@@ -194,7 +203,7 @@ const AcademicSupervisorDashboard = () => {
         .map((log) => Number(log.week_number || 1))
         .filter((weekNumber, index, array) => array.indexOf(weekNumber) === index)
         .sort((left, right) => left - right);
-      const evaluatedWeeks = new Set(placementWeeks.map((week) => Number(week.week_number)));
+      const evaluatedWeeks = new Set(placementWeeks.filter((week) => week.has_evaluation).map((week) => Number(week.week_number)));
       const nextWeekNumber = placementLogWeeks.find((weekNumber) => !evaluatedWeeks.has(weekNumber)) || (placementLogWeeks.length ? placementLogWeeks[placementLogWeeks.length - 1] + 1 : 1);
 
       return {
@@ -567,7 +576,20 @@ const AcademicSupervisorDashboard = () => {
                       <button
                         type="button"
                         className="eval-btn"
-                        onClick={() => openEvalEditor(group.placement, group.nextWeekNumber, null)}
+                        disabled={!logs.find((log) => (log.placement?.id ?? log.placement_id) === group.placementId && Number(log.week_number) === group.nextWeekNumber)}
+                        onClick={() => {
+                          const logExists = logs.find((log) => (log.placement?.id ?? log.placement_id) === group.placementId && Number(log.week_number) === group.nextWeekNumber);
+                          if (logExists) {
+                            openEvalEditor(group.placement, group.nextWeekNumber, null);
+                          } else {
+                            toast.error('A log must exist for this week before adding an evaluation');
+                          }
+                        }}
+                        style={{
+                          opacity: !logs.find((log) => (log.placement?.id ?? log.placement_id) === group.placementId && Number(log.week_number) === group.nextWeekNumber) ? 0.6 : 1,
+                          cursor: !logs.find((log) => (log.placement?.id ?? log.placement_id) === group.placementId && Number(log.week_number) === group.nextWeekNumber) ? 'not-allowed' : 'pointer',
+                        }}
+                        title={!logs.find((log) => (log.placement?.id ?? log.placement_id) === group.placementId && Number(log.week_number) === group.nextWeekNumber) ? 'A log must exist for this week' : 'Add evaluation for the next week'}
                       >
                         Add Evaluation
                       </button>
@@ -597,11 +619,14 @@ const AcademicSupervisorDashboard = () => {
                               <div style={{ marginBottom: '8px' }}>
                                 <div style={{ fontWeight: 700, marginBottom: '8px' }}>Week {w.week_number}</div>
                                 <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '4px' }}>
-                                  Workplace: <strong>{w.supervisor_score ?? 'N/A'}</strong>
-                                </div>
-                                <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '4px' }}>
-                                  Academic: <strong>{w.academic_score ?? 'N/A'}</strong>
-                                </div>
+                                    Workplace: <strong>{w.log_status === 'missing' ? 0 : (w.supervisor_score ?? 'N/A')}</strong>
+                                  </div>
+                                  <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '4px' }}>
+                                    Academic: <strong>{w.log_status === 'missing' ? 0 : (w.academic_score ?? 'N/A')}</strong>
+                                  </div>
+                                  {w.log_status === 'missing' ? (
+                                    <div style={{ fontSize: '12px', color: '#b45309', marginTop: '4px' }}>No log submitted for this week. Scores are zero.</div>
+                                  ) : null}
                               </div>
                               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '8px', borderTop: '1px solid #e2e8f0' }}>
                                 <div>
@@ -613,15 +638,17 @@ const AcademicSupervisorDashboard = () => {
                                   <div style={{ fontSize: '16px', fontWeight: 'bold', color: '#059669' }}>{w.grade_weight ?? 'N/A'}</div>
                                 </div>
                               </div>
-                              <div style={{ marginTop: '8px', display: 'flex', gap: '8px' }}>
-                                <button
-                                  type="button"
-                                  className="eval-btn"
-                                  onClick={() => openEvalEditor(group.placement, w.week_number, evalToEdit || null)}
-                                >
-                                  {evalToEdit ? 'Edit Evaluation' : 'Add Evaluation'}
-                                </button>
-                              </div>
+                              {w.log_status !== 'missing' && evalToEdit ? (
+                                <div style={{ marginTop: '8px', display: 'flex', gap: '8px' }}>
+                                  <button
+                                    type="button"
+                                    className="eval-btn"
+                                    onClick={() => openEvalEditor(group.placement, w.week_number, evalToEdit || null)}
+                                  >
+                                    Edit Evaluation
+                                  </button>
+                                </div>
+                              ) : null}
                               <div style={{ marginTop: '8px', fontSize: '12px', color: '#475569' }}>
                                 <div><strong>Your evaluation:</strong> {evalToEdit ? 'Edit' : 'Add'}</div>
                                 <div><strong>Other workplace evaluation:</strong> {otherSupervisorSubmitted ? 'Already submitted' : 'Not yet submitted'}</div>
@@ -632,8 +659,8 @@ const AcademicSupervisorDashboard = () => {
                       </div>
                     )}
                     <div style={{ marginTop: '12px', textAlign: 'right', color: '#475569' }}>
-                      <strong>Average Score:</strong> {group.placementAverageScore != null ? (Number(group.placementAverageScore).toFixed(2)) : (group.weeks.length ? ((group.weeks.reduce((t, a) => t + Number(a.combined_score || 0), 0) / group.weeks.length).toFixed(2)) : '0.00')}
-                      <span style={{ marginLeft: '12px' }}><strong>Average Weight:</strong> {group.placementAverageWeight != null ? (Number(group.placementAverageWeight).toFixed(2)) : (group.weeks.length ? ((group.weeks.reduce((t, a) => t + Number(a.grade_weight || 0), 0) / group.weeks.length).toFixed(2)) : '0.00')}</span>
+                      <strong>Average Score:</strong> {group.placementAverageScore != null ? group.placementAverageScore.toFixed(2) : '0.00'}
+                      <span style={{ marginLeft: '12px' }}><strong>Average Weight:</strong> {group.placementAverageWeight != null ? group.placementAverageWeight.toFixed(2) : '0.00'}</span>
                     </div>
                   </div>
                 );
