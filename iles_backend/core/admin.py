@@ -38,6 +38,20 @@ class NotificationAdmin(admin.ModelAdmin):
 admin.site.register(CustomUser, CustomUserAdmin)
 admin.site.register(InternshipPlacement, PlacementAdmin)
 admin.site.register(WeeklyLog, WeeklyLogAdmin)
-admin.site.register(EvaluationCriteria)
+class EvaluationCriteriaAdmin(admin.ModelAdmin):
+    list_display = ['name', 'weight_percent', 'max_score', 'supervisor_share', 'academic_share']
+    list_filter = ['name']
+    search_fields = ['name', 'description']
+    fieldsets = (
+        ('Basic Information', {
+            'fields': ('name', 'description', 'max_score')
+        }),
+        ('Weight Distribution', {
+            'fields': ('weight_percent', 'supervisor_share', 'academic_share'),
+            'description': 'Configure how weights are distributed between supervisor and academic evaluators. Supervisor share + Academic share must equal 100%.'
+        }),
+    )
+
+admin.site.register(EvaluationCriteria, EvaluationCriteriaAdmin)
 admin.site.register(Evaluation)
 admin.site.register(Notification, NotificationAdmin)
