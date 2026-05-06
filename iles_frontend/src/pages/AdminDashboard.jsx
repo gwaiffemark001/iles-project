@@ -272,11 +272,12 @@ function AdminDashboard() {
           const weightPercent = Number(criterion.weight_percent || 0)
           const supervisorShare = Number(criterion.supervisor_share || 0)
           const academicShare = Number(criterion.academic_share || 0)
+          // Note: weighted_score already includes weight_percent from backend, so we only apply role shares
           const supervisorContribution = supervisorScore !== null && maxScore > 0
-            ? ((Number(supervisorScore) / maxScore) * weightPercent * (supervisorShare / 100))
+            ? ((Number(supervisorScore) / maxScore) * (supervisorShare / 100))
             : 0
           const academicContribution = academicScore !== null && maxScore > 0
-            ? ((Number(academicScore) / maxScore) * weightPercent * (academicShare / 100))
+            ? ((Number(academicScore) / maxScore) * (academicShare / 100))
             : 0
 
           return {
@@ -291,8 +292,6 @@ function AdminDashboard() {
             total_contribution: Number((supervisorContribution + academicContribution).toFixed(2)),
           }
         })
-
-        const combinedScore = criteriaBreakdown.reduce((total, criterionRow) => total + criterionRow.total_contribution, 0)
 
         // Calculate supervisor and academic total scores from criteria items
         let supervisorTotalScore = null
@@ -312,11 +311,14 @@ function AdminDashboard() {
           academicTotalScore = Number(academicEvaluation.score)
         }
 
+        // Combined score is the sum of workplace and academic supervisor scores
+        const combinedScore = Number(((supervisorTotalScore ?? 0) + (academicTotalScore ?? 0)).toFixed(2))
+
         return {
           week_number: weekNumber,
           supervisor_score: supervisorTotalScore,
           academic_score: academicTotalScore,
-          combined_score: Number(combinedScore.toFixed(2)),
+          combined_score: combinedScore,
           criteria_breakdown: criteriaBreakdown,
         }
       }),

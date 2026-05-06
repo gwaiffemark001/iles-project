@@ -5,18 +5,19 @@ export const getGradeWeight = (score) => {
     return null
   }
 
-  if (numericScore > 80) return 5
-  if (numericScore > 75) return 4.5
-  if (numericScore > 70) return 4
-  if (numericScore > 65) return 3.5
-  if (numericScore > 60) return 3
-  if (numericScore > 55) return 2.5
-  if (numericScore > 50) return 2
-  if (numericScore > 30) return 1
+  // Normalize score to 0-100 range if it's higher (since combined score is sum of two evaluations)
+  const normalizedScore = numericScore > 100 ? numericScore / 2 : numericScore
+
+  if (normalizedScore > 80) return 5
+  if (normalizedScore > 75) return 4.5
+  if (normalizedScore > 70) return 4
+  if (normalizedScore > 65) return 3.5
+  if (normalizedScore > 60) return 3
+  if (normalizedScore > 55) return 2.5
+  if (normalizedScore > 50) return 2
+  if (normalizedScore > 30) return 1
   return 0
 }
-
-const getEvaluationItems = (evaluation) => Array.isArray(evaluation?.items) ? evaluation.items : []
 
 const MS_PER_DAY = 24 * 60 * 60 * 1000
 
@@ -55,74 +56,11 @@ const getOverdueWeeks = (placement, today = new Date()) => {
 }
 
 const calculateCombinedWeekScore = (supervisorEvaluation, academicEvaluation) => {
-  const criteriaMap = new Map()
-
-  getEvaluationItems(supervisorEvaluation).forEach((item) => {
-    const criteriaId = item.criteria?.id ?? item.criteria_id
-    if (criteriaId != null) {
-      criteriaMap.set(criteriaId, item.criteria)
-    }
-  })
-
-  getEvaluationItems(academicEvaluation).forEach((item) => {
-    const criteriaId = item.criteria?.id ?? item.criteria_id
-    if (criteriaId != null) {
-      criteriaMap.set(criteriaId, item.criteria)
-    }
-  })
-
-  let combinedScore = 0
-
-  criteriaMap.forEach((criteria, criteriaId) => {
-    if (!criteria) {
-      return
-    }
-
-    const maxScore = Number(criteria.max_score || 0)
-    if (maxScore <= 0) {
-      return
-    }
-
-    const supervisorItem = getEvaluationItems(supervisorEvaluation).find((item) => (item.criteria?.id ?? item.criteria_id) === criteriaId)
-    const academicItem = getEvaluationItems(academicEvaluation).find((item) => (item.criteria?.id ?? item.criteria_id) === criteriaId)
-
-    const supervisorScore = Number(supervisorItem?.score ?? 0)
-    const academicScore = Number(academicItem?.score ?? 0)
-    const supervisorShare = Number(criteria.supervisor_share ?? 0)
-    const academicShare = Number(criteria.academic_share ?? 0)
-    const weightPercent = Number(criteria.weight_percent ?? 0)
-
-    const supervisorContribution = (supervisorScore / maxScore) * weightPercent * (supervisorShare / 100)
-    const academicContribution = (academicScore / maxScore) * weightPercent * (academicShare / 100)
-
-    combinedScore += supervisorContribution + academicContribution
-  })
-
-  if (criteriaMap.size === 0) {
-    const scores = []
-
-    if (supervisorEvaluation) {
-      const supervisorScore = Number(supervisorEvaluation?.score)
-      if (!Number.isNaN(supervisorScore)) {
-        scores.push(supervisorScore)
-      }
-    }
-
-    if (academicEvaluation) {
-      const academicScore = Number(academicEvaluation?.score)
-      if (!Number.isNaN(academicScore)) {
-        scores.push(academicScore)
-      }
-    }
-
-    if (scores.length === 0) {
-      return 0
-    }
-
-    combinedScore = scores.reduce((total, value) => total + value, 0) / scores.length
-  }
-
-  return Number(combinedScore.toFixed(2))
+  const supervisorScore = Number(supervisorEvaluation?.weighted_score ?? supervisorEvaluation?.score ?? 0)
+  const academicScore = Number(academicEvaluation?.weighted_score ?? academicEvaluation?.score ?? 0)
+  
+  // Combined score is simply the sum of workplace and academic scores
+  return Number((supervisorScore + academicScore).toFixed(2))
 }
 
 export const buildWeeklyEvaluationSummaries = (evaluations = [], placements = [], logs = []) => {
@@ -241,8 +179,8 @@ export const buildWeeklyEvaluationSummaries = (evaluations = [], placements = []
       return {
         ...group,
         has_evaluation: Boolean(group.supervisorEvaluation || group.academicEvaluation),
-        supervisor_score: group.supervisor_score ?? group.supervisorEvaluation?.score ?? null,
-        academic_score: group.academic_score ?? group.academicEvaluation?.score ?? null,
+        supervisor_score: group.supervisor_score ?? group.supervisorEvaluation?.weighted_score ?? group.supervisorEvaluation?.score ?? null,
+        academic_score: group.academic_score ?? group.academicEvaluation?.weighted_score ?? group.academicEvaluation?.score ?? null,
         combined_score: combinedScore,
         grade_weight: getGradeWeight(combinedScore),
       }
