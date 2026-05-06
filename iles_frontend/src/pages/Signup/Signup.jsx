@@ -63,7 +63,7 @@ function Signup() {
                         required
                     >
                         <option value="student">Student</option>
-                        <option value="workplace_supervisor">Workplace Supervisor</option>
+                        <option value="workplace_supervisor">Workplace</option>
                         <option value="academic_supervisor">Academic Supervisor</option>
                     </select>
                     <input
