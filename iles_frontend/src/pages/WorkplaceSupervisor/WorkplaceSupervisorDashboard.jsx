@@ -446,7 +446,7 @@ export default function WorkplaceSupervisorDashboard() {
                             <div style={{ marginBottom: '8px' }}>
                               <div style={{ fontWeight: 700, marginBottom: '8px' }}>Week {w.week_number}</div>
                               <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '4px' }}>
-                                Supervisor: <strong>{w.supervisor_score ?? 'N/A'}</strong>
+                                Workplace: <strong>{w.supervisor_score ?? 'N/A'}</strong>
                               </div>
                               <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '4px' }}>
                                 Academic: <strong>{w.academic_score ?? 'N/A'}</strong>
@@ -473,7 +473,7 @@ export default function WorkplaceSupervisorDashboard() {
                             </div>
                             <div style={{ marginTop: '8px', fontSize: '12px', color: '#475569' }}>
                               <div><strong>Your evaluation:</strong> {evalToEdit ? 'Edit' : 'Add'}</div>
-                              <div><strong>Other supervisor evaluation:</strong> {otherSupervisorSubmitted ? 'Already submitted' : 'Not yet submitted'}</div>
+                              <div><strong>Other workplace evaluation:</strong> {otherSupervisorSubmitted ? 'Already submitted' : 'Not yet submitted'}</div>
                             </div>
                           </div>
                         );
@@ -529,7 +529,7 @@ export default function WorkplaceSupervisorDashboard() {
                        <div style={{ fontWeight: 700, color: '#0f172a', marginBottom: '8px' }}>{crit.name}</div>
                        {crit.description && <p style={{ fontSize: '13px', color: '#64748b', marginBottom: '12px' }}>{crit.description}</p>}
                        <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '8px' }}><strong>Max Score:</strong> {crit.max_score}</div>
-                       <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '4px' }}><strong>Supervisor Share:</strong> {crit.supervisor_share}%</div>
+                       <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '4px' }}><strong>Workplace Share:</strong> {crit.supervisor_share}%</div>
                        <div style={{ fontSize: '12px', color: '#64748b' }}><strong>Academic Share:</strong> {crit.academic_share}%</div>
                      </div>
                    ))}
