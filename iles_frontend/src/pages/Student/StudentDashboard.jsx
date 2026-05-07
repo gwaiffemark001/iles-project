@@ -3,6 +3,7 @@ import { useAuth } from '../../contexts/useAuth';
 import { logsAPI, placementsAPI, evaluationsAPI, criteriaAPI } from '@/api/api';
 import { getErrorMessage } from '@/api/api';
 import { buildWeeklyEvaluationSummaries } from '@/utils/evaluationSummary';
+import NotificationPane from '../../components/NotificationPane';
 import './StudentDashboard.css';
 
 const createInitialLogForm = (defaultPlacementId = '') => ({
@@ -329,6 +330,12 @@ const StudentDashboard = () => {
           >
             Evaluations
           </button>
+          <button
+            className={`nav-item ${activeTab === 'notifications' ? 'active' : ''}`}
+            onClick={() => setActiveTab('notifications')}
+          >
+            Notifications
+          </button>
            <button
              className={`nav-item ${activeTab === 'criteria' ? 'active' : ''}`}
              onClick={() => setActiveTab('criteria')}
@@ -352,8 +359,17 @@ const StudentDashboard = () => {
           <div className="avatar">{getUserInitials(user)}</div>
         </div>
 
+        
+
         <div className="content">
           {pageError ? <div className="error-message page-alert">{pageError}</div> : null}
+
+          {activeTab === 'notifications' && (
+            <div>
+              <div className="section-title">Notifications</div>
+              <NotificationPane title="Notifications" subtitle="Log and evaluation updates" limit={8} />
+            </div>
+          )}
 
           {activeTab === 'logs' && (
             <div className="logs-section">
