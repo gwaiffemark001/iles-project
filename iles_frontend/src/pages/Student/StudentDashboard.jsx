@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '../../contexts/useAuth';
-import { logsAPI, placementsAPI, evaluationsAPI, criteriaAPI } from '@/api/api';
+import { logsAPI, placementsAPI, evaluationsAPI, criteriaAPI, notificationsAPI } from '@/api/api';
 import { getErrorMessage } from '@/api/api';
 import { buildWeeklyEvaluationSummaries } from '@/utils/evaluationSummary';
 import NotificationPane from '../../components/NotificationPane';
@@ -72,6 +72,7 @@ const StudentDashboard = () => {
   const [saving, setSaving] = useState(false);
   const [pageError, setPageError] = useState('');
   const [loading, setLoading] = useState(true);
+  const [unreadCount, setUnreadCount] = useState(0);
   const weeklyEvaluationSummaries = useMemo(
     () => buildWeeklyEvaluationSummaries(evaluations, placements, logs, criteria).weeklySummaries,
     [evaluations, placements, logs, criteria],
@@ -85,6 +86,17 @@ const StudentDashboard = () => {
     [placements, formData.placement_id],
   );
   const isCompletedPlacementSelected = selectedPlacement?.status === 'completed';
+
+  const fetchUnreadCount = async () => {
+    try {
+      const response = await notificationsAPI.getNotifications({ limit: 100 });
+      const notifications = Array.isArray(response.data) ? response.data : [];
+      const count = notifications.filter((n) => !n.is_read).length;
+      setUnreadCount(count);
+    } catch {
+      // Silently fail - unread count is not critical
+    }
+  };
 
   const fetchData = async () => {
     try {
@@ -113,9 +125,16 @@ const StudentDashboard = () => {
   useEffect(() => {
     const initializeDashboard = async () => {
       await fetchData();
+      await fetchUnreadCount();
     };
 
     initializeDashboard();
+
+    const pollingInterval = setInterval(async () => {
+      await fetchUnreadCount();
+    }, 30000);
+
+    return () => clearInterval(pollingInterval);
   }, []);
 
   useEffect(() => {
@@ -335,6 +354,7 @@ const StudentDashboard = () => {
             onClick={() => setActiveTab('notifications')}
           >
             Notifications
+            {unreadCount > 0 && <span style={{ marginLeft: '8px', padding: '2px 6px', backgroundColor: '#DC2626', color: 'white', borderRadius: '10px', fontSize: '11px', fontWeight: 'bold' }}>{unreadCount}</span>}
           </button>
            <button
              className={`nav-item ${activeTab === 'criteria' ? 'active' : ''}`}
