@@ -4,6 +4,7 @@ import { useAuth } from '../auth/useAuth'
 import { criteriaAPI, evaluationsAPI, placementsAPI } from '../api/api'
 import { buildWeeklyEvaluationSummaries, getGradeWeight } from '../utils/evaluationSummary'
 import ChatPane from '../components/ChatPane'
+import UserGuide from '../components/UserGuide'
 import './AdminDashboard.css'
 
 const userRoles = [
@@ -1583,6 +1584,7 @@ function AdminDashboard() {
           </div>
         </div>
       )}
+      <UserGuide userRole="admin" />
     </div>
   )
 }

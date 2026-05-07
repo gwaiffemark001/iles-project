@@ -1050,12 +1050,13 @@ class AdminStatisticsView(APIView):
 class ChatContactsView(APIView):
     """
     GET /api/chat/contacts/ - Get list of users the current user can chat with (role-restricted)
+    Returns sorted by most recent message, includes unread count
     """
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
         user = request.user
-        contacts = []
+        contact_ids = set()
 
         if user.role == 'student':
             # Students can chat with their supervisors and admin
@@ -1066,10 +1067,10 @@ class ChatContactsView(APIView):
                     supervisor_ids.add(placement.workplace_supervisor_id)
                 if placement.academic_supervisor_id:
                     supervisor_ids.add(placement.academic_supervisor_id)
-            
-            supervisors = CustomUser.objects.filter(id__in=supervisor_ids)
-            admin_users = CustomUser.objects.filter(role='admin')
-            contacts = list(supervisors) + list(admin_users)
+            contact_ids = supervisor_ids
+            # Add admins
+            admin_ids = set(CustomUser.objects.filter(role='admin').values_list('id', flat=True))
+            contact_ids.update(admin_ids)
 
         elif user.role in ['workplace_supervisor', 'academic_supervisor']:
             # Supervisors can chat with their students and admin
@@ -1082,17 +1083,47 @@ class ChatContactsView(APIView):
             for placement in placements:
                 if placement.student_id:
                     student_ids.add(placement.student_id)
-            
-            students = CustomUser.objects.filter(id__in=student_ids)
-            admin_users = CustomUser.objects.filter(role='admin')
-            contacts = list(students) + list(admin_users)
+            contact_ids = student_ids
+            # Add admins
+            admin_ids = set(CustomUser.objects.filter(role='admin').values_list('id', flat=True))
+            contact_ids.update(admin_ids)
 
         elif user.role == 'admin':
             # Admin can chat with all other users
-            contacts = CustomUser.objects.exclude(id=user.id)
+            contact_ids = set(CustomUser.objects.exclude(id=user.id).values_list('id', flat=True))
 
-        serializer = UserSummarySerializer(contacts, many=True)
-        return Response(serializer.data)
+        # Get contacts with message metadata
+        contacts_data = []
+        for contact_id in contact_ids:
+            contact_user = CustomUser.objects.get(id=contact_id)
+            
+            # Get most recent message timestamp
+            most_recent = ChatMessage.objects.filter(
+                (models.Q(sender=user, recipient=contact_user) | models.Q(sender=contact_user, recipient=user))
+            ).order_by('-created_at').first()
+            
+            # Get unread count from this contact
+            unread_count = ChatMessage.objects.filter(
+                sender=contact_user,
+                recipient=user,
+                is_read=False
+            ).count()
+            
+            contact_data = {
+                'id': contact_user.id,
+                'username': contact_user.username,
+                'email': contact_user.email,
+                'full_name': contact_user.get_full_name() or contact_user.username,
+                'role': contact_user.role,
+                'unread_count': unread_count,
+                'last_message_time': most_recent.created_at if most_recent else None,
+            }
+            contacts_data.append(contact_data)
+        
+        # Sort by most recent message (None values go to end)
+        contacts_data.sort(key=lambda x: x['last_message_time'] or '', reverse=True)
+        
+        return Response(contacts_data)
 
 
 class ChatMessagesView(APIView):
