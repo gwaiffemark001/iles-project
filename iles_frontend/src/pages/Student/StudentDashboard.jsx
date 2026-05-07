@@ -36,6 +36,21 @@ const computeCurrentWeekForPlacement = (placement, today = new Date()) => {
   return Math.max(1, Math.floor(elapsedDays / 7) + 1)
 }
 
+const computeNextWeekNumberForPlacement = (placementId, logs = []) => {
+  if (!placementId) return 1
+
+  const placementWeeks = logs
+    .filter((log) => String(log.placement?.id ?? log.placement_id) === String(placementId))
+    .map((log) => Number(log.week_number || 0))
+    .filter((weekNumber) => !Number.isNaN(weekNumber) && weekNumber > 0)
+
+  if (!placementWeeks.length) {
+    return 1
+  }
+
+  return Math.max(...placementWeeks) + 1
+}
+
 const getUserInitials = (user) => {
   const firstInitial = user?.first_name?.[0] || '';
   const lastInitial = user?.last_name?.[0] || '';
@@ -57,8 +72,8 @@ const StudentDashboard = () => {
   const [pageError, setPageError] = useState('');
   const [loading, setLoading] = useState(true);
   const weeklyEvaluationSummaries = useMemo(
-    () => buildWeeklyEvaluationSummaries(evaluations, placements, logs).weeklySummaries,
-    [evaluations, placements, logs],
+    () => buildWeeklyEvaluationSummaries(evaluations, placements, logs, criteria).weeklySummaries,
+    [evaluations, placements, logs, criteria],
   );
   const loggablePlacements = useMemo(
     () => placements.filter((placement) => placement.status !== 'completed'),
@@ -103,7 +118,7 @@ const StudentDashboard = () => {
   }, []);
 
   useEffect(() => {
-    if (!loggablePlacements.length) {
+    if (!loggablePlacements.length || editingLogId) {
       return;
     }
 
@@ -113,27 +128,52 @@ const StudentDashboard = () => {
           (placement) => String(placement.id) === String(currentData.placement_id),
         );
 
-        if (currentlySelectedPlacement) {
+        const activePlacement = currentlySelectedPlacement
+          || loggablePlacements.find((placement) => placement.status === 'active')
+          || loggablePlacements[0];
+
+        const nextWeekNumber = String(computeNextWeekNumberForPlacement(activePlacement.id, logs));
+        const nextPlacementId = String(activePlacement.id);
+
+        if (
+          String(currentData.placement_id) === nextPlacementId
+          && String(currentData.week_number) === nextWeekNumber
+        ) {
           return currentData;
         }
 
-        const activePlacement = loggablePlacements.find((placement) => placement.status === 'active') || loggablePlacements[0];
-        const currentWeek = computeCurrentWeekForPlacement(activePlacement)
-        return { ...createInitialLogForm(activePlacement.id), week_number: String(currentWeek) };
+        return {
+          ...currentData,
+          placement_id: nextPlacementId,
+          week_number: nextWeekNumber,
+        };
       });
     };
 
     updateFormData();
-  }, [loggablePlacements, logs]);
+  }, [loggablePlacements, logs, editingLogId]);
 
   const resetForm = () => {
     const activePlacement = loggablePlacements.find((placement) => placement.status === 'active') || loggablePlacements[0];
     setEditingLogId(null);
-    setFormData(createInitialLogForm(activePlacement?.id));
+    setFormData({
+      ...createInitialLogForm(activePlacement?.id),
+      week_number: String(computeNextWeekNumberForPlacement(activePlacement?.id, logs)),
+    });
   };
 
   const handleFormChange = (event) => {
     const { name, value } = event.target;
+
+    if (name === 'placement_id' && !editingLogId) {
+      setFormData((currentData) => ({
+        ...currentData,
+        placement_id: value,
+        week_number: String(computeNextWeekNumberForPlacement(value, logs)),
+      }));
+      return;
+    }
+
     setFormData((currentData) => ({ ...currentData, [name]: value }));
   };
 
@@ -208,7 +248,14 @@ const StudentDashboard = () => {
       resetForm();
       await fetchData();
     } catch (error) {
-      setFormError(getErrorMessage(error, 'Unable to save your weekly log.'));
+      const message = getErrorMessage(error, 'Unable to save your weekly log.');
+
+      if (!editingLogId && /placement_id.*week_number.*unique|unique set/i.test(message)) {
+        await fetchData();
+        setFormError('A log for that week already exists. Week number has been moved to the next available week.');
+      } else {
+        setFormError(message);
+      }
     } finally {
       setSaving(false);
     }
@@ -557,7 +604,7 @@ const StudentDashboard = () => {
                               <div style={{ fontSize: '18px', fontWeight: 'bold', color: '#2563eb' }}>{summary.combined_score ?? 'N/A'}</div>
                             </div>
                             <div style={{ textAlign: 'right' }}>
-                              <div style={{ fontSize: '11px', color: '#64748b' }}>Weight</div>
+                              <div style={{ fontSize: '11px', color: '#64748b' }}>GPA</div>
                               <div style={{ fontSize: '18px', fontWeight: 'bold', color: '#059669' }}>{summary.grade_weight ?? 'N/A'}</div>
                             </div>
                           </div>
@@ -572,7 +619,7 @@ const StudentDashboard = () => {
                         <strong>Average Score:</strong> {(weeklyEvaluationSummaries.reduce((total, week) => total + Number(week.combined_score || 0), 0) / weeklyEvaluationSummaries.length).toFixed(2)}
                       </div>
                       <div>
-                        <strong>Average Weight:</strong> {(weeklyEvaluationSummaries.reduce((total, week) => total + Number(week.grade_weight || 0), 0) / weeklyEvaluationSummaries.length).toFixed(2)}
+                        <strong>Average GPA:</strong> {(weeklyEvaluationSummaries.reduce((total, week) => total + Number(week.grade_weight || 0), 0) / weeklyEvaluationSummaries.length).toFixed(2)}
                       </div>
                     </div>
                   )}

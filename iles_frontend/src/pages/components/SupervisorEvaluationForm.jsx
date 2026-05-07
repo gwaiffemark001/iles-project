@@ -23,6 +23,8 @@ export default function SupervisorEvaluationForm({
   const [criteria, setCriteria] = useState([]);
   const [items, setItems] = useState([]);
   const [selectedCriteriaId, setSelectedCriteriaId] = useState(null);
+  const [lockedCriteriaId, setLockedCriteriaId] = useState(null);
+  const [lockedCriteriaName, setLockedCriteriaName] = useState(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
   const [loadingCriteria, setLoadingCriteria] = useState(true);
@@ -77,6 +79,45 @@ export default function SupervisorEvaluationForm({
     };
   }, [criteria, existingEvaluation]);
 
+  // Check for other supervisor's evaluation to enforce same criteria
+  useEffect(() => {
+    let isMounted = true;
+    const checkOtherEvaluation = async () => {
+      try {
+        const otherEvaluationType = determinedEvaluationType === 'academic' ? 'supervisor' : 'academic';
+        const weekNum = existingEvaluation?.week_number || initialWeekNumber;
+        
+        const allEvaluations = await evaluationsAPI.getEvaluations();
+        const otherEval = Array.isArray(allEvaluations.data) 
+          ? allEvaluations.data.find(e => 
+              Number(e.placement?.id ?? e.placement_id) === Number(placementId)
+              && Number(e.week_number) === Number(weekNum)
+              && e.evaluation_type === otherEvaluationType
+            )
+          : null;
+
+        if (isMounted && otherEval && Array.isArray(otherEval.items) && otherEval.items.length > 0) {
+          const otherCriteriaId = otherEval.items[0]?.criteria?.id || otherEval.items[0]?.criteria_id;
+          const otherCriteria = criteria.find(c => c.id === otherCriteriaId);
+          if (otherCriteriaId && otherCriteria) {
+            setLockedCriteriaId(otherCriteriaId);
+            setLockedCriteriaName(otherCriteria.name);
+            setSelectedCriteriaId(otherCriteriaId);
+          }
+        }
+      } catch (err) {
+        // Silently fail, this is optional enforcement
+      }
+    };
+
+    if (criteria.length > 0) {
+      checkOtherEvaluation();
+    }
+    return () => {
+      isMounted = false;
+    };
+  }, [criteria, placementId, initialWeekNumber, determinedEvaluationType, existingEvaluation?.week_number]);
+
   const setItemScore = (criteriaId, value) => {
     // Enforce max score of 100
     let numericValue = value === '' ? '' : Number(value) || 0;
@@ -91,6 +132,10 @@ export default function SupervisorEvaluationForm({
   };
 
   const toggleCriteriaSelection = (criteriaId) => {
+    // If criteria is locked, don't allow changing it
+    if (lockedCriteriaId && criteriaId !== lockedCriteriaId) {
+      return;
+    }
     // select a single criterion (no multi-select)
     setSelectedCriteriaId(criteriaId);
   };
@@ -104,10 +149,12 @@ export default function SupervisorEvaluationForm({
 
     const score = selectedItem.score === '' ? 0 : Number(selectedItem.score);
     const maxScore = Number(crit.max_score || 100);
-    const weightPercent = Number(crit.weight_percent || 0);
+    const roleShare = determinedEvaluationType === 'academic'
+      ? Number(crit.academic_share || 0)
+      : Number(crit.supervisor_share || 0);
     if (maxScore <= 0) return 0;
 
-    const weightedTotal = (score / maxScore) * weightPercent;
+    const weightedTotal = (score / maxScore) * roleShare;
     return Math.round(weightedTotal * 100) / 100;
   };
 
@@ -210,12 +257,22 @@ export default function SupervisorEvaluationForm({
           padding: '12px',
           borderRadius: '6px',
           border: '1px solid #e2e8f0',
-          backgroundColor: '#f8fafc',
+          backgroundColor: lockedCriteriaId ? '#fef3c7' : '#f8fafc',
         }}
       >
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
           <div style={{ fontWeight: 600, color: '#0f172a' }}>Select Criterion to Evaluate</div>
+          {lockedCriteriaId && (
+            <div style={{ fontSize: '12px', color: '#b45309', fontWeight: 500 }}>
+              Locked to: <strong>{lockedCriteriaName}</strong>
+            </div>
+          )}
         </div>
+        {lockedCriteriaId && (
+          <div style={{ fontSize: '12px', color: '#92400e', marginBottom: '8px', padding: '8px', backgroundColor: '#fef08a', borderRadius: '4px' }}>
+            The other supervisor has already chosen this criteria for this week. You must use the same criteria to ensure consistency.
+          </div>
+        )}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '8px' }}>
           {criteria.map((c) => (
             <label
@@ -226,11 +283,12 @@ export default function SupervisorEvaluationForm({
                 gap: '8px',
                 padding: '8px',
                 borderRadius: '6px',
-                border: '1px solid #e2e8f0',
-                backgroundColor: '#fff',
+                border: lockedCriteriaId && c.id !== lockedCriteriaId ? '1px solid #ccc' : '1px solid #e2e8f0',
+                backgroundColor: lockedCriteriaId && c.id !== lockedCriteriaId ? '#f3f4f6' : '#fff',
                 fontSize: '13px',
-                color: '#0f172a',
-                cursor: saving ? 'not-allowed' : 'pointer',
+                color: lockedCriteriaId && c.id !== lockedCriteriaId ? '#9ca3af' : '#0f172a',
+                cursor: lockedCriteriaId && c.id !== lockedCriteriaId ? 'not-allowed' : saving ? 'not-allowed' : 'pointer',
+                opacity: lockedCriteriaId && c.id !== lockedCriteriaId ? 0.6 : 1,
               }}
             >
               <input
@@ -238,7 +296,7 @@ export default function SupervisorEvaluationForm({
                 name="selectedCriterion"
                 checked={selectedCriteriaId === c.id}
                 onChange={() => toggleCriteriaSelection(c.id)}
-                disabled={saving}
+                disabled={saving || (lockedCriteriaId && c.id !== lockedCriteriaId)}
               />
               <span>{c.name}</span>
             </label>
@@ -253,7 +311,9 @@ export default function SupervisorEvaluationForm({
 
           const itemScore = items.find((it) => it.criteria_id === c.id)?.score || '';
           const maxScore = 100;
-          const weightPercent = Number(c.weight_percent || 0);
+          const roleShare = determinedEvaluationType === 'academic'
+            ? Number(c.academic_share || 0)
+            : Number(c.supervisor_share || 0);
 
           return (
             <div
@@ -270,7 +330,7 @@ export default function SupervisorEvaluationForm({
                   <div style={{ fontWeight: 600, color: '#0f172a' }}>{c.name} criteria</div>
                 </div>
                 <div style={{ marginTop: '4px', fontSize: '12px', color: '#64748b' }}>
-                  Weight from admin criteria: <strong>{weightPercent.toFixed(2)}%</strong>
+                  Role share from admin criteria: <strong>{roleShare.toFixed(2)}%</strong>
                 </div>
                 {c.description && (
                   <p

@@ -104,7 +104,6 @@ class WeeklyLogListView(APIView):
             log = serializer.save()
             # Set submitted_at timestamp if status is submitted
             if log.status == 'submitted':
-                from django.utils import timezone
                 log.submitted_at = timezone.now()
                 log.save()
                 notify_log_submitted(log, actor=request.user)

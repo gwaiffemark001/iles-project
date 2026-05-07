@@ -47,7 +47,7 @@ function AdminDashboard() {
   const [showWeeklyModal, setShowWeeklyModal] = useState(false)
   const [selectedPlacementForWeekly, setSelectedPlacementForWeekly] = useState(null)
 
-  const { weeklySummaries: allWeeklySummaries } = useMemo(() => buildWeeklyEvaluationSummaries(evaluations), [evaluations])
+  const { weeklySummaries: allWeeklySummaries } = useMemo(() => buildWeeklyEvaluationSummaries(evaluations, [], [], criteria), [evaluations, criteria])
   const groupedSummaries = useMemo(() => {
     if (!allWeeklySummaries || allWeeklySummaries.length === 0) return []
     return Object.values(allWeeklySummaries.reduce((acc, s) => {
@@ -274,10 +274,10 @@ function AdminDashboard() {
           const academicShare = Number(criterion.academic_share || 0)
           // Note: weighted_score already includes weight_percent from backend, so we only apply role shares
           const supervisorContribution = supervisorScore !== null && maxScore > 0
-            ? ((Number(supervisorScore) / maxScore) * (supervisorShare / 100))
+            ? ((Number(supervisorScore) / maxScore) * (supervisorShare / 100)) * 100
             : 0
           const academicContribution = academicScore !== null && maxScore > 0
-            ? ((Number(academicScore) / maxScore) * (academicShare / 100))
+            ? ((Number(academicScore) / maxScore) * (academicShare / 100)) * 100
             : 0
 
           return {
@@ -311,8 +311,8 @@ function AdminDashboard() {
           academicTotalScore = Number(academicEvaluation.score)
         }
 
-        // Combined score is the sum of workplace and academic supervisor scores
-        const combinedScore = Number(((supervisorTotalScore ?? 0) + (academicTotalScore ?? 0)).toFixed(2))
+        // Combined score is the sum of all contributions from criteria breakdown
+        const combinedScore = Number((criteriaBreakdown.reduce((total, cb) => total + Number(cb.total_contribution || 0), 0)).toFixed(2))
 
         return {
           week_number: weekNumber,
@@ -957,7 +957,7 @@ function AdminDashboard() {
                               </div>
                               <div style={{ textAlign: 'right' }}>
                                 <div style={{ fontSize: '18px', fontWeight: 'bold', color: '#2563eb' }}>Total: {w.combined_score}</div>
-                                <div style={{ fontSize: '13px', color: '#64748b' }}>Grade Weight: {w.grade_weight ?? 'N/A'}</div>
+                                <div style={{ fontSize: '13px', color: '#64748b' }}>Grade GPA: {w.grade_weight ?? 'N/A'}</div>
                               </div>
                             </div>
                           </div>
@@ -968,7 +968,7 @@ function AdminDashboard() {
                           const placement = placements.find(p => p.id === group.placementId);
                           const avgScore = placement?.average_score != null ? Number(placement.average_score).toFixed(2) : (group.weeks.length ? (group.weeks.reduce((t,a)=>t+Number(a.combined_score||0),0)/group.weeks.length).toFixed(2) : '0.00');
                           const avgWeight = placement?.average_weight != null ? Number(placement.average_weight).toFixed(2) : (group.weeks.length ? (group.weeks.reduce((t,a)=>t+Number(a.grade_weight||0),0)/group.weeks.length).toFixed(2) : '0.00');
-                          return (<><strong>Average Score:</strong> {avgScore}<span style={{ marginLeft: '12px' }}><strong>Average Weight:</strong> {avgWeight}</span></>);
+                          return (<><strong>Average Score:</strong> {avgScore}<span style={{ marginLeft: '12px' }}><strong>Average GPA:</strong> {avgWeight}</span></>);
                         })()}
                       </div>
                     </div>
@@ -1050,7 +1050,7 @@ function AdminDashboard() {
                       </label>
                     </div>
                     <p style={{ margin: 0, color: '#64748b', fontSize: '12px' }}>
-                      Weight is calculated automatically by the backend.
+                      GPA is calculated automatically by the backend.
                     </p>
                     <div style={{ display: 'flex', gap: '10px' }}>
                       <button type="submit" disabled={criteriaSaving} style={{ padding: '8px 16px', backgroundColor: '#27AE60', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>
@@ -1486,58 +1486,76 @@ function AdminDashboard() {
             {weeklySummary.weeks.length === 0 ? (
               <p>No weekly evaluations found.</p>
             ) : (
-              <div style={{ display: 'grid', gap: '8px' }}>
+              <div style={{ display: 'grid', gap: '16px' }}>
                 {weeklySummary.weeks.map((w) => (
-                  <div key={w.week_number} style={{ padding: '12px', background: '#f7f9fc', borderRadius: '8px' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <div>
-                        <div style={{ fontWeight: 700 }}>Week {w.week_number}</div>
-                                <div style={{ fontSize: '13px', color: '#64748b' }}>Workplace: {w.supervisor_score ?? 'N/A'} | Academic: {w.academic_score ?? 'N/A'}</div>
+                  <div key={w.week_number} style={{ padding: '16px', background: '#f7f9fc', borderRadius: '8px' }}>
+                    <div style={{ marginBottom: '16px' }}>
+                      <div style={{ fontWeight: 700, fontSize: '16px', marginBottom: '8px' }}>Week {w.week_number}</div>
+                      <div style={{ fontSize: '13px', color: '#64748b', marginBottom: '8px' }}>
+                        Workplace Score: <strong>{w.supervisor_score ?? 'N/A'}</strong> | Academic Score: <strong>{w.academic_score ?? 'N/A'}</strong>
                       </div>
-                      <div style={{ textAlign: 'right' }}>
-                        <div style={{ fontSize: '18px', fontWeight: 'bold', color: '#2563eb' }}>Total: {w.combined_score}</div>
-                        <div style={{ fontSize: '13px', color: '#64748b' }}>Grade Weight: {getGradeWeight(w.combined_score) ?? 'N/A'}</div>
+                      <div style={{ display: 'flex', gap: '24px' }}>
+                        <div>
+                          <div style={{ fontSize: '12px', color: '#64748b' }}>Total Week Score</div>
+                          <div style={{ fontSize: '18px', fontWeight: 'bold', color: '#2563eb' }}>{w.combined_score}</div>
+                        </div>
+                        <div>
+                          <div style={{ fontSize: '12px', color: '#64748b' }}>Grade GPA</div>
+                          <div style={{ fontSize: '18px', fontWeight: 'bold', color: '#059669' }}>{getGradeWeight(w.combined_score) ?? 'N/A'}</div>
+                        </div>
                       </div>
                     </div>
 
-                    {/* Per-criterion breakdown */}
-                    {w.criteria_breakdown && w.criteria_breakdown.length > 0 && (
-                      <div style={{ marginTop: '10px', display: 'grid', gap: '8px' }}>
-                        {w.criteria_breakdown.map((cb) => (
-                          <div key={cb.criteria_id} style={{ padding: '10px', background: '#fff', borderRadius: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', border: '1px solid #eef2f7' }}>
-                            <div style={{ flex: 1 }}>
-                              <div style={{ fontWeight: 600, color: '#0f172a' }}>{cb.criteria_name}</div>
-                              <div style={{ fontSize: '12px', color: '#64748b' }}>Max: {cb.max_score}</div>
+                    {/* Per-criterion breakdown - only show criteria with scores */}
+                    {w.criteria_breakdown && w.criteria_breakdown.length > 0 && (() => {
+                      const usedCriteria = w.criteria_breakdown.filter(cb => 
+                        (cb.supervisor_score !== null && cb.supervisor_score !== undefined) || 
+                        (cb.academic_score !== null && cb.academic_score !== undefined)
+                      );
+                      return usedCriteria.length > 0 ? (
+                        <div style={{ borderTop: '1px solid #e2e8f0', paddingTop: '12px', display: 'grid', gap: '8px' }}>
+                          {usedCriteria.map((cb) => (
+                            <div key={cb.criteria_id} style={{ padding: '10px', background: '#fff', borderRadius: '8px', border: '1px solid #eef2f7' }}>
+                              <div style={{ marginBottom: '8px' }}>
+                                <div style={{ fontWeight: 600, color: '#0f172a' }}>Criteria: {cb.criteria_name}</div>
+                                <div style={{ fontSize: '12px', color: '#64748b' }}>Max: {cb.max_score}</div>
+                              </div>
+                              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px' }}>
+                                <div style={{ textAlign: 'left' }}>
+                                  <div style={{ fontSize: '12px', color: '#475569' }}>Workplace Score</div>
+                                  <div style={{ fontWeight: 600, color: '#2563eb' }}>{cb.supervisor_score ?? '—'}</div>
+                                  <div style={{ fontSize: '11px', color: '#64748b' }}>Contrib: {cb.supervisor_contribution}</div>
+                                </div>
+                                <div style={{ textAlign: 'left' }}>
+                                  <div style={{ fontSize: '12px', color: '#475569' }}>Academic Score</div>
+                                  <div style={{ fontWeight: 600, color: '#16a34a' }}>{cb.academic_score ?? '—'}</div>
+                                  <div style={{ fontSize: '11px', color: '#64748b' }}>Contrib: {cb.academic_contribution}</div>
+                                </div>
+                                <div style={{ textAlign: 'left' }}>
+                                  <div style={{ fontSize: '12px', color: '#475569' }}>Total</div>
+                                  <div style={{ fontWeight: 700, color: '#0f172a' }}>{cb.total_contribution}</div>
+                                </div>
+                              </div>
                             </div>
-                            <div style={{ display: 'flex', gap: '12px', alignItems: 'center', minWidth: '260px', justifyContent: 'flex-end' }}>
-                              <div style={{ textAlign: 'right' }}>
-                                <div style={{ fontSize: '12px', color: '#475569' }}>Sup Score</div>
-                                <div style={{ fontWeight: 600, color: '#2563eb' }}>{cb.supervisor_score ?? '—'}</div>
-                                <div style={{ fontSize: '12px', color: '#64748b' }}>Contrib: {cb.supervisor_contribution}</div>
-                              </div>
-                              <div style={{ textAlign: 'right' }}>
-                                <div style={{ fontSize: '12px', color: '#475569' }}>Acad Score</div>
-                                <div style={{ fontWeight: 600, color: '#16a34a' }}>{cb.academic_score ?? '—'}</div>
-                                <div style={{ fontSize: '12px', color: '#64748b' }}>Contrib: {cb.academic_contribution}</div>
-                              </div>
-                              <div style={{ textAlign: 'right', minWidth: '80px' }}>
-                                <div style={{ fontSize: '12px', color: '#475569' }}>Total</div>
-                                <div style={{ fontWeight: 700, color: '#0f172a' }}>{cb.total_contribution}</div>
-                              </div>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
+                          ))}
+                        </div>
+                      ) : null;
+                    })()}
                   </div>
                 ))}
               </div>
             )}
 
-            <div style={{ marginTop: '16px', display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
-              <div style={{ alignSelf: 'center', color: '#475569' }}>
-                Average: <strong style={{ fontSize: '18px', color: '#16a34a' }}>{weeklySummary.average ?? 'N/A'}</strong>
-                <span style={{ marginLeft: '10px' }}>Grade Weight: <strong>{getGradeWeight(weeklySummary.average) ?? 'N/A'}</strong></span>
+            <div style={{ marginTop: '20px', borderTop: '1px solid #e2e8f0', paddingTop: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div style={{ color: '#475569' }}>
+                <div>
+                  <span style={{ fontSize: '14px' }}>Average Score: </span>
+                  <strong style={{ fontSize: '20px', color: '#2563eb', marginRight: '24px' }}>{weeklySummary.average ?? 'N/A'}</strong>
+                </div>
+              </div>
+              <div style={{ color: '#475569' }}>
+                <span style={{ fontSize: '14px' }}>Average GPA: </span>
+                <strong style={{ fontSize: '20px', color: '#059669' }}>{getGradeWeight(weeklySummary.average) ?? 'N/A'}</strong>
               </div>
             </div>
           </div>
