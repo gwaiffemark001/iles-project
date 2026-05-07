@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useAuth } from '../contexts/useAuth';
+import { useAuth } from '../auth/useAuth';
 import api from '../api/api';
 import './ProfileEditor.css';
 
@@ -26,6 +26,8 @@ const ProfileEditor = () => {
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
   const [errorDetails, setErrorDetails] = useState({});
+  const [avatarFile, setAvatarFile] = useState(null);
+  const [avatarPreview, setAvatarPreview] = useState(null);
 
   useEffect(() => {
     if (user) {
@@ -45,6 +47,8 @@ const ProfileEditor = () => {
           date_of_birth: user.profile?.date_of_birth || ''
         }
       });
+      setAvatarPreview(user.profile?.avatar_url || null);
+      setAvatarFile(null);
     }
   }, [user]);
 
@@ -71,16 +75,11 @@ const ProfileEditor = () => {
   const handleAvatarUpload = (e) => {
     const file = e.target.files[0];
     if (file) {
+      setAvatarFile(file);
+      // Create preview
       const reader = new FileReader();
       reader.onload = (event) => {
-        const dataUrl = event.target.result;
-        setFormData(prev => ({
-          ...prev,
-          profile: {
-            ...prev.profile,
-            avatar_url: dataUrl
-          }
-        }));
+        setAvatarPreview(event.target.result);
       };
       reader.readAsDataURL(file);
     }
@@ -94,10 +93,33 @@ const ProfileEditor = () => {
     setErrorDetails({});
 
     try {
-      const response = await api.put('/api/profile/', formData);
+      // Create FormData for file upload
+      const uploadData = new FormData();
+      uploadData.append('first_name', formData.first_name);
+      uploadData.append('last_name', formData.last_name);
+      uploadData.append('email', formData.email);
+      uploadData.append('phone', formData.phone);
+      if (formData.department) uploadData.append('department', formData.department);
+      if (formData.staff_number) uploadData.append('staff_number', formData.staff_number);
+      if (formData.student_number) uploadData.append('student_number', formData.student_number);
+      if (formData.registration_number) uploadData.append('registration_number', formData.registration_number);
+      
+      // Profile data
+      uploadData.append('profile.bio', formData.profile.bio);
+      uploadData.append('profile.location', formData.profile.location);
+      uploadData.append('profile.date_of_birth', formData.profile.date_of_birth);
+      
+      // Only append avatar file if a new one was selected
+      if (avatarFile) {
+        uploadData.append('profile.avatar_url', avatarFile);
+      }
+
+      const response = await api.put('/profile/', uploadData);
       
       if (response.data) {
         updateUser(response.data);
+        setAvatarFile(null);
+        setAvatarPreview(response.data.profile?.avatar_url || null);
         setIsEditing(false);
         setMessage('Profile updated successfully!');
         setTimeout(() => setMessage(''), 3000);
@@ -316,12 +338,11 @@ const ProfileEditor = () => {
             <label className="form-field">
               <span>Avatar</span>
               <div className="avatar-upload">
-                {formData.profile.avatar_url && (
+                {avatarPreview && (
                   <img 
-                    src={formData.profile.avatar_url} 
+                    src={avatarPreview} 
                     alt="Profile Avatar" 
                     className="avatar-preview"
-                    onError={(e) => { e.target.style.display = 'none' }}
                   />
                 )}
                 <input
