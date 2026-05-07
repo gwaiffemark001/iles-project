@@ -5,6 +5,7 @@ import { getErrorMessage } from '@/api/api';
 import { buildWeeklyEvaluationSummaries } from '@/utils/evaluationSummary';
 import NotificationPane from '../../components/NotificationPane';
 import ChatPane from '../../components/ChatPane';
+import ProfileEditor from '../../components/ProfileEditor';
 import UserGuide from '../../components/UserGuide';
 import './StudentDashboard.css';
 
@@ -373,6 +374,12 @@ const StudentDashboard = () => {
              Criteria
            </button>
            <button
+             className={`nav-item ${activeTab === 'profile' ? 'active' : ''}`}
+             onClick={() => setActiveTab('profile')}
+           >
+             Profile
+           </button>
+           <button
              className={`nav-item ${activeTab === 'chat' ? 'active' : ''}`}
              onClick={() => setActiveTab('chat')}
            >
@@ -704,6 +711,13 @@ const StudentDashboard = () => {
                   <p>No criteria have been defined yet.</p>
                 </div>
               )}
+            </div>
+          )}
+
+          {activeTab === 'profile' && (
+            <div>
+              <div className="section-title">My Profile</div>
+              <ProfileEditor />
             </div>
           )}
 

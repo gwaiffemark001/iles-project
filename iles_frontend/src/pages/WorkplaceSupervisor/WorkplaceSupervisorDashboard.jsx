@@ -6,6 +6,7 @@ import { useAuth } from '../../contexts/useAuth'
 import SupervisorEvaluationForm from '../components/SupervisorEvaluationForm'
 import NotificationPane from '../../components/NotificationPane'
 import ChatPane from '../../components/ChatPane'
+import ProfileEditor from '../../components/ProfileEditor'
 import UserGuide from '../../components/UserGuide'
 import './WorkplaceSupervisorDashboard.css'
 
@@ -300,6 +301,7 @@ export default function WorkplaceSupervisorDashboard() {
             {chatUnreadCount > 0 && <span style={{ marginLeft: '8px', padding: '2px 6px', backgroundColor: '#DC2626', color: 'white', borderRadius: '10px', fontSize: '11px', fontWeight: 'bold' }}>{chatUnreadCount}</span>}
           </button>
            <button className={`workplace-nav-item ${activeTab === 'criteria' ? 'active' : ''}`} onClick={() => setActiveTab('criteria')}>Criteria</button>
+           <button className={`workplace-nav-item ${activeTab === 'profile' ? 'active' : ''}`} onClick={() => setActiveTab('profile')}>Profile</button>
         </div>
         <div className="workplace-sidebar-bottom">
           <button className="workplace-nav-item logout" onClick={logout}>Logout</button>
@@ -621,6 +623,13 @@ export default function WorkplaceSupervisorDashboard() {
                    ))}
                  </div>
                )}
+             </section>
+           )}
+
+           {activeTab === 'profile' && (
+             <section className="workplace-profile-section">
+               <div className="section-title">My Profile</div>
+               <ProfileEditor />
              </section>
            )}
 
