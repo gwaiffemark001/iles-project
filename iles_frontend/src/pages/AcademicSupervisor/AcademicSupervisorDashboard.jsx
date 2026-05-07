@@ -32,7 +32,7 @@ const AcademicSupervisorDashboard = () => {
     try {
       const response = await notificationsAPI.getNotifications({ limit: 100 });
       const notifications = Array.isArray(response.data) ? response.data : [];
-      const count = notifications.filter((n) => !n.is_read).length;
+      const count = notifications.filter((n) => n.is_read === false).length;
       setUnreadCount(count);
     } catch {
       // Silently fail - unread count is not critical
@@ -77,6 +77,13 @@ const AcademicSupervisorDashboard = () => {
 
     return () => clearInterval(pollingInterval);
   }, [fetchData, fetchUnreadCount]);
+
+  // Refetch count when leaving Notifications page
+  useEffect(() => {
+    if (activeSection !== 'notifications') {
+      fetchUnreadCount();
+    }
+  }, [activeSection, fetchUnreadCount]);
 
   const getStudentsData = () => {
     return placements.map((placement) => {
