@@ -35,6 +35,7 @@ export default function SupervisorEvaluationForm({
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
   const [loadingCriteria, setLoadingCriteria] = useState(true);
+  const activeCriteriaId = lockedCriteriaId ?? selectedCriteriaId;
 
   useEffect(() => {
     let isMounted = true;
@@ -208,15 +209,15 @@ export default function SupervisorEvaluationForm({
   };
 
   const calculateTotalScore = () => {
-    if (criteria.length === 0 || items.length === 0 || !selectedCriteriaId) return 0;
+    if (criteria.length === 0 || items.length === 0 || !activeCriteriaId) return 0;
 
     if (determinedEvaluationType === 'supervisor') {
-      const weighted = calculateWorkplaceWeightedScore(selectedCriteriaId);
+      const weighted = calculateWorkplaceWeightedScore(activeCriteriaId);
       return Math.round(weighted * 100) / 100;
     }
 
-    const selectedItem = items.find((item) => item.criteria_id === selectedCriteriaId);
-    const crit = criteria.find((c) => c.id === selectedCriteriaId);
+    const selectedItem = items.find((item) => item.criteria_id === activeCriteriaId);
+    const crit = criteria.find((c) => c.id === activeCriteriaId);
     if (!selectedItem || !crit) return 0;
 
     const score = selectedItem.score === '' ? 0 : Number(selectedItem.score);
@@ -234,18 +235,18 @@ export default function SupervisorEvaluationForm({
     setSaving(true);
     setError(null);
 
-    if (!selectedCriteriaId) {
+    if (!activeCriteriaId) {
       setError('Select a criterion before saving.');
       setSaving(false);
       return;
     }
 
-    const selectedItem = items.find((item) => item.criteria_id === selectedCriteriaId);
-    const selectedCriterion = criteria.find((c) => c.id === selectedCriteriaId);
+    const selectedItem = items.find((item) => item.criteria_id === activeCriteriaId);
+    const selectedCriterion = criteria.find((c) => c.id === activeCriteriaId);
     let scoreToSave = 0;
 
     if (determinedEvaluationType === 'supervisor') {
-      const selected = workplaceScores[selectedCriteriaId] || {};
+      const selected = workplaceScores[activeCriteriaId] || {};
       const missingRequirement = WORKPLACE_REQUIREMENTS.find((req) => selected[req.key] === '' || selected[req.key] == null);
       if (missingRequirement) {
         setError(`Please enter a score for ${missingRequirement.label}.`);
@@ -264,7 +265,7 @@ export default function SupervisorEvaluationForm({
         return;
       }
 
-      scoreToSave = Math.round(calculateWorkplaceWeightedScore(selectedCriteriaId) * 100) / 100;
+      scoreToSave = Math.round(calculateWorkplaceWeightedScore(activeCriteriaId) * 100) / 100;
     } else {
       const numericScore = Number(selectedItem?.score);
       const maxScore = Number(selectedCriterion?.max_score || 100);
@@ -285,7 +286,7 @@ export default function SupervisorEvaluationForm({
       evaluator_id: evaluatorId,
       evaluation_type: determinedEvaluationType,
       week_number: existingEvaluation?.week_number || initialWeekNumber,
-      items: [{ criteria_id: selectedCriteriaId, score: scoreToSave }],
+      items: [{ criteria_id: activeCriteriaId, score: scoreToSave }],
     };
 
     try {
@@ -393,7 +394,7 @@ export default function SupervisorEvaluationForm({
               <input
                 type="radio"
                 name="selectedCriterion"
-                checked={selectedCriteriaId === c.id}
+                checked={activeCriteriaId === c.id}
                 onChange={() => toggleCriteriaSelection(c.id)}
                 disabled={saving || (lockedCriteriaId && c.id !== lockedCriteriaId)}
               />
@@ -404,8 +405,8 @@ export default function SupervisorEvaluationForm({
       </div>
 
       <div style={{ display: 'grid', gap: '12px', marginBottom: '16px' }}>
-        {selectedCriteriaId ? (() => {
-          const c = criteria.find((criterion) => criterion.id === selectedCriteriaId);
+        {activeCriteriaId ? (() => {
+          const c = criteria.find((criterion) => criterion.id === activeCriteriaId);
           if (!c) return null;
 
           const itemScore = items.find((it) => it.criteria_id === c.id)?.score || '';
