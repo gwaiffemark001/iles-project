@@ -28,6 +28,7 @@ const AcademicSupervisorDashboard = () => {
   const [editingEvaluation, setEditingEvaluation] = useState(null);
   const [selectedWeekNumber, setSelectedWeekNumber] = useState(1);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [chatUnreadCount, setChatUnreadCount] = useState(0);
 
   const fetchUnreadCount = useCallback(async () => {
     try {
@@ -533,6 +534,7 @@ const AcademicSupervisorDashboard = () => {
           </button>
           <button className={`nav-item ${activeSection === "chat" ? "active" : ""}`} onClick={() => setActiveSection("chat")}>
             Chat
+            {chatUnreadCount > 0 && <span style={{ marginLeft: '8px', padding: '2px 6px', backgroundColor: '#DC2626', color: 'white', borderRadius: '10px', fontSize: '11px', fontWeight: 'bold' }}>{chatUnreadCount}</span>}
           </button>
            <button className={`nav-item ${activeSection === "criteria" ? "active" : ""}`} onClick={() => setActiveSection("criteria")}>
              Criteria
@@ -793,7 +795,7 @@ const AcademicSupervisorDashboard = () => {
 
         {activeSection === "chat" && (
           <div style={{ height: 'calc(100vh - 120px)', display: 'flex', flexDirection: 'column' }}>
-            <ChatPane currentUserId={user?.id} />
+            <ChatPane currentUserId={user?.id} onUnreadCountChange={setChatUnreadCount} />
           </div>
         )}
       </div>
