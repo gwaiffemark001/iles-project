@@ -49,7 +49,6 @@ export default function WorkplaceSupervisorDashboard() {
   const [showEvalEditor, setShowEvalEditor] = useState(false)
   const [evalPlacement, setEvalPlacement] = useState(null)
   const [selectedWeekNumber, setSelectedWeekNumber] = useState(1)
-  const [evaluatingLogId, setEvaluatingLogId] = useState(null)
   const [editingEvaluation, setEditingEvaluation] = useState(null)
   const [unreadCount, setUnreadCount] = useState(0)
 
@@ -120,27 +119,7 @@ export default function WorkplaceSupervisorDashboard() {
     return evaluations.filter(e => e.evaluation_type === 'supervisor');
   }, [evaluations]);
 
-  const getNextSupervisorWeek = useCallback((placementId) => {
-    const placementLogWeeks = logs
-      .filter((log) => Number(log.placement?.id ?? log.placement_id) === Number(placementId))
-      .map((log) => Number(log.week_number || 1))
-      .filter((weekNumber, index, array) => array.indexOf(weekNumber) === index)
-      .sort((left, right) => left - right);
-
-    const evaluatedWeeks = new Set(
-      supervisorEvaluations
-        .filter((evaluation) => Number(evaluation.placement?.id ?? evaluation.placement_id) === Number(placementId))
-        .map((evaluation) => Number(evaluation.week_number || 1))
-        .filter((weekNumber) => !Number.isNaN(weekNumber)),
-    );
-
-    const maxKnownWeek = Math.max(1, ...placementLogWeeks, ...Array.from(evaluatedWeeks));
-    let nextWeekNumber = 1;
-    while (evaluatedWeeks.has(nextWeekNumber) && nextWeekNumber <= maxKnownWeek + 1) {
-      nextWeekNumber += 1;
-    }
-    return nextWeekNumber;
-  }, [logs, supervisorEvaluations]);
+  
 
   // Build weekly summaries from all evaluation types so both scores appear on each card.
   const { weeklySummaries: allWeeklySummaries } = useMemo(
@@ -241,17 +220,11 @@ export default function WorkplaceSupervisorDashboard() {
   }
 
   useEffect(() => {
-    if (evaluatingLogId) {
-      const target = document.getElementById(`workplace-inline-eval-${evaluatingLogId}`)
-      target?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-      return
-    }
-
     if (showEvalEditor && evalPlacement) {
       const target = document.getElementById('workplace-eval-editor-form')
       target?.scrollIntoView({ behavior: 'smooth', block: 'start' })
     }
-  }, [evaluatingLogId, showEvalEditor, evalPlacement])
+  }, [showEvalEditor, evalPlacement])
 
   const closeEvaluationEditor = () => {
     setShowEvalEditor(false)
@@ -282,13 +255,7 @@ export default function WorkplaceSupervisorDashboard() {
     }
   }
 
-  const getExistingEvaluationForLog = (log) => evaluations.find(
-    (evaluation) => (
-      Number(evaluation.placement?.id ?? evaluation.placement_id) === Number(log.placement?.id ?? log.placement_id)
-      && evaluation.evaluation_type === 'supervisor'
-      && Number(evaluation.week_number) === Number(log.week_number)
-    ),
-  )
+  
 
   const handleRejectLog = async (logId, supervisorComment) => {
     try {
@@ -433,8 +400,6 @@ export default function WorkplaceSupervisorDashboard() {
                     {filteredLogs.map((log) => (
                       <div key={log.id} className={`workplace-log-card ${log.status}`}>
                         {(() => {
-                          const nextWeekNumber = getNextSupervisorWeek(log.placement?.id ?? log.placement_id)
-                          const canEvaluateThisLog = Number(log.week_number) === Number(nextWeekNumber) && log.status === 'approved'
                           return (
                             <>
                         <div className="workplace-log-header">
@@ -465,25 +430,7 @@ export default function WorkplaceSupervisorDashboard() {
                                 </div>
                               </>
                             )}
-                            {log.status === 'approved' && (
-                              <div style={{ marginTop: '12px' }}>
-                                <button
-                                  type="button"
-                                  className="workplace-btn-review"
-                                  disabled={!canEvaluateThisLog}
-                                  onClick={() => {
-                                    if (canEvaluateThisLog) {
-                                      setEvaluatingLogId(log.id)
-                                    } else {
-                                      toast.error(`Week ${nextWeekNumber} must be approved before evaluation`)
-                                    }
-                                  }}
-                                  title={canEvaluateThisLog ? 'Evaluate this week' : `Week ${nextWeekNumber} must be approved before evaluation`}
-                                >
-                                  {getExistingEvaluationForLog(log) ? 'Edit Weekly Evaluation' : 'Evaluate This Week'}
-                                </button>
-                              </div>
-                            )}
+                            {/* Inline weekly evaluation button removed per request */}
                           </div>
                         )}
                         {log.status !== 'approved' && (
@@ -491,24 +438,7 @@ export default function WorkplaceSupervisorDashboard() {
                             ⚠️ This log must be approved by both supervisors before you can evaluate it.
                           </div>
                         )}
-                        {evaluatingLogId === log.id ? (
-                          <div id={`workplace-inline-eval-${log.id}`} style={{ marginTop: '16px' }}>
-                            <SupervisorEvaluationForm
-                              placementId={log.placement?.id ?? log.placement_id}
-                              evaluatorId={user?.id}
-                              evaluationType="supervisor"
-                              existingEvaluation={getExistingEvaluationForLog(log)}
-                              initialWeekNumber={log.week_number}
-                              studentName={log.placement?.student?.full_name || log.placement?.student?.username || 'Student'}
-                              onSaved={() => {
-                                toast.success('Evaluation saved successfully')
-                                setEvaluatingLogId(null)
-                                loadData()
-                              }}
-                              onCancel={() => setEvaluatingLogId(null)}
-                            />
-                          </div>
-                        ) : null}
+                        {/* Inline evaluation form removed */}
                             </>
                           )
                         })()}
