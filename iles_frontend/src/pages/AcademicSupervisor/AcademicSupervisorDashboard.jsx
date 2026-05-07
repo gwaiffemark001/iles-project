@@ -2,7 +2,7 @@ import { useEffect, useState, useCallback, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import { useAuth } from "../../contexts/useAuth";
-import { criteriaAPI, evaluationsAPI, getErrorMessage, logsAPI, placementsAPI } from "../../api/api";
+import { criteriaAPI, evaluationsAPI, getErrorMessage, logsAPI, placementsAPI, notificationsAPI } from "../../api/api";
 import { buildWeeklyEvaluationSummaries } from "../../utils/evaluationSummary";
 import SupervisorEvaluationForm from "../components/SupervisorEvaluationForm";
 import NotificationPane from "../../components/NotificationPane";
@@ -26,6 +26,18 @@ const AcademicSupervisorDashboard = () => {
   const [editingEvaluation, setEditingEvaluation] = useState(null);
   const [selectedWeekNumber, setSelectedWeekNumber] = useState(1);
   const [evaluatingLogId, setEvaluatingLogId] = useState(null);
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  const fetchUnreadCount = useCallback(async () => {
+    try {
+      const response = await notificationsAPI.getNotifications({ limit: 100 });
+      const notifications = Array.isArray(response.data) ? response.data : [];
+      const count = notifications.filter((n) => !n.is_read).length;
+      setUnreadCount(count);
+    } catch {
+      // Silently fail - unread count is not critical
+    }
+  }, []);
 
   const fetchData = useCallback(async () => {
 
@@ -54,10 +66,17 @@ const AcademicSupervisorDashboard = () => {
   useEffect(() => {
     const initializeData = async () => {
       await fetchData();
+      await fetchUnreadCount();
     };
 
     initializeData();
-  }, [fetchData]);
+
+    const pollingInterval = setInterval(async () => {
+      await fetchUnreadCount();
+    }, 30000);
+
+    return () => clearInterval(pollingInterval);
+  }, [fetchData, fetchUnreadCount]);
 
   const getStudentsData = () => {
     return placements.map((placement) => {
@@ -558,6 +577,7 @@ const AcademicSupervisorDashboard = () => {
           </button>
           <button className={`nav-item ${activeSection === "notifications" ? "active" : ""}`} onClick={() => setActiveSection("notifications")}>
             Notifications
+            {unreadCount > 0 && <span style={{ marginLeft: '8px', padding: '2px 6px', backgroundColor: '#DC2626', color: 'white', borderRadius: '10px', fontSize: '11px', fontWeight: 'bold' }}>{unreadCount}</span>}
           </button>
            <button className={`nav-item ${activeSection === "criteria" ? "active" : ""}`} onClick={() => setActiveSection("criteria")}>
              Criteria
