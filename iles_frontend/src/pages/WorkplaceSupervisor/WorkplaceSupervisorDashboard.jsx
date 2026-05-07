@@ -53,6 +53,7 @@ export default function WorkplaceSupervisorDashboard() {
   const [selectedWeekNumber, setSelectedWeekNumber] = useState(1)
   const [editingEvaluation, setEditingEvaluation] = useState(null)
   const [unreadCount, setUnreadCount] = useState(0)
+  const [chatUnreadCount, setChatUnreadCount] = useState(0)
 
   const fetchUnreadCount = useCallback(async () => {
     try {
@@ -293,7 +294,10 @@ export default function WorkplaceSupervisorDashboard() {
             Notifications
             {unreadCount > 0 && <span style={{ marginLeft: '8px', padding: '2px 6px', backgroundColor: '#DC2626', color: 'white', borderRadius: '10px', fontSize: '11px', fontWeight: 'bold' }}>{unreadCount}</span>}
           </button>
-          <button className={`workplace-nav-item ${activeTab === 'chat' ? 'active' : ''}`} onClick={() => setActiveTab('chat')}>Chat</button>
+          <button className={`workplace-nav-item ${activeTab === 'chat' ? 'active' : ''}`} onClick={() => setActiveTab('chat')}>
+            Chat
+            {chatUnreadCount > 0 && <span style={{ marginLeft: '8px', padding: '2px 6px', backgroundColor: '#DC2626', color: 'white', borderRadius: '10px', fontSize: '11px', fontWeight: 'bold' }}>{chatUnreadCount}</span>}
+          </button>
            <button className={`workplace-nav-item ${activeTab === 'criteria' ? 'active' : ''}`} onClick={() => setActiveTab('criteria')}>Criteria</button>
         </div>
         <div className="workplace-sidebar-bottom">
@@ -620,7 +624,7 @@ export default function WorkplaceSupervisorDashboard() {
 
            {activeTab === 'chat' && (
              <section style={{ height: 'calc(100vh - 120px)', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-               <ChatPane currentUserId={user?.id} />
+               <ChatPane currentUserId={user?.id} onUnreadCountChange={setChatUnreadCount} />
              </section>
            )}
       </main>
