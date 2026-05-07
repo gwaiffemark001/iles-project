@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { createApiClient } from '../api/client'
-import AuthContext from './AuthContext'
+import AuthContext from "./AuthContextInstance";
 
 const ACCESS_KEY = 'access_token'
 const REFRESH_KEY = 'refresh_token'
@@ -67,6 +67,11 @@ export function AuthProvider({ children }) {
     if (profile?.role) localStorage.setItem(ROLE_KEY, profile.role)
     return profile
   }, [api])
+
+  const updateUser = useCallback((userData) => {
+    setUser(userData)
+    if (userData?.role) localStorage.setItem(ROLE_KEY, userData.role)
+  }, [])
 
   const login = useCallback(
     async ({ usernameOrEmail, username, password }) => {
@@ -180,8 +185,9 @@ export function AuthProvider({ children }) {
       register,
       logout,
       fetchProfile,
+      updateUser,
     }
-  }, [api, user, accessToken, refreshToken, loading, login, register, logout, fetchProfile])
+  }, [api, user, accessToken, refreshToken, loading, login, register, logout, fetchProfile, updateUser])
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
 }

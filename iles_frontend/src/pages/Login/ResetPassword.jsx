@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useNavigate, useSearchParams, Link } from 'react-router-dom'
 import './Login.css'
-import { useAuth } from '../../auth/useAuth'
+import { useAuth } from '@/auth/useAuth'
 
 export default function ResetPassword() {
   const { api } = useAuth()

@@ -2,9 +2,49 @@
   max-width: 800px;
   margin: 0 auto;
   padding: 20px;
-  background: #f8fafc;
+  background: #f8f9fa;
   border-radius: 8px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.avatar-upload {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  margin-bottom: 10px;
+}
+
+.avatar-preview {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 3px solid #ddd;
+  margin-bottom: 10px;
+}
+
+.avatar-input {
+  display: none;
+}
+
+.upload-btn {
+  padding: 8px 16px;
+  background: #007bff;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background-color 0.2s;
+}
+
+.upload-btn:hover {
+  background: #0056b3;
+}
+
+.upload-btn:disabled {
+  background: #6c757d;
+  cursor: not-allowed;
 }
 
 .profile-header {

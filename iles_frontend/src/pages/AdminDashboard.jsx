@@ -1,11 +1,12 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import axios from 'axios'
-import { useAuth } from '../auth/useAuth'
+import { useAuth } from '@/auth/useAuth'
 import { criteriaAPI, evaluationsAPI, placementsAPI } from '../api/api'
 import { buildWeeklyEvaluationSummaries, getGradeWeight } from '../utils/evaluationSummary'
 import ChatPane from '../components/ChatPane'
 import ProfileEditor from '../components/ProfileEditor'
 import UserGuide from '../components/UserGuide'
+import UserAvatar from '../components/UserAvatar'
 import './AdminDashboard.css'
 
 const userRoles = [
@@ -548,10 +549,13 @@ function AdminDashboard() {
     <div style={{ display: 'flex', minHeight: '100vh', backgroundColor: '#f5f5f5' }}>
       {/* Sidebar */}
       <div style={{ width: '250px', backgroundColor: '#2c3e50', color: 'white', padding: '20px', position: 'sticky', top: '0', height: '100vh', overflowY: 'auto' }}>
-        <div style={{ marginBottom: '30px' }}>
-          <h2 style={{ margin: '0 0 10px 0' }}>ILES</h2>
-          <p style={{ margin: '0', fontSize: '14px', opacity: 0.8 }}>{user?.username || 'Admin'}</p>
-          <p style={{ margin: '0', fontSize: '12px', opacity: 0.6 }}>Administrator</p>
+        <div style={{ marginBottom: '30px', display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
+          <UserAvatar user={user} size="large" />
+          <div>
+            <h2 style={{ margin: '0 0 10px 0' }}>ILES</h2>
+            <p style={{ margin: '0', fontSize: '14px', opacity: 0.8 }}>{user?.username || 'Admin'}</p>
+            <p style={{ margin: '0', fontSize: '12px', opacity: 0.6 }}>Administrator</p>
+          </div>
         </div>
         
         <nav style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>

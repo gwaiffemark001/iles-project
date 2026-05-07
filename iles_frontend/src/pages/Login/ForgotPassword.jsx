@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom'
 import './Login.css'
 import { useState } from 'react'
-import { useAuth } from '../../auth/useAuth'
+import { useAuth } from '@/auth/useAuth'
 
 function ForgotPassword() {
     const { api } = useAuth()

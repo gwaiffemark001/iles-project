@@ -2,12 +2,13 @@ import { useEffect, useMemo, useState, useCallback } from 'react'
 import { toast } from 'react-toastify'
 import { criteriaAPI, evaluationsAPI, getErrorMessage, logsAPI, placementsAPI, notificationsAPI } from '../../api/api'
 import { buildWeeklyEvaluationSummaries } from '../../utils/evaluationSummary'
-import { useAuth } from '../../contexts/useAuth'
+import { useAuth } from '@/auth/useAuth'
 import SupervisorEvaluationForm from '../components/SupervisorEvaluationForm'
 import NotificationPane from '../../components/NotificationPane'
 import ChatPane from '../../components/ChatPane'
 import ProfileEditor from '../../components/ProfileEditor'
 import UserGuide from '../../components/UserGuide'
+import UserAvatar from '../../components/UserAvatar'
 import './WorkplaceSupervisorDashboard.css'
 
 function normalizePlacement(placement, logs, evaluations) {
@@ -319,7 +320,7 @@ export default function WorkplaceSupervisorDashboard() {
               <strong>{user?.username}</strong>
               <span>Workplace Supervisor</span>
             </div>
-            <div className="workplace-avatar">{user?.username?.charAt(0).toUpperCase()}</div>
+            <UserAvatar user={user} size="medium" className="workplace-avatar" />
           </div>
         </header>
 
