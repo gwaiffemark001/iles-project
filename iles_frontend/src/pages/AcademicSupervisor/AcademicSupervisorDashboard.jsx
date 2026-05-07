@@ -7,6 +7,7 @@ import { buildWeeklyEvaluationSummaries } from "../../utils/evaluationSummary";
 import SupervisorEvaluationForm from "../components/SupervisorEvaluationForm";
 import NotificationPane from "../../components/NotificationPane";
 import ChatPane from "../../components/ChatPane";
+import UserGuide from "../../components/UserGuide";
 import "./AcademicSupervisorDashboard.css";
 
 const AcademicSupervisorDashboard = () => {
@@ -796,6 +797,7 @@ const AcademicSupervisorDashboard = () => {
           </div>
         )}
       </div>
+      <UserGuide userRole="academic_supervisor" />
     </div>
   );
 };

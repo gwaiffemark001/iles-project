@@ -5,6 +5,7 @@ import { getErrorMessage } from '@/api/api';
 import { buildWeeklyEvaluationSummaries } from '@/utils/evaluationSummary';
 import NotificationPane from '../../components/NotificationPane';
 import ChatPane from '../../components/ChatPane';
+import UserGuide from '../../components/UserGuide';
 import './StudentDashboard.css';
 
 const createInitialLogForm = (defaultPlacementId = '') => ({
@@ -712,6 +713,7 @@ const StudentDashboard = () => {
           )}
         </div>
       </div>
+      <UserGuide userRole="student" />
     </div>
   );
 };

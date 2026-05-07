@@ -59,18 +59,45 @@
   display: flex;
   flex-direction: column;
   gap: 4px;
+  width: 100%;
+}
+
+.contact-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
 }
 
 .contact-name {
   font-weight: 500;
   color: #0a1d37;
   font-size: 14px;
+  flex: 1;
+}
+
+.unread-badge {
+  background-color: #d1242f;
+  color: white;
+  font-weight: 600;
+  font-size: 12px;
+  padding: 2px 6px;
+  border-radius: 12px;
+  min-width: 20px;
+  text-align: center;
+  flex-shrink: 0;
 }
 
 .contact-role {
   font-size: 12px;
   color: #64748b;
   text-transform: capitalize;
+}
+
+.contact-time {
+  font-size: 11px;
+  color: #99a3af;
+  margin-top: 2px;
 }
 
 .no-contacts {

@@ -10,6 +10,8 @@ export default function ChatPane({ currentUserId }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const messagesEndRef = useRef(null);
+  const previousMessagesRef = useRef([]);
+  const pollingIntervalRef = useRef(null);
 
   const fetchContacts = useCallback(async () => {
     try {
@@ -24,7 +26,14 @@ export default function ChatPane({ currentUserId }) {
     try {
       setLoading(true);
       const response = await chatAPI.getMessages(contactId);
-      setMessages(Array.isArray(response.data) ? response.data : []);
+      const newMessages = Array.isArray(response.data) ? response.data : [];
+      
+      // Only update state if messages actually changed
+      if (JSON.stringify(newMessages) !== JSON.stringify(previousMessagesRef.current)) {
+        setMessages(newMessages);
+        previousMessagesRef.current = newMessages;
+      }
+      
       setError('');
     } catch {
       setError('Failed to load messages');
@@ -42,6 +51,8 @@ export default function ChatPane({ currentUserId }) {
       setMessageText('');
       // Refresh messages
       await fetchMessages(selectedContact.id);
+      // Refresh contacts to update unread counts
+      await fetchContacts();
     } catch {
       setError('Failed to send message');
     }
@@ -53,12 +64,24 @@ export default function ChatPane({ currentUserId }) {
 
   useEffect(() => {
     if (selectedContact) {
+      // Fetch messages immediately
       fetchMessages(selectedContact.id);
+      
+      // Clear any existing polling interval
+      if (pollingIntervalRef.current) {
+        clearInterval(pollingIntervalRef.current);
+      }
+      
       // Poll for new messages every 3 seconds
-      const interval = setInterval(() => {
+      pollingIntervalRef.current = setInterval(() => {
         fetchMessages(selectedContact.id);
       }, 3000);
-      return () => clearInterval(interval);
+      
+      return () => {
+        if (pollingIntervalRef.current) {
+          clearInterval(pollingIntervalRef.current);
+        }
+      };
     }
   }, [selectedContact, fetchMessages]);
 
@@ -86,10 +109,25 @@ export default function ChatPane({ currentUserId }) {
                   onClick={() => setSelectedContact(contact)}
                 >
                   <div className="contact-info">
-                    <div className="contact-name">
-                      {contact.full_name || contact.username}
+                    <div className="contact-header">
+                      <div className="contact-name">
+                        {contact.full_name || contact.username}
+                      </div>
+                      {contact.unread_count > 0 && (
+                        <span className="unread-badge">{contact.unread_count}</span>
+                      )}
                     </div>
                     <div className="contact-role">{contact.role}</div>
+                    {contact.last_message_time && (
+                      <div className="contact-time">
+                        {new Date(contact.last_message_time).toLocaleDateString([], {
+                          month: 'short',
+                          day: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit',
+                        })}
+                      </div>
+                    )}
                   </div>
                 </li>
               ))}

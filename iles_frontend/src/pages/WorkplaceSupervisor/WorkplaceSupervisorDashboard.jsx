@@ -6,6 +6,7 @@ import { useAuth } from '../../contexts/useAuth'
 import SupervisorEvaluationForm from '../components/SupervisorEvaluationForm'
 import NotificationPane from '../../components/NotificationPane'
 import ChatPane from '../../components/ChatPane'
+import UserGuide from '../../components/UserGuide'
 import './WorkplaceSupervisorDashboard.css'
 
 function normalizePlacement(placement, logs, evaluations) {
@@ -623,6 +624,7 @@ export default function WorkplaceSupervisorDashboard() {
              </section>
            )}
       </main>
+      <UserGuide userRole="workplace_supervisor" />
     </div>
   )
 }
