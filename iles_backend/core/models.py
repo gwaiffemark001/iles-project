@@ -341,13 +341,14 @@ class Evaluation(models.Model):
         except Exception:
             pass
 
-        # Generic per-criteria weighted percent fallback (uses criteria.weight_percent as percent total)
+        # Generic per-criteria weighted percent fallback (uses the evaluator role share)
         total = Decimal('0')
         for item in items_qs:
             crit = item.criteria
             try:
                 if crit.max_score and crit.max_score > 0:
-                    contribution = (Decimal(str(item.score)) / Decimal(str(crit.max_score))) * Decimal(str(crit.weight_percent))
+                    role_share = crit.supervisor_share if self.evaluation_type == 'supervisor' else crit.academic_share
+                    contribution = (Decimal(str(item.score)) / Decimal(str(crit.max_score))) * Decimal(str(role_share))
                 else:
                     contribution = Decimal('0')
             except Exception:
@@ -416,7 +417,7 @@ class Evaluation(models.Model):
         criteria = EvaluationCriteria.objects.all()
 
         total = Decimal('0')
-        # Track per-role totals (these are already weighted by criteria.weight_percent when computed per-evaluation)
+            # Track per-role totals (weighted by the evaluator role share for each criterion)
         sup_total = None
         acad_total = None
 
@@ -453,9 +454,7 @@ class Evaluation(models.Model):
                     if crit.max_score and crit.max_score > 0:
                         sup_score = Decimal(str(sup_item.score))
                         sup_score_val = float(sup_score)
-                        # portion of the criterion's weight assigned to supervisor
-                        sup_share_of_weight = (Decimal(str(crit.weight_percent)) * (Decimal(str(crit.supervisor_share)) / Decimal('100')))
-                        sup_contribution = (sup_score / Decimal(str(crit.max_score))) * sup_share_of_weight
+                        sup_contribution = (sup_score / Decimal(str(crit.max_score))) * Decimal(str(crit.supervisor_share))
                         crit_contrib += sup_contribution
                 except EvaluationItem.DoesNotExist:
                     pass
@@ -466,8 +465,7 @@ class Evaluation(models.Model):
                     if crit.max_score and crit.max_score > 0:
                         acad_score = Decimal(str(acad_item.score))
                         acad_score_val = float(acad_score)
-                        acad_share_of_weight = (Decimal(str(crit.weight_percent)) * (Decimal(str(crit.academic_share)) / Decimal('100')))
-                        acad_contribution = (acad_score / Decimal(str(crit.max_score))) * acad_share_of_weight
+                        acad_contribution = (acad_score / Decimal(str(crit.max_score))) * Decimal(str(crit.academic_share))
                         crit_contrib += acad_contribution
                 except EvaluationItem.DoesNotExist:
                     pass
@@ -507,10 +505,8 @@ class Evaluation(models.Model):
             crit_breakdown = []
             for crit in criteria:
                 crit_id = getattr(crit, 'id', None)
-                sup_share_of_weight = (Decimal(str(crit.weight_percent)) * (Decimal(str(crit.supervisor_share)) / Decimal('100')))
-                acad_share_of_weight = (Decimal(str(crit.weight_percent)) * (Decimal(str(crit.academic_share)) / Decimal('100')))
-                sup_contr = float(round(sup_val * (sup_share_of_weight / Decimal('100')), 2)) if sup_total is not None else 0.0
-                acad_contr = float(round(acad_val * (acad_share_of_weight / Decimal('100')), 2)) if acad_total is not None else 0.0
+                sup_contr = float(round((sup_val / Decimal(str(crit.max_score))) * Decimal(str(crit.supervisor_share)), 2)) if sup_total is not None else 0.0
+                acad_contr = float(round((acad_val / Decimal(str(crit.max_score))) * Decimal(str(crit.academic_share)), 2)) if acad_total is not None else 0.0
                 crit_breakdown.append({
                     'criteria_id': crit_id,
                     'criteria_name': crit.name,

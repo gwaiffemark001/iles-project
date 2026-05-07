@@ -55,15 +55,57 @@ const getOverdueWeeks = (placement, today = new Date()) => {
   return Math.max(0, Math.floor(elapsedDays / 7))
 }
 
-const calculateCombinedWeekScore = (supervisorEvaluation, academicEvaluation) => {
-  const supervisorScore = Number(supervisorEvaluation?.weighted_score ?? supervisorEvaluation?.score ?? 0)
-  const academicScore = Number(academicEvaluation?.weighted_score ?? academicEvaluation?.score ?? 0)
-  
-  // Combined score is simply the sum of workplace and academic scores
-  return Number((supervisorScore + academicScore).toFixed(2))
+const calculateCombinedWeekScore = (supervisorEvaluation, academicEvaluation, criteria = []) => {
+  if (!criteria.length || (!supervisorEvaluation && !academicEvaluation)) {
+    // Fallback: sum weighted scores if criteria not available
+    const supervisorScore = Number(supervisorEvaluation?.weighted_score ?? supervisorEvaluation?.score ?? 0)
+    const academicScore = Number(academicEvaluation?.weighted_score ?? academicEvaluation?.score ?? 0)
+    return Number((supervisorScore + academicScore).toFixed(2))
+  }
+
+  // Calculate contributions from both evaluations based on criteria
+  let totalContribution = 0
+
+  // Process supervisor evaluation
+  if (supervisorEvaluation?.items && Array.isArray(supervisorEvaluation.items)) {
+    supervisorEvaluation.items.forEach((item) => {
+      const criterion = criteria.find(
+        (c) => Number(c.id) === Number(item.criteria?.id ?? item.criteria_id)
+      )
+      if (criterion) {
+        const score = Number(item.score ?? 0)
+        const maxScore = Number(criterion.max_score ?? 100)
+        const roleShare = Number(criterion.supervisor_share ?? 0)
+        if (maxScore > 0) {
+          const contribution = (score / maxScore) * (roleShare / 100)
+          totalContribution += contribution
+        }
+      }
+    })
+  }
+
+  // Process academic evaluation
+  if (academicEvaluation?.items && Array.isArray(academicEvaluation.items)) {
+    academicEvaluation.items.forEach((item) => {
+      const criterion = criteria.find(
+        (c) => Number(c.id) === Number(item.criteria?.id ?? item.criteria_id)
+      )
+      if (criterion) {
+        const score = Number(item.score ?? 0)
+        const maxScore = Number(criterion.max_score ?? 100)
+        const roleShare = Number(criterion.academic_share ?? 0)
+        if (maxScore > 0) {
+          const contribution = (score / maxScore) * (roleShare / 100)
+          totalContribution += contribution
+        }
+      }
+    })
+  }
+
+  return Number((totalContribution * 100).toFixed(2))
 }
 
-export const buildWeeklyEvaluationSummaries = (evaluations = [], placements = [], logs = []) => {
+export const buildWeeklyEvaluationSummaries = (evaluations = [], placements = [], logs = [], criteria = []) => {
   const groups = new Map()
   const logLookup = new Map()
 

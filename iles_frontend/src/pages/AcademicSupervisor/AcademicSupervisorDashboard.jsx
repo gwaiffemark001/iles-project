@@ -162,33 +162,56 @@ const AcademicSupervisorDashboard = () => {
     );
   }, [evaluations, user?.id]);
 
+  const getNextAcademicWeek = useCallback((placementId) => {
+    const placementLogWeeks = logs
+      .filter((log) => Number(log.placement?.id ?? log.placement_id) === Number(placementId))
+      .map((log) => Number(log.week_number || 1))
+      .filter((weekNumber, index, array) => array.indexOf(weekNumber) === index)
+      .sort((left, right) => left - right);
+
+    const evaluatedWeeks = new Set(
+      academicEvaluations
+        .filter((evaluation) => Number(evaluation.placement?.id ?? evaluation.placement_id) === Number(placementId))
+        .map((evaluation) => Number(evaluation.week_number || 1))
+        .filter((weekNumber) => !Number.isNaN(weekNumber)),
+    );
+
+    const maxKnownWeek = Math.max(1, ...placementLogWeeks, ...Array.from(evaluatedWeeks));
+    let nextWeekNumber = 1;
+    while (evaluatedWeeks.has(nextWeekNumber) && nextWeekNumber <= maxKnownWeek + 1) {
+      nextWeekNumber += 1;
+    }
+    return nextWeekNumber;
+  }, [logs, academicEvaluations]);
+
   const { weeklySummaries: allWeeklySummaries } = useMemo(
-    () => buildWeeklyEvaluationSummaries(evaluations, placements, logs),
-    [evaluations, placements, logs]
+    () => buildWeeklyEvaluationSummaries(evaluations, placements, logs, criteria),
+    [evaluations, placements, logs, criteria]
   );
 
   const groupedSummaries = useMemo(() => {
     const groups = new Map();
     allWeeklySummaries.forEach((summary) => {
-      const placementId = summary.placementId;
-      if (placementId == null) return;
+      const placementId = Number(summary.placementId);
+      if (Number.isNaN(placementId)) return;
       if (!groups.has(placementId)) {
         groups.set(placementId, {
           placementId,
           placementName: summary.placementName || 'Unknown Placement',
           weeks: [],
           placementAverageScore: null,
-          placementAverageWeight: null,
+          placementAverageGPA: null,
         });
       }
       groups.get(placementId).weeks.push(summary);
     });
-    // calculate placement-level averages from weeks
+
+    // Include all tracked weeks so missed-log weeks still count as zero.
     const results = Array.from(groups.values());
     results.forEach((g) => {
       if (g.weeks.length > 0) {
         g.placementAverageScore = Number((g.weeks.reduce((t, w) => t + Number(w.combined_score || 0), 0) / g.weeks.length).toFixed(2));
-        g.placementAverageWeight = Number((g.weeks.reduce((t, w) => t + Number(w.grade_weight || 0), 0) / g.weeks.length).toFixed(2));
+        g.placementAverageGPA = Number((g.weeks.reduce((t, w) => t + Number(w.grade_weight || 0), 0) / g.weeks.length).toFixed(2));
       }
     });
     return results;
@@ -197,14 +220,25 @@ const AcademicSupervisorDashboard = () => {
   const academicStudentCards = useMemo(() => {
     return placements.map((placement) => {
       const placementId = placement.id;
-      const placementWeeks = groupedSummaries.find((group) => group.placementId === placementId)?.weeks || [];
+      const placementSummary = groupedSummaries.find((group) => Number(group.placementId) === Number(placementId));
+      const placementWeeks = placementSummary?.weeks || [];
       const placementLogWeeks = logs
-        .filter((log) => (log.placement?.id ?? log.placement_id) === placementId)
+        .filter((log) => Number(log.placement?.id ?? log.placement_id) === Number(placementId))
         .map((log) => Number(log.week_number || 1))
         .filter((weekNumber, index, array) => array.indexOf(weekNumber) === index)
         .sort((left, right) => left - right);
-      const evaluatedWeeks = new Set(placementWeeks.filter((week) => week.has_evaluation).map((week) => Number(week.week_number)));
-      const nextWeekNumber = placementLogWeeks.find((weekNumber) => !evaluatedWeeks.has(weekNumber)) || (placementLogWeeks.length ? placementLogWeeks[placementLogWeeks.length - 1] + 1 : 1);
+      const evaluatedWeeks = new Set(
+        academicEvaluations
+          .filter((evaluation) => Number(evaluation.placement?.id ?? evaluation.placement_id) === Number(placementId))
+          .map((evaluation) => Number(evaluation.week_number || 1))
+          .filter((weekNumber) => !Number.isNaN(weekNumber)),
+      );
+      const maxKnownWeek = Math.max(1, ...placementLogWeeks, ...Array.from(evaluatedWeeks));
+      let nextWeekNumber = 1;
+      while (evaluatedWeeks.has(nextWeekNumber) && nextWeekNumber <= maxKnownWeek + 1) {
+        nextWeekNumber += 1;
+      }
+      const canAddEvaluation = placementLogWeeks.includes(nextWeekNumber);
 
       return {
         placement,
@@ -216,10 +250,13 @@ const AcademicSupervisorDashboard = () => {
           placement.student_name ||
           'Unknown Student',
         weeks: placementWeeks,
+        placementAverageScore: placementSummary?.placementAverageScore ?? null,
+        placementAverageGPA: placementSummary?.placementAverageGPA ?? null,
         nextWeekNumber,
+        canAddEvaluation,
       };
     });
-  }, [placements, groupedSummaries, logs]);
+  }, [placements, groupedSummaries, logs, academicEvaluations]);
 
   const closeEvalEditor = () => {
     setShowEvalEditor(false);
@@ -380,6 +417,8 @@ const AcademicSupervisorDashboard = () => {
         ) : (
           <div style={{ display: "grid", gap: "12px" }}>
             {selectedStudentLogs.map((log) => {
+              const nextWeekNumber = getNextAcademicWeek(log.placement?.id ?? log.placement_id);
+              const canEvaluateThisLog = Number(log.week_number) === Number(nextWeekNumber);
               const displayStatus = log.status === "submitted"
                 ? "Pending"
                 : log.status === "reviewed"
@@ -401,7 +440,18 @@ const AcademicSupervisorDashboard = () => {
                   <p style={studentLogTextStyle}><strong>Deadline:</strong> {formatDate(log.deadline)}</p>
                   {log.status === 'submitted' ? (
                     <div style={{ marginTop: '12px' }}>
-                      <button className="eval-btn" onClick={() => setEvaluatingLogId(log.id)}>
+                      <button
+                        className="eval-btn"
+                        disabled={!canEvaluateThisLog}
+                        onClick={() => {
+                          if (canEvaluateThisLog) {
+                            setEvaluatingLogId(log.id);
+                          } else {
+                            toast.error(`Week ${nextWeekNumber} must be evaluated first`);
+                          }
+                        }}
+                        title={canEvaluateThisLog ? 'Evaluate this week' : `Week ${nextWeekNumber} must be evaluated first`}
+                      >
                         {getExistingEvaluationForLog(log) ? 'Edit Weekly Evaluation' : 'Evaluate This Week'}
                       </button>
                     </div>
@@ -576,20 +626,15 @@ const AcademicSupervisorDashboard = () => {
                       <button
                         type="button"
                         className="eval-btn"
-                        disabled={!logs.find((log) => (log.placement?.id ?? log.placement_id) === group.placementId && Number(log.week_number) === group.nextWeekNumber)}
+                        disabled={!group.canAddEvaluation}
                         onClick={() => {
-                          const logExists = logs.find((log) => (log.placement?.id ?? log.placement_id) === group.placementId && Number(log.week_number) === group.nextWeekNumber);
-                          if (logExists) {
+                          if (group.canAddEvaluation) {
                             openEvalEditor(group.placement, group.nextWeekNumber, null);
                           } else {
-                            toast.error('A log must exist for this week before adding an evaluation');
+                            toast.error(`Week ${group.nextWeekNumber} must have a submitted log before adding an evaluation`);
                           }
                         }}
-                        style={{
-                          opacity: !logs.find((log) => (log.placement?.id ?? log.placement_id) === group.placementId && Number(log.week_number) === group.nextWeekNumber) ? 0.6 : 1,
-                          cursor: !logs.find((log) => (log.placement?.id ?? log.placement_id) === group.placementId && Number(log.week_number) === group.nextWeekNumber) ? 'not-allowed' : 'pointer',
-                        }}
-                        title={!logs.find((log) => (log.placement?.id ?? log.placement_id) === group.placementId && Number(log.week_number) === group.nextWeekNumber) ? 'A log must exist for this week' : 'Add evaluation for the next week'}
+                        title={group.canAddEvaluation ? `Add evaluation for Week ${group.nextWeekNumber}` : `Week ${group.nextWeekNumber} log is required before evaluating`}
                       >
                         Add Evaluation
                       </button>
@@ -605,6 +650,8 @@ const AcademicSupervisorDashboard = () => {
                               && evaluation.evaluation_type === 'academic'
                           );
                           const otherSupervisorSubmitted = w.supervisor_score !== null && w.supervisor_score !== undefined;
+                          const supervisorCriteria = w.supervisorEvaluation?.items?.[0]?.criteria?.name || 'Not specified';
+                          const academicCriteria = w.academicEvaluation?.items?.[0]?.criteria?.name || 'Not specified';
 
                           return (
                             <div
@@ -620,9 +667,11 @@ const AcademicSupervisorDashboard = () => {
                                 <div style={{ fontWeight: 700, marginBottom: '8px' }}>Week {w.week_number}</div>
                                 <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '4px' }}>
                                     Workplace: <strong>{w.log_status === 'missing' ? 0 : (w.supervisor_score ?? 'N/A')}</strong>
+                                    {w.supervisorEvaluation && <span style={{ fontSize: '11px', color: '#7c3aed', marginLeft: '6px' }}>({supervisorCriteria})</span>}
                                   </div>
                                   <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '4px' }}>
                                     Academic: <strong>{w.log_status === 'missing' ? 0 : (w.academic_score ?? 'N/A')}</strong>
+                                    {w.academicEvaluation && <span style={{ fontSize: '11px', color: '#7c3aed', marginLeft: '6px' }}>({academicCriteria})</span>}
                                   </div>
                                   {w.log_status === 'missing' ? (
                                     <div style={{ fontSize: '12px', color: '#b45309', marginTop: '4px' }}>No log submitted for this week. Scores are zero.</div>
@@ -634,7 +683,7 @@ const AcademicSupervisorDashboard = () => {
                                   <div style={{ fontSize: '18px', fontWeight: 'bold', color: '#2563eb' }}>{w.combined_score ?? 'N/A'}</div>
                                 </div>
                                 <div style={{ textAlign: 'right' }}>
-                                  <div style={{ fontSize: '11px', color: '#64748b' }}>Weight</div>
+                                  <div style={{ fontSize: '11px', color: '#64748b' }}>GPA</div>
                                   <div style={{ fontSize: '16px', fontWeight: 'bold', color: '#059669' }}>{w.grade_weight ?? 'N/A'}</div>
                                 </div>
                               </div>
@@ -649,10 +698,12 @@ const AcademicSupervisorDashboard = () => {
                                   </button>
                                 </div>
                               ) : null}
-                              <div style={{ marginTop: '8px', fontSize: '12px', color: '#475569' }}>
-                                <div><strong>Your evaluation:</strong> {evalToEdit ? 'Edit' : 'Add'}</div>
-                                <div><strong>Other workplace evaluation:</strong> {otherSupervisorSubmitted ? 'Already submitted' : 'Not yet submitted'}</div>
-                              </div>
+                              {w.log_status !== 'missing' && (
+                                <div style={{ marginTop: '8px', fontSize: '12px', color: '#475569' }}>
+                                  <div><strong>Your evaluation:</strong> {evalToEdit ? 'Edit' : 'Add'}</div>
+                                  <div><strong>Other evaluation:</strong> {otherSupervisorSubmitted ? 'Already submitted' : 'Not yet submitted'}</div>
+                                </div>
+                              )}
                             </div>
                           );
                         })}
@@ -660,7 +711,7 @@ const AcademicSupervisorDashboard = () => {
                     )}
                     <div style={{ marginTop: '12px', textAlign: 'right', color: '#475569' }}>
                       <strong>Average Score:</strong> {group.placementAverageScore != null ? group.placementAverageScore.toFixed(2) : '0.00'}
-                      <span style={{ marginLeft: '12px' }}><strong>Average Weight:</strong> {group.placementAverageWeight != null ? group.placementAverageWeight.toFixed(2) : '0.00'}</span>
+                      <span style={{ marginLeft: '12px' }}><strong>Average GPA:</strong> {group.placementAverageGPA != null ? group.placementAverageGPA.toFixed(2) : '0.00'}</span>
                     </div>
                   </div>
                 );
