@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { useAuth } from '../../auth/useAuth'
+import { useAuth } from '@/auth/useAuth'
 
 export default function PlacementsList() {
   const { api } = useAuth()

@@ -1,6 +1,6 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { useState } from 'react';
-import { useAuth } from '../../auth/useAuth';
+import { useAuth } from '@/auth/useAuth';
 import './Login.css';
 import '../../ILES.css'; 
 

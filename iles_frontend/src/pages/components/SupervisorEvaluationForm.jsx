@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { criteriaAPI, evaluationsAPI, getErrorMessage } from '../../api/api';
-import { useAuth } from '../../contexts/useAuth';
+import { useAuth } from '@/auth/useAuth';
 
 const WORKPLACE_REQUIREMENTS = [
   { key: 'technical', label: 'Technical Skills', weight: 40 },

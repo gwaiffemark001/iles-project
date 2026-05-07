@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
-import { useAuth } from "../../contexts/useAuth";
+import { useAuth } from "@/auth/useAuth";
 import { criteriaAPI, evaluationsAPI, getErrorMessage, logsAPI, placementsAPI, notificationsAPI } from "../../api/api";
 import { buildWeeklyEvaluationSummaries } from "../../utils/evaluationSummary";
 import SupervisorEvaluationForm from "../components/SupervisorEvaluationForm";
@@ -9,6 +9,7 @@ import NotificationPane from '../../components/NotificationPane';
 import ChatPane from '../../components/ChatPane';
 import ProfileEditor from '../../components/ProfileEditor';
 import UserGuide from '../../components/UserGuide';
+import UserAvatar from '../../components/UserAvatar';
 import "./AcademicSupervisorDashboard.css";
 
 const AcademicSupervisorDashboard = () => {
@@ -540,9 +541,7 @@ const AcademicSupervisorDashboard = () => {
             <h1>Welcome back, {user?.username || "Dr. Susan"}</h1>
             <p>Academic Supervisor - Internship Logging & Evaluation System</p>
           </div>
-          <div className="avatar">
-            {user?.username ? user.username.charAt(0).toUpperCase() : "DS"}
-          </div>
+          <UserAvatar user={user} size="medium" className="avatar" />
         </div>
         {activeSection === 'notifications' && (
           <div style={{ marginBottom: 18 }}>

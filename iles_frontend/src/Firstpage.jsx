@@ -1,7 +1,7 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { useState } from 'react'
 import './Firstpage.css';
-import { useAuth } from './auth/useAuth'
+import { useAuth } from '@/auth/useAuth'
 import { roleToHomePath } from './routes/roleRedirect'
 
 function Firstpage() {

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
-import { useAuth } from '../../auth/useAuth'
+import { useAuth } from '@/auth/useAuth'
 
 function todayISO() {
   return new Date().toISOString().slice(0, 10)

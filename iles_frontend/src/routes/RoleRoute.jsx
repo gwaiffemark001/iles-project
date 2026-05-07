@@ -1,6 +1,6 @@
 import { Navigate, Outlet, useLocation } from 'react-router-dom'
 import { roleToHomePath } from './roleRedirect'
-import { useAuth } from '../auth/useAuth'
+import { useAuth } from '@/auth/useAuth'
 
 function normalizeRole(role) {
   return (role || '').trim().toLowerCase()
