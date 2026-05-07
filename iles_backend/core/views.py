@@ -553,7 +553,7 @@ class EvaluationListView(APIView):
                 )
             if weekly_log.status != 'approved':
                 return Response(
-                    {'error': 'The weekly log must be approved by both supervisors before it can be evaluated.'},
+                    {'error': 'The weekly log must be approved by a supervisor before it can be evaluated.'},
                     status=status.HTTP_400_BAD_REQUEST,
                 )
 
