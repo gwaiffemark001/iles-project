@@ -105,13 +105,13 @@ class PermissionTests(TestCase):
         self.client.force_authenticate(user=self.admin)
         response = self.client.get('/api/users/?role=student')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(response.data), 2)
+        self.assertEqual(len(response.data), 1)
         self.assertEqual(response.data[0]['role'], 'student')
 
     def test_student_cannot_access_users(self):
         self.client.force_authenticate(user=self.student)
         response = self.client.get('/api/users/')
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
     def test_admin_cannot_create_duplicate_active_placement_for_student(self):
         workplace_supervisor = CustomUser.objects.create_user(

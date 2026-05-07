@@ -328,7 +328,14 @@ class InternshipPlacementDetailView(APIView):
 
     def get(self, request, pk):
         try:
-            placement = InternshipPlacement.objects.get(pk=pk)
+            if request.user.role == 'admin':
+                placement = InternshipPlacement.objects.get(pk=pk)
+            elif request.user.role == 'workplace_supervisor':
+                placement = InternshipPlacement.objects.get(pk=pk, workplace_supervisor=request.user)
+            elif request.user.role == 'academic_supervisor':
+                placement = InternshipPlacement.objects.get(pk=pk, academic_supervisor=request.user)
+            else:
+                placement = InternshipPlacement.objects.get(pk=pk, student=request.user)
         except InternshipPlacement.DoesNotExist:
             return Response({'error': 'Placement not found'}, status=status.HTTP_404_NOT_FOUND)
         serializer = InternshipPlacementSerializer(placement)
@@ -495,17 +502,17 @@ class EvaluationListView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        if request.user.role in ['admin', 'workplace_supervisor', 'academic_supervisor']:
+        if request.user.role == 'admin':
             evaluations = Evaluation.objects.all()
-            serializer = EvaluationSerializer(evaluations, many=True)
-            return Response(serializer.data)
+        elif request.user.role == 'workplace_supervisor':
+            evaluations = Evaluation.objects.filter(placement__workplace_supervisor=request.user)
+        elif request.user.role == 'academic_supervisor':
+            evaluations = Evaluation.objects.filter(placement__academic_supervisor=request.user)
         else:
-            # For students, return only their placement evaluations
-            evaluations = Evaluation.objects.filter(
-                placement__student=request.user
-            )
-            serializer = EvaluationSerializer(evaluations, many=True)
-            return Response(serializer.data)
+            evaluations = Evaluation.objects.filter(placement__student=request.user)
+
+        serializer = EvaluationSerializer(evaluations, many=True)
+        return Response(serializer.data)
 
     def post(self, request):
         if request.user.role not in ['admin', 'workplace_supervisor', 'academic_supervisor']:
@@ -520,10 +527,23 @@ class EvaluationListView(APIView):
         elif request.user.role == 'workplace_supervisor':
             data['evaluation_type'] = 'supervisor'
 
+        if request.user.role != 'admin':
+            data['evaluator_id'] = request.user.id
+
         # Enforce that evaluations are attached to an existing weekly log for that placement/week.
         placement_id = data.get('placement') or data.get('placement_id')
         week_number = data.get('week_number')
         if placement_id and week_number:
+            try:
+                placement = InternshipPlacement.objects.get(pk=placement_id)
+            except InternshipPlacement.DoesNotExist:
+                return Response({'error': 'Placement not found'}, status=status.HTTP_404_NOT_FOUND)
+
+            if request.user.role == 'workplace_supervisor' and placement.workplace_supervisor_id != request.user.id:
+                return Response({'error': 'You can only evaluate your own placements'}, status=status.HTTP_403_FORBIDDEN)
+            if request.user.role == 'academic_supervisor' and placement.academic_supervisor_id != request.user.id:
+                return Response({'error': 'You can only evaluate your own placements'}, status=status.HTTP_403_FORBIDDEN)
+
             if not WeeklyLog.objects.filter(placement_id=placement_id, week_number=week_number).exists():
                 return Response(
                     {'error': 'No weekly log exists for this placement and week.'},
@@ -658,7 +678,10 @@ class SupervisorReviewView(APIView):
                 status=status.HTTP_403_FORBIDDEN
             )
         try:
-            log = WeeklyLog.objects.get(pk=pk)
+            if request.user.role == 'workplace_supervisor':
+                log = WeeklyLog.objects.get(pk=pk, placement__workplace_supervisor=request.user)
+            else:
+                log = WeeklyLog.objects.get(pk=pk, placement__academic_supervisor=request.user)
         except WeeklyLog.DoesNotExist:
             return Response({'error': 'Log not found'}, status=status.HTTP_404_NOT_FOUND)
 
@@ -689,7 +712,10 @@ class LogRevisionView(APIView):
                 status=status.HTTP_403_FORBIDDEN
             )
         try:
-            log = WeeklyLog.objects.get(pk=pk)
+            if request.user.role == 'workplace_supervisor':
+                log = WeeklyLog.objects.get(pk=pk, placement__workplace_supervisor=request.user)
+            else:
+                log = WeeklyLog.objects.get(pk=pk, placement__academic_supervisor=request.user)
         except WeeklyLog.DoesNotExist:
             return Response({'error': 'Log not found'}, status=status.HTTP_404_NOT_FOUND)
 
@@ -729,7 +755,12 @@ class SupervisorApproveView(APIView):
                 status=status.HTTP_403_FORBIDDEN
             )
         try:
-            log = WeeklyLog.objects.get(pk=pk)
+            if request.user.role == 'admin':
+                log = WeeklyLog.objects.get(pk=pk)
+            elif request.user.role == 'workplace_supervisor':
+                log = WeeklyLog.objects.get(pk=pk, placement__workplace_supervisor=request.user)
+            else:
+                log = WeeklyLog.objects.get(pk=pk, placement__academic_supervisor=request.user)
         except WeeklyLog.DoesNotExist:
             return Response({'error': 'Log not found'}, status=status.HTTP_404_NOT_FOUND)
 
@@ -776,7 +807,14 @@ class EvaluationDetailView(APIView):
 
     def get(self, request, pk):
         try:
-            evaluation = Evaluation.objects.get(pk=pk)
+            if request.user.role == 'admin':
+                evaluation = Evaluation.objects.get(pk=pk)
+            elif request.user.role == 'workplace_supervisor':
+                evaluation = Evaluation.objects.get(pk=pk, placement__workplace_supervisor=request.user)
+            elif request.user.role == 'academic_supervisor':
+                evaluation = Evaluation.objects.get(pk=pk, placement__academic_supervisor=request.user)
+            else:
+                evaluation = Evaluation.objects.get(pk=pk, placement__student=request.user)
         except Evaluation.DoesNotExist:
             return Response({'error': 'Evaluation not found'}, status=status.HTTP_404_NOT_FOUND)
         serializer = EvaluationSerializer(evaluation)
@@ -789,7 +827,12 @@ class EvaluationDetailView(APIView):
                 status=status.HTTP_403_FORBIDDEN
             )
         try:
-            evaluation = Evaluation.objects.get(pk=pk)
+            if request.user.role == 'admin':
+                evaluation = Evaluation.objects.get(pk=pk)
+            elif request.user.role == 'workplace_supervisor':
+                evaluation = Evaluation.objects.get(pk=pk, placement__workplace_supervisor=request.user)
+            else:
+                evaluation = Evaluation.objects.get(pk=pk, placement__academic_supervisor=request.user)
         except Evaluation.DoesNotExist:
             return Response({'error': 'Evaluation not found'}, status=status.HTTP_404_NOT_FOUND)
         # Auto-set evaluation_type based on user role for updates too
@@ -798,6 +841,17 @@ class EvaluationDetailView(APIView):
             data['evaluation_type'] = 'academic'
         elif request.user.role == 'workplace_supervisor':
             data['evaluation_type'] = 'supervisor'
+
+        if request.user.role != 'admin':
+            data['evaluator_id'] = request.user.id
+
+        requested_placement_id = data.get('placement') or data.get('placement_id') or getattr(evaluation.placement, 'id', None)
+        if request.user.role == 'workplace_supervisor' and requested_placement_id:
+            if not InternshipPlacement.objects.filter(pk=requested_placement_id, workplace_supervisor=request.user).exists():
+                return Response({'error': 'You can only update evaluations for your own placements'}, status=status.HTTP_403_FORBIDDEN)
+        if request.user.role == 'academic_supervisor' and requested_placement_id:
+            if not InternshipPlacement.objects.filter(pk=requested_placement_id, academic_supervisor=request.user).exists():
+                return Response({'error': 'You can only update evaluations for your own placements'}, status=status.HTTP_403_FORBIDDEN)
 
         if data.get('score') is not None:
             try:
@@ -972,6 +1026,9 @@ class UserSummaryView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request, pk):
+        if request.user.role != 'admin' and request.user.pk != pk:
+            return Response({'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
+
         user = CustomUser.objects.get(pk=pk)
         serializer = UserProfileSerializer(user)
         return Response(serializer.data)
@@ -981,7 +1038,18 @@ class UserListView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        users = CustomUser.objects.all()
+        if request.user.role != 'admin':
+            return Response(
+                {'error': 'Only admins can view users'},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        users = CustomUser.objects.all().order_by('role', 'first_name', 'username')
+        role_filter = request.query_params.get('role')
+
+        if role_filter:
+            users = users.filter(role=role_filter)
+
         serializer = CustomUserSerializer(users, many=True)
         return Response(serializer.data)
 
@@ -1004,6 +1072,12 @@ class UserListView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
     def delete(self, request, pk):
+        if request.user.role != 'admin':
+            return Response(
+                {'error': 'Only admins can delete users'},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
         try:
             user = CustomUser.objects.get(pk=pk)
             user.delete()
