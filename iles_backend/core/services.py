@@ -129,3 +129,36 @@ def notify_log_submitted(log, actor=None):
             "week_number": log.week_number,
         },
     )
+
+
+def notify_evaluation_status_changed(evaluation, actor=None, created=False):
+    placement = evaluation.placement
+    student = placement.student
+    workplace_supervisor = placement.workplace_supervisor
+    academic_supervisor = placement.academic_supervisor
+    recipients = [student, workplace_supervisor, academic_supervisor]
+
+    if actor is not None:
+        recipients = [user for user in recipients if user and user.pk != actor.pk]
+
+    notification_type = "evaluation_submitted" if created else "evaluation_updated"
+    title = "Weekly evaluation submitted" if created else "Weekly evaluation updated"
+    actor_label = _get_user_display_name(actor) if actor else "A supervisor"
+    message = (
+        f"{actor_label} { 'submitted' if created else 'updated' } week {evaluation.week_number} "
+        f"evaluation for {placement.company_name}."
+    )
+
+    create_notifications(
+        recipients=recipients,
+        title=title,
+        message=message,
+        notification_type=notification_type,
+        actor=actor,
+        data={
+            "evaluation_id": evaluation.id,
+            "placement_id": placement.id,
+            "week_number": evaluation.week_number,
+            "evaluation_type": evaluation.evaluation_type,
+        },
+    )
