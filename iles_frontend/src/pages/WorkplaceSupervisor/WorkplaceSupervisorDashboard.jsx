@@ -19,8 +19,9 @@ function normalizePlacement(placement, logs, evaluations) {
     id: placementId,
     placement,
     studentName: placement.student?.full_name || placement.student?.username || 'Unknown Student',
-    studentDepartment: placement.student?.department || 'Not specified',
+    studentDepartment: placement.student?.department || 'Department not set',
     studentNumber: placement.student?.student_number || 'Not assigned',
+    registrationNumber: placement.student?.registration_number || 'Not assigned',
     companyName: placement.company_name || 'Not specified',
     companyAddress: placement.company_address || 'Not provided',
     startDate: placement.start_date,
@@ -369,6 +370,7 @@ export default function WorkplaceSupervisorDashboard() {
                     <p><strong>Period:</strong> {intern.startDate} - {intern.endDate}</p>
                     <p><strong>Status:</strong> <span className={`workplace-status-badge ${intern.status}`}>{intern.status}</span></p>
                     {intern.studentNumber ? <p><strong>Student No:</strong> {intern.studentNumber}</p> : null}
+                    {intern.registrationNumber ? <p><strong>Registration No:</strong> {intern.registrationNumber}</p> : null}
                   </div>
                   <div className="workplace-intern-stats">
                     <div className="workplace-intern-stat"><span className="stat-number">{intern.totalLogs}</span><span className="stat-label">Total</span></div>
