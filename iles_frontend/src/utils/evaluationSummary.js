@@ -217,7 +217,7 @@ export const buildWeeklyEvaluationSummaries = (evaluations = [], placements = []
 
   const weeklySummaries = Array.from(groups.values())
     .map((group) => {
-      const combinedScore = calculateCombinedWeekScore(group.supervisorEvaluation, group.academicEvaluation)
+      const combinedScore = calculateCombinedWeekScore(group.supervisorEvaluation, group.academicEvaluation, criteria)
       return {
         ...group,
         has_evaluation: Boolean(group.supervisorEvaluation || group.academicEvaluation),
