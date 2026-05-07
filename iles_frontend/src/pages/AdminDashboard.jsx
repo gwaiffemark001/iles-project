@@ -3,7 +3,8 @@ import axios from 'axios'
 import { useAuth } from '../auth/useAuth'
 import { criteriaAPI, evaluationsAPI, placementsAPI } from '../api/api'
 import { buildWeeklyEvaluationSummaries, getGradeWeight } from '../utils/evaluationSummary'
-import ProfileEditor from '../components/ProfileEditor.jsx'
+import ChatPane from '../components/ChatPane'
+import UserGuide from '../components/UserGuide'
 import './AdminDashboard.css'
 
 const userRoles = [
@@ -47,6 +48,7 @@ function AdminDashboard() {
   const [weeklySummary, setWeeklySummary] = useState(null)
   const [showWeeklyModal, setShowWeeklyModal] = useState(false)
   const [selectedPlacementForWeekly, setSelectedPlacementForWeekly] = useState(null)
+  const [chatUnreadCount, setChatUnreadCount] = useState(0)
 
   const { weeklySummaries: allWeeklySummaries } = useMemo(() => buildWeeklyEvaluationSummaries(evaluations, [], [], criteria), [evaluations, criteria])
   const groupedSummaries = useMemo(() => {
@@ -606,7 +608,7 @@ function AdminDashboard() {
               textAlign: 'left'
             }}
           >
-            Evaluations
+            ⭐ Evaluations
           </button>
           <button 
             onClick={() => setActiveSection('criteria')}
@@ -623,18 +625,22 @@ function AdminDashboard() {
             📋 Criteria
           </button>
           <button 
-            onClick={() => setActiveSection('profile')}
+            onClick={() => setActiveSection('chat')}
             style={{ 
               padding: '10px', 
-              backgroundColor: activeSection === 'profile' ? '#34495e' : 'transparent',
+              backgroundColor: activeSection === 'chat' ? '#34495e' : 'transparent',
               color: 'white', 
               border: 'none', 
               borderRadius: '4px', 
               cursor: 'pointer',
-              textAlign: 'left'
+              textAlign: 'left',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px'
             }}
           >
-            👤 My Profile
+            💬 Chat
+            {chatUnreadCount > 0 && <span style={{ padding: '2px 6px', backgroundColor: '#DC2626', color: 'white', borderRadius: '10px', fontSize: '11px', fontWeight: 'bold' }}>{chatUnreadCount}</span>}
           </button>
           <button 
             onClick={fetchDashboardData}
@@ -1106,9 +1112,10 @@ function AdminDashboard() {
             </div>
           )}
 
-          {activeSection === 'profile' && (
-            <div>
-              <ProfileEditor />
+          {activeSection === 'chat' && (
+            <div style={{ height: 'calc(100vh - 150px)', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+              <h2 style={{ color: '#2c3e50', marginBottom: '20px', margin: 0 }}>Chat with Users</h2>
+              <ChatPane currentUserId={user?.id} onUnreadCountChange={setChatUnreadCount} />
             </div>
           )}
         </div>
@@ -1582,6 +1589,7 @@ function AdminDashboard() {
           </div>
         </div>
       )}
+      <UserGuide userRole="admin" />
     </div>
   )
 }

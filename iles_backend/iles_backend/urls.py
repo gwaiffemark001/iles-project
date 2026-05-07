@@ -28,6 +28,8 @@ from core.views import (
     UserSummaryView,
     PasswordResetRequestView,
     PasswordResetConfirmView,
+    ChatContactsView,
+    ChatMessagesView,
 )
 
 urlpatterns = [
@@ -89,7 +91,8 @@ urlpatterns = [
     #User Summary 
     path('api/users/<int:pk>/summary/', UserSummaryView.as_view()),
 
-    # User Profile
-    path('api/profile/', UserProfileView.as_view(), name='user-profile'),
+    # Chat
+    path('api/chat/contacts/', ChatContactsView.as_view(), name='chat-contacts'),
+    path('api/chat/messages/<int:recipient_id>/', ChatMessagesView.as_view(), name='chat-messages'),
 ]
 

@@ -10,6 +10,7 @@ from .models import (
     PlacementApplication,
     UserProfile,
     WeeklyLog,
+    ChatMessage,
 )
 
 class CustomUserSerializer(serializers.ModelSerializer):
@@ -485,7 +486,7 @@ class EvaluationSerializer(serializers.ModelSerializer):
                 raise serializers.ValidationError({'week_number': ['Weekly log for this placement and week does not exist.']})
             if weekly_log.status != 'approved':
                 raise serializers.ValidationError({
-                    'week_number': ['The weekly log must be approved by both supervisors before it can be evaluated.']
+                    'week_number': ['The weekly log must be approved by a supervisor before it can be evaluated.']
                 })
 
             duplicate_qs = Evaluation.objects.filter(
@@ -594,3 +595,28 @@ class UserProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = CustomUser
         fields = '__all__'
+
+
+class ChatMessageSerializer(serializers.ModelSerializer):
+    sender_name = serializers.SerializerMethodField()
+    recipient_name = serializers.SerializerMethodField()
+
+    class Meta:
+        model = ChatMessage
+        fields = [
+            'id',
+            'sender',
+            'sender_name',
+            'recipient',
+            'recipient_name',
+            'message',
+            'is_read',
+            'created_at',
+        ]
+        read_only_fields = ['id', 'sender', 'created_at']
+
+    def get_sender_name(self, obj):
+        return obj.sender.get_full_name() or obj.sender.username
+
+    def get_recipient_name(self, obj):
+        return obj.recipient.get_full_name() or obj.recipient.username
