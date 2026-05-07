@@ -57,7 +57,7 @@ export default function WorkplaceSupervisorDashboard() {
     try {
       const response = await notificationsAPI.getNotifications({ limit: 100 })
       const notifications = Array.isArray(response.data) ? response.data : []
-      const count = notifications.filter((n) => !n.is_read).length
+      const count = notifications.filter((n) => n.is_read === false).length
       setUnreadCount(count)
     } catch {
       // Silently fail - unread count is not critical
@@ -94,7 +94,14 @@ export default function WorkplaceSupervisorDashboard() {
     }, 30000);
 
     return () => clearInterval(pollingInterval);
-  }, [loadData, fetchUnreadCount])
+  }, [loadData, fetchUnreadCount]);
+
+  // Refetch count when leaving Notifications page
+  useEffect(() => {
+    if (activeTab !== 'notifications') {
+      fetchUnreadCount();
+    }
+  }, [activeTab, fetchUnreadCount])
 
   const interns = useMemo(
     () => placements.map((placement) => normalizePlacement(placement, logs, evaluations)),
