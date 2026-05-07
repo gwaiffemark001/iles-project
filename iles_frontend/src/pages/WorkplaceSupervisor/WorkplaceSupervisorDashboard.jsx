@@ -583,7 +583,7 @@ export default function WorkplaceSupervisorDashboard() {
               {showEvalEditor && evalPlacement ? (
                 <div id="workplace-eval-editor-form" style={{ marginTop: '24px', padding: '16px', backgroundColor: '#f5f5f5', borderRadius: '8px' }}>
                   <h3 style={{ marginTop: 0 }}>
-                    {editingEvaluation ? `Edit Week ${editingEvaluation.week_number} Evaluation` : 'Create New Evaluation'}
+                    {editingEvaluation ? `Edit Week ${selectedWeekNumber} Evaluation` : 'Create New Evaluation'}
                   </h3>
                   <SupervisorEvaluationForm
                     placementId={evalPlacement.id}

@@ -4,6 +4,7 @@ from decimal import Decimal
 from django.contrib.auth.models import AbstractUser
 from django.core.exceptions import ValidationError
 from django.utils import timezone
+from django.utils.dateparse import parse_date
 
 class CustomUser(AbstractUser):
     ROLE_CHOICES =[
@@ -106,6 +107,26 @@ class InternshipPlacement(models.Model):
                 'end_date': 'End date must be after start date.'
             })
 
+    def sync_status_from_dates(self):
+        """Keep the stored status aligned with the placement dates."""
+        start_date = self.start_date if not isinstance(self.start_date, str) else parse_date(self.start_date)
+        end_date = self.end_date if not isinstance(self.end_date, str) else parse_date(self.end_date)
+
+        if not self.student:
+            self.status = 'pending'
+            return
+
+        today = timezone.now().date()
+        if start_date and today < start_date:
+            self.status = 'pending'
+            return
+
+        if end_date and today >= end_date:
+            self.status = 'completed'
+            return
+
+        self.status = 'active'
+
     class Meta:
         constraints = [
             models.UniqueConstraint(
@@ -117,6 +138,7 @@ class InternshipPlacement(models.Model):
 
     def save(self, *args, **kwargs):
         """Override save to include validation"""
+        self.sync_status_from_dates()
         self.full_clean()
         super().save(*args, **kwargs)
 
@@ -296,8 +318,7 @@ class Evaluation(models.Model):
 
     placement = models.ForeignKey(InternshipPlacement, on_delete=models.CASCADE, related_name='evaluations')
     evaluator = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='given_evaluations')
-
-    # Remove week_number constraint - allow multiple evaluations per placement
+    week_number = models.PositiveIntegerField()
 
     # Optional raw evaluator score (0-100 scale) and computed weighted score stored here
     score = models.DecimalField(max_digits=6, decimal_places=2, null=True, blank=True, help_text="Evaluator raw score (0-100)")
@@ -368,7 +389,7 @@ class Evaluation(models.Model):
         self.save(update_fields=['weighted_score'])
 
     class Meta:
-        ordering = ['-evaluated_at']
+        ordering = ['week_number', '-evaluated_at']
 
     def __str__(self):
         student_username = self.placement.student.username if self.placement.student else "Unknown"
