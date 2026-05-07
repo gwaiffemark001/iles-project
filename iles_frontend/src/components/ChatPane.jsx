@@ -2,7 +2,7 @@ import { useEffect, useState, useCallback, useRef } from 'react';
 import { chatAPI } from '../api/api';
 import './ChatPane.css';
 
-export default function ChatPane({ currentUserId }) {
+export default function ChatPane({ currentUserId, onUnreadCountChange }) {
   const [contacts, setContacts] = useState([]);
   const [selectedContact, setSelectedContact] = useState(null);
   const [messages, setMessages] = useState([]);
@@ -22,9 +22,11 @@ export default function ChatPane({ currentUserId }) {
     }
   }, []);
 
-  const fetchMessages = useCallback(async (contactId) => {
+  const fetchMessages = useCallback(async (contactId, showLoading = false) => {
     try {
-      setLoading(true);
+      if (showLoading) {
+        setLoading(true);
+      }
       const response = await chatAPI.getMessages(contactId);
       const newMessages = Array.isArray(response.data) ? response.data : [];
       
@@ -38,7 +40,9 @@ export default function ChatPane({ currentUserId }) {
     } catch {
       setError('Failed to load messages');
     } finally {
-      setLoading(false);
+      if (showLoading) {
+        setLoading(false);
+      }
     }
   }, []);
 
@@ -50,7 +54,7 @@ export default function ChatPane({ currentUserId }) {
       await chatAPI.sendMessage(selectedContact.id, messageText);
       setMessageText('');
       // Refresh messages
-      await fetchMessages(selectedContact.id);
+      await fetchMessages(selectedContact.id, false);
       // Refresh contacts to update unread counts
       await fetchContacts();
     } catch {
@@ -62,10 +66,18 @@ export default function ChatPane({ currentUserId }) {
     fetchContacts();
   }, [fetchContacts]);
 
+  // Report unread count to parent component
+  useEffect(() => {
+    if (onUnreadCountChange && contacts.length > 0) {
+      const unreadContactCount = contacts.filter((contact) => contact.unread_count > 0).length;
+      onUnreadCountChange(unreadContactCount);
+    }
+  }, [contacts, onUnreadCountChange]);
+
   useEffect(() => {
     if (selectedContact) {
       // Fetch messages immediately
-      fetchMessages(selectedContact.id);
+      fetchMessages(selectedContact.id, true);
       
       // Clear any existing polling interval
       if (pollingIntervalRef.current) {
@@ -74,7 +86,7 @@ export default function ChatPane({ currentUserId }) {
       
       // Poll for new messages every 3 seconds
       pollingIntervalRef.current = setInterval(() => {
-        fetchMessages(selectedContact.id);
+        fetchMessages(selectedContact.id, false);
       }, 3000);
       
       return () => {
