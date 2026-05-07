@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/useAuth';
-import { api } from '../api/api';
+import api from '../api/api';
 import './ProfileEditor.css';
 
 const ProfileEditor = () => {
@@ -25,6 +25,7 @@ const ProfileEditor = () => {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
+  const [errorDetails, setErrorDetails] = useState({});
 
   useEffect(() => {
     if (user) {
@@ -67,11 +68,30 @@ const ProfileEditor = () => {
     }
   };
 
+  const handleAvatarUpload = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const dataUrl = event.target.result;
+        setFormData(prev => ({
+          ...prev,
+          profile: {
+            ...prev.profile,
+            avatar_url: dataUrl
+          }
+        }));
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     setMessage('');
     setError('');
+    setErrorDetails({});
 
     try {
       const response = await api.put('/api/profile/', formData);
@@ -83,8 +103,17 @@ const ProfileEditor = () => {
         setTimeout(() => setMessage(''), 3000);
       }
     } catch (err) {
-      setError(err.response?.data?.detail || 'Failed to update profile');
-      setTimeout(() => setError(''), 5000);
+      console.error('Profile update error:', err);
+      const errorMessage = err.response?.data?.detail || 
+                        err.response?.data?.message || 
+                        err.message || 
+                        'Failed to update profile';
+      setError(errorMessage);
+      setErrorDetails(err.response?.data || {});
+      setTimeout(() => {
+        setError('');
+        setErrorDetails({});
+      }, 5000);
     } finally {
       setLoading(false);
     }
@@ -208,6 +237,12 @@ const ProfileEditor = () => {
 
       {message && <div className="success-message">{message}</div>}
       {error && <div className="error-message">{error}</div>}
+      {Object.keys(errorDetails).length > 0 && (
+        <div className="error-details">
+          <h4>Error Details:</h4>
+          <pre>{JSON.stringify(errorDetails, null, 2)}</pre>
+        </div>
+      )}
 
       <form className="profile-form" onSubmit={handleSubmit}>
         <div className="form-section">
@@ -279,15 +314,33 @@ const ProfileEditor = () => {
 
           <div className="form-row">
             <label className="form-field">
-              <span>Avatar URL</span>
-              <input
-                type="url"
-                name="profile.avatar_url"
-                value={formData.profile.avatar_url}
-                onChange={handleInputChange}
-                disabled={!isEditing}
-                placeholder="https://example.com/avatar.jpg"
-              />
+              <span>Avatar</span>
+              <div className="avatar-upload">
+                {formData.profile.avatar_url && (
+                  <img 
+                    src={formData.profile.avatar_url} 
+                    alt="Profile Avatar" 
+                    className="avatar-preview"
+                    onError={(e) => { e.target.style.display = 'none' }}
+                  />
+                )}
+                <input
+                  type="file"
+                  name="profile.avatar_file"
+                  onChange={handleAvatarUpload}
+                  disabled={!isEditing}
+                  accept="image/*"
+                  className="avatar-input"
+                />
+                <button
+                  type="button"
+                  onClick={() => document.querySelector('.avatar-input')?.click()}
+                  disabled={!isEditing}
+                  className="upload-btn"
+                >
+                  {loading ? 'Uploading...' : 'Choose File'}
+                </button>
+              </div>
             </label>
             <label className="form-field">
               <span>Location</span>
