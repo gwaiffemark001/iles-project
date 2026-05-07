@@ -1,6 +1,6 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { useState } from 'react';
-import { useAuth } from '../../contexts/useAuth';
+import { useAuth } from '../../auth/useAuth';
 import './Login.css';
 import '../../ILES.css'; 
 
@@ -28,13 +28,13 @@ function Login() {
             const role = result.user?.role;
 
             if (role === 'admin') {
-                navigate('/admin/dashboard');
+                navigate('/app/admin/dashboard');
             } else if (role === 'academic_supervisor') {
-                navigate('/academic-supervisor/dashboard');
+                navigate('/app/academic/dashboard');
             } else if (role === 'workplace_supervisor') {
-                navigate('/workplace-supervisor/dashboard');
+                navigate('/app/workplace/dashboard');
             } else {
-                navigate('/student/dashboard');
+                navigate('/app/student/dashboard');
             }
         } catch (error) {
             setErrorMessage(error?.message || 'Login failed. Please try again.');
