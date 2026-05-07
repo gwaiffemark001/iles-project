@@ -347,6 +347,7 @@ class WeeklyLogSerializer(serializers.ModelSerializer):
 
     def validate(self, attrs):
         placement = attrs.get('placement') or getattr(self.instance, 'placement', None)
+        week_number = attrs.get('week_number') if attrs.get('week_number') is not None else getattr(self.instance, 'week_number', None)
         request = self.context.get('request')
 
         if not placement:
@@ -448,6 +449,7 @@ class EvaluationSerializer(serializers.ModelSerializer):
         write_only=True,
         required=False,
     )
+    week_number = serializers.IntegerField(write_only=True, required=False)
     evaluator = CustomUserSerializer(read_only=True) 
     evaluator_id = serializers.PrimaryKeyRelatedField(
         source="evaluator",
@@ -472,6 +474,7 @@ class EvaluationSerializer(serializers.ModelSerializer):
             "score",
             "weighted_score",
             "evaluation_type",
+            "week_number",
             "evaluated_at",
         ]
         extra_kwargs = {
@@ -486,6 +489,43 @@ class EvaluationSerializer(serializers.ModelSerializer):
     def get_items(self, obj):
         """Return evaluation items using the correct related_name"""
         return EvaluationItemSerializer(obj.evaluation_items.all(), many=True).data
+
+    def _get_other_supervisor_criteria_id(self, placement, week_number, request_role, instance_pk=None):
+        if request_role not in ['workplace_supervisor', 'academic_supervisor']:
+            return None
+
+        other_type = 'academic' if request_role == 'workplace_supervisor' else 'supervisor'
+        other_evaluation = Evaluation.objects.filter(
+            placement=placement,
+            week_number=week_number,
+            evaluation_type=other_type,
+        )
+        if instance_pk:
+            other_evaluation = other_evaluation.exclude(pk=instance_pk)
+
+        other_evaluation = other_evaluation.first()
+        if not other_evaluation:
+            return None
+
+        first_item = other_evaluation.evaluation_items.first()
+        return first_item.criteria_id if first_item else None
+
+    def _normalize_items_for_locked_criteria(self, items_data, locked_criteria_id):
+        if locked_criteria_id is None:
+            return items_data
+
+        normalized_items = []
+        first_score = 0
+
+        if isinstance(items_data, list) and items_data:
+            first_item = items_data[0] if isinstance(items_data[0], dict) else {}
+            first_score = first_item.get('score', 0)
+
+        normalized_items.append({
+            'criteria_id': locked_criteria_id,
+            'score': first_score,
+        })
+        return normalized_items
 
     def validate(self, attrs):
         placement = attrs.get("placement") or getattr(self.instance, "placement", None)
@@ -525,6 +565,15 @@ class EvaluationSerializer(serializers.ModelSerializer):
                     }
                 )
 
+            locked_criteria_id = self._get_other_supervisor_criteria_id(
+                placement,
+                week_number,
+                request.user.role,
+                instance_pk=getattr(self.instance, 'pk', None),
+            )
+            if locked_criteria_id is not None:
+                self._locked_criteria_id = locked_criteria_id
+
         return attrs
 
     def create(self, validated_data):
@@ -538,11 +587,11 @@ class EvaluationSerializer(serializers.ModelSerializer):
         if 'evaluator' not in validated_data and request is not None:
             validated_data['evaluator'] = request.user
 
-        # Remove week_number from validated_data to avoid database constraint
-        if 'week_number' in validated_data:
-            del validated_data['week_number']
-
         evaluation = Evaluation.objects.create(**validated_data)
+
+        locked_criteria_id = getattr(self, '_locked_criteria_id', None)
+        if locked_criteria_id is not None:
+            items_data = self._normalize_items_for_locked_criteria(items_data, locked_criteria_id)
 
         if items_data and isinstance(items_data, list):
             for item in items_data:
@@ -571,6 +620,10 @@ class EvaluationSerializer(serializers.ModelSerializer):
         for attr, value in validated_data.items():
             setattr(instance, attr, value)
         instance.save()
+
+        locked_criteria_id = getattr(self, '_locked_criteria_id', None)
+        if locked_criteria_id is not None:
+            items_data = self._normalize_items_for_locked_criteria(items_data, locked_criteria_id)
 
         if items_data is not None and isinstance(items_data, list):
             # Replace existing items with provided ones for simplicity

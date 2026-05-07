@@ -376,6 +376,60 @@ class WeeklyLogPolicyTests(TestCase):
         }, format='json')
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
+    def test_admin_extension_reactivates_completed_placement_and_allows_logs_and_evaluations(self):
+        today = timezone.now().date()
+        completed_placement = self.placement
+        completed_placement.start_date = today - timedelta(days=35)
+        completed_placement.end_date = today - timedelta(days=1)
+        completed_placement.status = 'completed'
+        completed_placement.save()
+
+        admin = CustomUser.objects.create_user(
+            username='admin-extension',
+            password='pass123',
+            role='admin'
+        )
+
+        self.client.force_authenticate(user=admin)
+        update_response = self.client.put(f'/api/placements/{completed_placement.id}/', {
+            'student_id': self.student.id,
+            'workplace_supervisor_id': self.workplace_supervisor.id,
+            'academic_supervisor_id': self.academic_supervisor.id,
+            'company_name': 'Completed Co',
+            'company_address': 'Kampala',
+            'start_date': str(today - timedelta(days=35)),
+            'end_date': str(today + timedelta(days=35)),
+        }, format='json')
+
+        self.assertEqual(update_response.status_code, status.HTTP_200_OK)
+        self.assertEqual(update_response.data['status'], 'active')
+
+        self.client.force_authenticate(user=self.student)
+        log_response = self.client.post('/api/logs/', {
+            'placement_id': completed_placement.id,
+            'week_number': 1,
+            'activities': 'Extension log entry',
+            'status': 'draft',
+        }, format='json')
+        self.assertEqual(log_response.status_code, status.HTTP_201_CREATED)
+
+        WeeklyLog.objects.filter(pk=log_response.data['id']).update(status='approved')
+        self.assertTrue(WeeklyLog.objects.filter(pk=log_response.data['id'], status='approved').exists())
+
+        criterion = EvaluationCriteria.objects.create(name='Quality', max_score=100, weight_percent=100)
+
+        self.client.force_authenticate(user=self.workplace_supervisor)
+        evaluation_response = self.client.post('/api/evaluations/', {
+            'placement_id': completed_placement.id,
+            'week_number': 1,
+            'evaluation_type': 'supervisor',
+            'items': [
+                {'criteria_id': criterion.id, 'score': 80},
+            ],
+        }, format='json')
+
+        self.assertEqual(evaluation_response.status_code, status.HTTP_201_CREATED)
+
 
 class EvaluationPolicyTests(TestCase):
 
@@ -450,15 +504,28 @@ class EvaluationPolicyTests(TestCase):
         self.assertIn('No weekly log exists for this placement and week', str(response.data))
 
     def test_cannot_create_duplicate_evaluation_for_same_week(self):
-        Evaluation.objects.create(
-            placement=self.placement,
-            evaluator=self.workplace_supervisor,
-            week_number=1,
-            evaluation_type='supervisor',
-            weighted_score=79,
+        self.client.force_authenticate(user=self.workplace_supervisor)
+        first_response = self.client.post('/api/evaluations/', {
+            'placement_id': self.placement.id,
+            'week_number': 1,
+            'evaluation_type': 'supervisor',
+            'items': [
+                {'criteria_id': self.technical.id, 'score': 80},
+                {'criteria_id': self.communication.id, 'score': 70},
+                {'criteria_id': self.professionalism.id, 'score': 90},
+            ],
+        }, format='json')
+        self.assertEqual(first_response.status_code, status.HTTP_201_CREATED)
+
+        self.assertEqual(
+            Evaluation.objects.filter(
+                placement=self.placement,
+                evaluator=self.workplace_supervisor,
+                evaluation_type='supervisor',
+            ).count(),
+            1,
         )
 
-        self.client.force_authenticate(user=self.workplace_supervisor)
         response = self.client.post('/api/evaluations/', {
             'placement_id': self.placement.id,
             'week_number': 1,
