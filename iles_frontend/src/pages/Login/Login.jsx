@@ -50,7 +50,7 @@ function Login() {
                     <header className='header'>
                         <h1 className="head">WELCOME TO ILES</h1>
                         <h2 className="subhead">Login to continue</h2>
-                        <img className="logo" src="/ILES-Logo.png" alt="ILES logo" />
+                        <img className="logo" src="/ILES-Logo.png" alt="ILES logo" onError={(e) => { e.target.style.display = 'none' }} />
                     </header>
                     <div >
                         <form className="logins" onSubmit={handleLogin}>

@@ -363,13 +363,7 @@ const StudentDashboard = () => {
             Notifications
             {unreadCount > 0 && <span style={{ marginLeft: '8px', padding: '2px 6px', backgroundColor: '#DC2626', color: 'white', borderRadius: '10px', fontSize: '11px', fontWeight: 'bold' }}>{unreadCount}</span>}
           </button>
-           <button
-             className={`nav-item ${activeTab === 'criteria' ? 'active' : ''}`}
-             onClick={() => setActiveTab('criteria')}
-           >
-             Criteria
-           </button>
-        </nav>
+                   </nav>
         <div className="sidebar-bottom">
           <button className="nav-item logout" onClick={logout}>
             Logout
@@ -594,8 +588,8 @@ const StudentDashboard = () => {
                 <>
                   <div className="evaluations-list" style={{ marginBottom: '24px' }}>
                     {[...weeklyEvaluationSummaries].sort((a, b) => a.week_number - b.week_number).map((summary) => {
-                      const supervisorCriteria = summary.supervisorEvaluation?.items?.[0]?.criteria?.name || 'Not specified';
-                      const academicCriteria = summary.academicEvaluation?.items?.[0]?.criteria?.name || 'Not specified';
+                      const supervisorMaxScore = summary.supervisorEvaluation?.items?.[0]?.criteria?.max_score || 5;
+                      const academicMaxScore = summary.academicEvaluation?.items?.[0]?.criteria?.max_score || 5;
                       return (
                         <div
                           key={summary.key}
@@ -626,7 +620,7 @@ const StudentDashboard = () => {
                                 {summary.log_status === 'missing' ? 0 : (summary.supervisor_score ?? 'Not yet submitted')}
                               </div>
                               {summary.supervisorEvaluation && (
-                                <div style={{ fontSize: '11px', color: '#7c3aed' }}>({supervisorCriteria})</div>
+                                <div style={{ fontSize: '11px', color: '#7c3aed' }}>(Max Score: {supervisorMaxScore})</div>
                               )}
                             </div>
 
@@ -636,7 +630,7 @@ const StudentDashboard = () => {
                                 {summary.log_status === 'missing' ? 0 : (summary.academic_score ?? 'Not yet submitted')}
                               </div>
                               {summary.academicEvaluation && (
-                                <div style={{ fontSize: '11px', color: '#7c3aed' }}>({academicCriteria})</div>
+                                <div style={{ fontSize: '11px', color: '#7c3aed' }}>(Max Score: {academicMaxScore})</div>
                               )}
                             </div>
                           </div>
@@ -670,29 +664,6 @@ const StudentDashboard = () => {
               ) : (
                 <div className="empty-state">
                   <p>No evaluations have been recorded yet.</p>
-                </div>
-              )}
-            </div>
-          )}
-
-          {activeTab === 'criteria' && (
-            <div className="evaluations-section">
-              <h2>Evaluation Criteria</h2>
-              {criteria.length ? (
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '16px' }}>
-                  {criteria.map((crit) => (
-                    <div key={crit.id} className="evaluation-card" style={{ border: '1px solid #e2e8f0' }}>
-                      <h3>{crit.name}</h3>
-                      {crit.description ? <p>{crit.description}</p> : null}
-                      <p><strong>Max Score:</strong> {crit.max_score}</p>
-                      <p><strong>Workplace Share:</strong> {crit.supervisor_share}%</p>
-                      <p><strong>Academic Share:</strong> {crit.academic_share}%</p>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="empty-state">
-                  <p>No criteria have been defined yet.</p>
                 </div>
               )}
             </div>

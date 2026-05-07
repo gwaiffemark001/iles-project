@@ -3,6 +3,7 @@ import axios from 'axios'
 import { useAuth } from '../auth/useAuth'
 import { criteriaAPI, evaluationsAPI, placementsAPI } from '../api/api'
 import { buildWeeklyEvaluationSummaries, getGradeWeight } from '../utils/evaluationSummary'
+import ProfileEditor from '../components/ProfileEditor.jsx'
 import './AdminDashboard.css'
 
 const userRoles = [
@@ -605,7 +606,7 @@ function AdminDashboard() {
               textAlign: 'left'
             }}
           >
-            ⭐ Evaluations
+            Evaluations
           </button>
           <button 
             onClick={() => setActiveSection('criteria')}
@@ -620,6 +621,20 @@ function AdminDashboard() {
             }}
           >
             📋 Criteria
+          </button>
+          <button 
+            onClick={() => setActiveSection('profile')}
+            style={{ 
+              padding: '10px', 
+              backgroundColor: activeSection === 'profile' ? '#34495e' : 'transparent',
+              color: 'white', 
+              border: 'none', 
+              borderRadius: '4px', 
+              cursor: 'pointer',
+              textAlign: 'left'
+            }}
+          >
+            👤 My Profile
           </button>
           <button 
             onClick={fetchDashboardData}
@@ -1088,6 +1103,12 @@ function AdminDashboard() {
                   ))}
                 </div>
               )}
+            </div>
+          )}
+
+          {activeSection === 'profile' && (
+            <div>
+              <ProfileEditor />
             </div>
           )}
         </div>
