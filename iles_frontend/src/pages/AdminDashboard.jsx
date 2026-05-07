@@ -77,7 +77,22 @@ function AdminDashboard() {
 
   const handleEditFieldChange = (event) => {
     const { name, value } = event.target
-    setEditFormData((currentData) => ({ ...currentData, [name]: value }))
+    setEditFormData((currentData) => {
+      const nextData = { ...currentData, [name]: value }
+
+      if (name === 'role') {
+        if (value === 'student') {
+          nextData.staff_number = ''
+        }
+
+        if (value === 'workplace_supervisor' || value === 'academic_supervisor') {
+          nextData.student_number = ''
+          nextData.registration_number = ''
+        }
+      }
+
+      return nextData
+    })
   }
 
   const handleEditUser = (selectedUser) => {
@@ -515,6 +530,31 @@ function AdminDashboard() {
     return role || 'Unknown'
   }
 
+  const getUserCardDetails = (user) => {
+    const role = user?.role
+    const roleSpecificLabel = role === 'student'
+      ? 'Student Number'
+      : role === 'workplace_supervisor'
+        ? 'Staff Number'
+        : role === 'academic_supervisor'
+          ? 'Department'
+          : 'Identifier'
+
+    const roleSpecificValue = role === 'student'
+      ? (user?.student_number || user?.registration_number || 'Not specified')
+      : role === 'workplace_supervisor'
+        ? (user?.staff_number || 'Not specified')
+        : role === 'academic_supervisor'
+          ? (user?.department || 'Not specified')
+          : (user?.registration_number || user?.staff_number || user?.student_number || user?.department || 'Not specified')
+
+    return [
+      { label: 'Username', value: user?.username || 'Not specified' },
+      { label: 'Phone', value: user?.phone || 'Not specified' },
+      { label: roleSpecificLabel, value: roleSpecificValue },
+    ]
+  }
+
   const formatDate = (value) => {
     if (!value) return 'Not available'
     return new Intl.DateTimeFormat('en-UG', {
@@ -860,14 +900,15 @@ function AdminDashboard() {
                       <h3 style={{ margin: '0 0 10px 0', color: '#2c3e50' }}>{getFullName(user)}</h3>
                       <p style={{ margin: '5px 0', color: '#7f8c8d' }}>Role: <span style={{ backgroundColor: '#27AE60', color: 'white', padding: '2px 6px', borderRadius: '4px', fontSize: '12px' }}>{getRoleLabel(user.role)}</span></p>
                       <p style={{ margin: '5px 0', color: '#7f8c8d' }}>Email: {user.email}</p>
-                      {user.student_number && <p style={{ margin: '5px 0', color: '#7f8c8d' }}>Student #: {user.student_number}</p>}
-                      {user.department && <p style={{ margin: '5px 0', color: '#7f8c8d' }}>Department: {user.department}</p>}
+                      {getUserCardDetails(user).map((field) => (
+                        <p key={field.label} style={{ margin: '5px 0', color: '#7f8c8d' }}>{field.label}: {field.value}</p>
+                      ))}
                       <div style={{ marginTop: '15px', display: 'flex', gap: '10px' }}>
                         <button 
                           onClick={() => handleEditUser(user)}
                           style={{ padding: '5px 10px', backgroundColor: '#3498DB', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
                         >
-                          Edit
+                          Edit User
                         </button>
                         <button 
                           onClick={() => handleDeleteUser(user.id)}
@@ -1230,18 +1271,24 @@ function AdminDashboard() {
                       <span style={{ color: '#475569', fontSize: '14px' }}>Department</span>
                       <input name="department" value={editFormData.department || ''} onChange={handleEditFieldChange} disabled={editSaving} style={editInputStyle} />
                     </label>
-                    <label style={{ display: 'grid', gap: '8px' }}>
-                      <span style={{ color: '#475569', fontSize: '14px' }}>Staff Number</span>
-                      <input name="staff_number" value={editFormData.staff_number || ''} onChange={handleEditFieldChange} disabled={editSaving} style={editInputStyle} />
-                    </label>
-                    <label style={{ display: 'grid', gap: '8px' }}>
-                      <span style={{ color: '#475569', fontSize: '14px' }}>Student Number</span>
-                      <input name="student_number" value={editFormData.student_number || ''} onChange={handleEditFieldChange} disabled={editSaving} style={editInputStyle} />
-                    </label>
-                    <label style={{ display: 'grid', gap: '8px' }}>
-                      <span style={{ color: '#475569', fontSize: '14px' }}>Registration Number</span>
-                      <input name="registration_number" value={editFormData.registration_number || ''} onChange={handleEditFieldChange} disabled={editSaving} style={editInputStyle} />
-                    </label>
+                    {editFormData.role !== 'student' ? (
+                      <label style={{ display: 'grid', gap: '8px' }}>
+                        <span style={{ color: '#475569', fontSize: '14px' }}>Staff Number</span>
+                        <input name="staff_number" value={editFormData.staff_number || ''} onChange={handleEditFieldChange} disabled={editSaving} style={editInputStyle} />
+                      </label>
+                    ) : null}
+                    {editFormData.role === 'student' ? (
+                      <>
+                        <label style={{ display: 'grid', gap: '8px' }}>
+                          <span style={{ color: '#475569', fontSize: '14px' }}>Student Number</span>
+                          <input name="student_number" value={editFormData.student_number || ''} onChange={handleEditFieldChange} disabled={editSaving} style={editInputStyle} />
+                        </label>
+                        <label style={{ display: 'grid', gap: '8px' }}>
+                          <span style={{ color: '#475569', fontSize: '14px' }}>Registration Number</span>
+                          <input name="registration_number" value={editFormData.registration_number || ''} onChange={handleEditFieldChange} disabled={editSaving} style={editInputStyle} />
+                        </label>
+                      </>
+                    ) : null}
                   </div>
 
                   <label style={{ display: 'grid', gap: '8px' }}>
