@@ -171,6 +171,13 @@ export default function WorkplaceSupervisorDashboard() {
         nextWeekNumber += 1;
       }
       const canAddEvaluation = placementLogWeeks.includes(nextWeekNumber);
+      
+      // Check if the log for nextWeekNumber is in draft status - if so, disable evaluation
+      const nextWeekLog = logs.find(
+        (log) => Number(log.placement?.id ?? log.placement_id) === Number(placementId) &&
+                 Number(log.week_number) === Number(nextWeekNumber)
+      );
+      const canAddEvaluationFinal = canAddEvaluation && nextWeekLog && nextWeekLog.status !== 'draft';
 
       return {
         placement,
@@ -185,7 +192,7 @@ export default function WorkplaceSupervisorDashboard() {
         placementAverageScore: placementSummary?.placementAverageScore ?? null,
         placementAverageGPA: placementSummary?.placementAverageGPA ?? null,
         nextWeekNumber,
-        canAddEvaluation,
+        canAddEvaluation: canAddEvaluationFinal,
       };
     });
   }, [placements, groupedSummaries, logs, supervisorEvaluations]);
@@ -205,6 +212,19 @@ export default function WorkplaceSupervisorDashboard() {
     setEditingEvaluation(evaluation)
     setShowEvalEditor(true)
   }
+
+  useEffect(() => {
+    if (evaluatingLogId) {
+      const target = document.getElementById(`workplace-inline-eval-${evaluatingLogId}`)
+      target?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+      return
+    }
+
+    if (showEvalEditor && evalPlacement) {
+      const target = document.getElementById('workplace-eval-editor-form')
+      target?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    }
+  }, [evaluatingLogId, showEvalEditor, evalPlacement])
 
   const closeEvaluationEditor = () => {
     setShowEvalEditor(false)
@@ -420,8 +440,13 @@ export default function WorkplaceSupervisorDashboard() {
                             </div>
                           </div>
                         )}
+                        {log.status === 'draft' && (
+                          <div style={{ marginTop: '12px', padding: '10px', backgroundColor: '#FEF3C7', borderRadius: '4px', color: '#92400E', fontSize: '13px' }}>
+                            ⚠️ This log is still in draft status. The student must submit it before you can evaluate.
+                          </div>
+                        )}
                         {evaluatingLogId === log.id ? (
-                          <div style={{ marginTop: '16px' }}>
+                          <div id={`workplace-inline-eval-${log.id}`} style={{ marginTop: '16px' }}>
                             <SupervisorEvaluationForm
                               placementId={log.placement?.id ?? log.placement_id}
                               evaluatorId={user?.id}
@@ -569,7 +594,7 @@ export default function WorkplaceSupervisorDashboard() {
               )}
               
               {showEvalEditor && evalPlacement ? (
-                <div style={{ marginTop: '24px', padding: '16px', backgroundColor: '#f5f5f5', borderRadius: '8px' }}>
+                <div id="workplace-eval-editor-form" style={{ marginTop: '24px', padding: '16px', backgroundColor: '#f5f5f5', borderRadius: '8px' }}>
                   <h3 style={{ marginTop: 0 }}>
                     {editingEvaluation ? `Edit Week ${editingEvaluation.week_number} Evaluation` : 'Create New Evaluation'}
                   </h3>
