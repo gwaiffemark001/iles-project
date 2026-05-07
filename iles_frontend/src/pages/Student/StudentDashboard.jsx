@@ -75,6 +75,7 @@ const StudentDashboard = () => {
   const [pageError, setPageError] = useState('');
   const [loading, setLoading] = useState(true);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [chatUnreadCount, setChatUnreadCount] = useState(0);
   const weeklyEvaluationSummaries = useMemo(
     () => buildWeeklyEvaluationSummaries(evaluations, placements, logs, criteria).weeklySummaries,
     [evaluations, placements, logs, criteria],
@@ -376,6 +377,7 @@ const StudentDashboard = () => {
              onClick={() => setActiveTab('chat')}
            >
              Chat
+             {chatUnreadCount > 0 && <span style={{ marginLeft: '8px', padding: '2px 6px', backgroundColor: '#DC2626', color: 'white', borderRadius: '10px', fontSize: '11px', fontWeight: 'bold' }}>{chatUnreadCount}</span>}
            </button>
         </nav>
         <div className="sidebar-bottom">
@@ -708,7 +710,7 @@ const StudentDashboard = () => {
 
           {activeTab === 'chat' && (
             <div style={{ height: 'calc(100vh - 120px)', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-              <ChatPane currentUserId={user?.id} />
+              <ChatPane currentUserId={user?.id} onUnreadCountChange={setChatUnreadCount} />
             </div>
           )}
         </div>
