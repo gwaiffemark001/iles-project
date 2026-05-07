@@ -6,6 +6,7 @@ import { criteriaAPI, evaluationsAPI, getErrorMessage, logsAPI, placementsAPI, n
 import { buildWeeklyEvaluationSummaries } from "../../utils/evaluationSummary";
 import SupervisorEvaluationForm from "../components/SupervisorEvaluationForm";
 import NotificationPane from "../../components/NotificationPane";
+import ChatPane from "../../components/ChatPane";
 import "./AcademicSupervisorDashboard.css";
 
 const AcademicSupervisorDashboard = () => {
@@ -529,6 +530,9 @@ const AcademicSupervisorDashboard = () => {
             Notifications
             {unreadCount > 0 && <span style={{ marginLeft: '8px', padding: '2px 6px', backgroundColor: '#DC2626', color: 'white', borderRadius: '10px', fontSize: '11px', fontWeight: 'bold' }}>{unreadCount}</span>}
           </button>
+          <button className={`nav-item ${activeSection === "chat" ? "active" : ""}`} onClick={() => setActiveSection("chat")}>
+            Chat
+          </button>
            <button className={`nav-item ${activeSection === "criteria" ? "active" : ""}`} onClick={() => setActiveSection("criteria")}>
              Criteria
            </button>
@@ -784,6 +788,12 @@ const AcademicSupervisorDashboard = () => {
               </div>
             )}
           </>
+        )}
+
+        {activeSection === "chat" && (
+          <div style={{ height: 'calc(100vh - 120px)', display: 'flex', flexDirection: 'column' }}>
+            <ChatPane currentUserId={user?.id} />
+          </div>
         )}
       </div>
     </div>

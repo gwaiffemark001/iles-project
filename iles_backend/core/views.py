@@ -2,6 +2,7 @@
 # Built by Mugabe Gideon
 # Endpoints: WeeklyLog, Placement, Evaluation, Auth, Profile, Supervisor Workflow
 from django.db.models import Avg, Count
+from django.db import models
 from django.contrib.auth.tokens import PasswordResetTokenGenerator
 from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
 from django.utils.encoding import force_bytes, force_str
@@ -20,6 +21,7 @@ from .models import (
     Notification,
     PlacementApplication,
     WeeklyLog,
+    ChatMessage,
 )
 from .serializers import (
     CustomUserSerializer,
@@ -31,6 +33,7 @@ from .serializers import (
     UserProfileSerializer,
     UserSummarySerializer,
     WeeklyLogSerializer,
+    ChatMessageSerializer,
 )
 from .services import (
     notify_evaluation_status_changed,
@@ -1043,3 +1046,135 @@ class AdminStatisticsView(APIView):
         }
         return Response(stats)
 
+
+class ChatContactsView(APIView):
+    """
+    GET /api/chat/contacts/ - Get list of users the current user can chat with (role-restricted)
+    """
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        user = request.user
+        contacts = []
+
+        if user.role == 'student':
+            # Students can chat with their supervisors and admin
+            placements = InternshipPlacement.objects.filter(student=user)
+            supervisor_ids = set()
+            for placement in placements:
+                if placement.workplace_supervisor_id:
+                    supervisor_ids.add(placement.workplace_supervisor_id)
+                if placement.academic_supervisor_id:
+                    supervisor_ids.add(placement.academic_supervisor_id)
+            
+            supervisors = CustomUser.objects.filter(id__in=supervisor_ids)
+            admin_users = CustomUser.objects.filter(role='admin')
+            contacts = list(supervisors) + list(admin_users)
+
+        elif user.role in ['workplace_supervisor', 'academic_supervisor']:
+            # Supervisors can chat with their students and admin
+            if user.role == 'workplace_supervisor':
+                placements = InternshipPlacement.objects.filter(workplace_supervisor=user)
+            else:
+                placements = InternshipPlacement.objects.filter(academic_supervisor=user)
+            
+            student_ids = set()
+            for placement in placements:
+                if placement.student_id:
+                    student_ids.add(placement.student_id)
+            
+            students = CustomUser.objects.filter(id__in=student_ids)
+            admin_users = CustomUser.objects.filter(role='admin')
+            contacts = list(students) + list(admin_users)
+
+        elif user.role == 'admin':
+            # Admin can chat with all other users
+            contacts = CustomUser.objects.exclude(id=user.id)
+
+        serializer = UserSummarySerializer(contacts, many=True)
+        return Response(serializer.data)
+
+
+class ChatMessagesView(APIView):
+    """
+    GET /api/chat/messages/<recipient_id>/ - Get messages between current user and recipient
+    POST /api/chat/messages/<recipient_id>/ - Send a message
+    """
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, recipient_id):
+        try:
+            recipient = CustomUser.objects.get(pk=recipient_id)
+        except CustomUser.DoesNotExist:
+            return Response({'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
+
+        # Check if users can communicate
+        if not self._can_communicate(request.user, recipient):
+            return Response({'error': 'You are not allowed to communicate with this user'}, status=status.HTTP_403_FORBIDDEN)
+
+        messages = ChatMessage.objects.filter(
+            (models.Q(sender=request.user, recipient=recipient) | models.Q(sender=recipient, recipient=request.user))
+        ).order_by('created_at')
+
+        # Mark received messages as read
+        ChatMessage.objects.filter(sender=recipient, recipient=request.user, is_read=False).update(is_read=True)
+
+        serializer = ChatMessageSerializer(messages, many=True)
+        return Response(serializer.data)
+
+    def post(self, request, recipient_id):
+        try:
+            recipient = CustomUser.objects.get(pk=recipient_id)
+        except CustomUser.DoesNotExist:
+            return Response({'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
+
+        # Check if users can communicate
+        if not self._can_communicate(request.user, recipient):
+            return Response({'error': 'You are not allowed to communicate with this user'}, status=status.HTTP_403_FORBIDDEN)
+
+        message_text = request.data.get('message')
+        if not message_text or not message_text.strip():
+            return Response({'message': ['Message cannot be empty']}, status=status.HTTP_400_BAD_REQUEST)
+
+        chat_message = ChatMessage.objects.create(
+            sender=request.user,
+            recipient=recipient,
+            message=message_text.strip()
+        )
+
+        serializer = ChatMessageSerializer(chat_message)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+    def _can_communicate(self, sender, recipient):
+        """Check if sender can communicate with recipient based on roles."""
+        if sender.id == recipient.id:
+            return False
+
+        if sender.role == 'admin' or recipient.role == 'admin':
+            return True
+
+        if sender.role == 'student':
+            # Student can only chat with supervisors
+            placements = InternshipPlacement.objects.filter(student=sender)
+            supervisor_ids = set()
+            for placement in placements:
+                if placement.workplace_supervisor_id:
+                    supervisor_ids.add(placement.workplace_supervisor_id)
+                if placement.academic_supervisor_id:
+                    supervisor_ids.add(placement.academic_supervisor_id)
+            return recipient.id in supervisor_ids
+
+        elif sender.role in ['workplace_supervisor', 'academic_supervisor']:
+            # Supervisor can only chat with their students
+            if sender.role == 'workplace_supervisor':
+                placements = InternshipPlacement.objects.filter(workplace_supervisor=sender)
+            else:
+                placements = InternshipPlacement.objects.filter(academic_supervisor=sender)
+            
+            student_ids = set()
+            for placement in placements:
+                if placement.student_id:
+                    student_ids.add(placement.student_id)
+            return recipient.id in student_ids
+
+        return False

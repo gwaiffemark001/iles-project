@@ -3,6 +3,7 @@ import axios from 'axios'
 import { useAuth } from '../auth/useAuth'
 import { criteriaAPI, evaluationsAPI, placementsAPI } from '../api/api'
 import { buildWeeklyEvaluationSummaries, getGradeWeight } from '../utils/evaluationSummary'
+import ChatPane from '../components/ChatPane'
 import './AdminDashboard.css'
 
 const userRoles = [
@@ -622,6 +623,20 @@ function AdminDashboard() {
             📋 Criteria
           </button>
           <button 
+            onClick={() => setActiveSection('chat')}
+            style={{ 
+              padding: '10px', 
+              backgroundColor: activeSection === 'chat' ? '#34495e' : 'transparent',
+              color: 'white', 
+              border: 'none', 
+              borderRadius: '4px', 
+              cursor: 'pointer',
+              textAlign: 'left'
+            }}
+          >
+            💬 Chat
+          </button>
+          <button 
             onClick={fetchDashboardData}
             style={{ 
               padding: '10px', 
@@ -1088,6 +1103,13 @@ function AdminDashboard() {
                   ))}
                 </div>
               )}
+            </div>
+          )}
+
+          {activeSection === 'chat' && (
+            <div style={{ height: 'calc(100vh - 150px)', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+              <h2 style={{ color: '#2c3e50', marginBottom: '20px', margin: 0 }}>Chat with Users</h2>
+              <ChatPane currentUserId={user?.id} />
             </div>
           )}
         </div>

@@ -10,6 +10,7 @@ from .models import (
     PlacementApplication,
     UserProfile,
     WeeklyLog,
+    ChatMessage,
 )
 
 class CustomUserSerializer(serializers.ModelSerializer):
@@ -608,3 +609,28 @@ class UserProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = CustomUser
         fields = '__all__'
+
+
+class ChatMessageSerializer(serializers.ModelSerializer):
+    sender_name = serializers.SerializerMethodField()
+    recipient_name = serializers.SerializerMethodField()
+
+    class Meta:
+        model = ChatMessage
+        fields = [
+            'id',
+            'sender',
+            'sender_name',
+            'recipient',
+            'recipient_name',
+            'message',
+            'is_read',
+            'created_at',
+        ]
+        read_only_fields = ['id', 'sender', 'created_at']
+
+    def get_sender_name(self, obj):
+        return obj.sender.get_full_name() or obj.sender.username
+
+    def get_recipient_name(self, obj):
+        return obj.recipient.get_full_name() or obj.recipient.username

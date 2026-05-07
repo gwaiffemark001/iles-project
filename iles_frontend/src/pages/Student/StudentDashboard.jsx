@@ -4,6 +4,7 @@ import { logsAPI, placementsAPI, evaluationsAPI, criteriaAPI, notificationsAPI }
 import { getErrorMessage } from '@/api/api';
 import { buildWeeklyEvaluationSummaries } from '@/utils/evaluationSummary';
 import NotificationPane from '../../components/NotificationPane';
+import ChatPane from '../../components/ChatPane';
 import './StudentDashboard.css';
 
 const createInitialLogForm = (defaultPlacementId = '') => ({
@@ -369,6 +370,12 @@ const StudentDashboard = () => {
            >
              Criteria
            </button>
+           <button
+             className={`nav-item ${activeTab === 'chat' ? 'active' : ''}`}
+             onClick={() => setActiveTab('chat')}
+           >
+             Chat
+           </button>
         </nav>
         <div className="sidebar-bottom">
           <button className="nav-item logout" onClick={logout}>
@@ -695,6 +702,12 @@ const StudentDashboard = () => {
                   <p>No criteria have been defined yet.</p>
                 </div>
               )}
+            </div>
+          )}
+
+          {activeTab === 'chat' && (
+            <div style={{ height: 'calc(100vh - 120px)', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+              <ChatPane currentUserId={user?.id} />
             </div>
           )}
         </div>
