@@ -78,7 +78,7 @@ export default function ResetPassword() {
         {message && <p className="success-message">{message}</p>}
         {error && <p className="error-message">{error}</p>}
 
-        <section className="failed_login" style={{ width: '400px' }}>
+        <section className="failed_login" style={{ width: '480px' }}>
           <p className="signup">
             <Link to="/">Back to Login</Link>
           </p>
