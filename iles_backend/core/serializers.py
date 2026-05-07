@@ -327,23 +327,7 @@ class WeeklyLogSerializer(serializers.ModelSerializer):
 
     def validate(self, attrs):
         placement = attrs.get('placement') or getattr(self.instance, 'placement', None)
-        week_number = attrs.get('week_number') if attrs.get('week_number') is not None else getattr(self.instance, 'week_number', None)
         request = self.context.get('request')
-
-        # Auto-assign week_number on creation when not provided by client
-        if request and request.method == 'POST' and week_number is None:
-            if not placement:
-                raise serializers.ValidationError({'placement_id': ['Placement is required to determine current week.']})
-            start_date = placement.start_date
-            if not start_date:
-                raise serializers.ValidationError({'placement_id': ['Placement must have a start date.']})
-            today = timezone.now().date()
-            end_date = placement.end_date
-            effective = end_date if end_date and end_date < today else today
-            days_elapsed = max(0, (effective - start_date).days)
-            current_week = max(1, (days_elapsed // 7) + 1)
-            attrs['week_number'] = current_week
-            week_number = current_week
 
         if not placement:
             raise serializers.ValidationError({'placement_id': ['Placement is required.']})
@@ -453,7 +437,6 @@ class EvaluationSerializer(serializers.ModelSerializer):
     )
     evaluator_name = serializers.SerializerMethodField(read_only=True)
     items = serializers.SerializerMethodField(read_only=True)
-    week_number = serializers.IntegerField(required=True)
     score = serializers.DecimalField(max_digits=6, decimal_places=2, required=False, allow_null=True)
 
     class Meta:
@@ -466,7 +449,6 @@ class EvaluationSerializer(serializers.ModelSerializer):
             "evaluator_id",
             "evaluator_name",
             "items",
-            "week_number",
             "score",
             "weighted_score",
             "evaluation_type",
@@ -535,6 +517,10 @@ class EvaluationSerializer(serializers.ModelSerializer):
         # Default evaluator to request.user when not provided
         if 'evaluator' not in validated_data and request is not None:
             validated_data['evaluator'] = request.user
+
+        # Remove week_number from validated_data to avoid database constraint
+        if 'week_number' in validated_data:
+            del validated_data['week_number']
 
         evaluation = Evaluation.objects.create(**validated_data)
 

@@ -297,8 +297,7 @@ class Evaluation(models.Model):
     placement = models.ForeignKey(InternshipPlacement, on_delete=models.CASCADE, related_name='evaluations')
     evaluator = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='given_evaluations')
 
-    # Link evaluation to a week (one evaluation per placement/evaluation_type/week)
-    week_number = models.PositiveIntegerField(default=1)
+    # Remove week_number constraint - allow multiple evaluations per placement
 
     # Optional raw evaluator score (0-100 scale) and computed weighted score stored here
     score = models.DecimalField(max_digits=6, decimal_places=2, null=True, blank=True, help_text="Evaluator raw score (0-100)")
@@ -318,33 +317,31 @@ class Evaluation(models.Model):
         except (AttributeError, Exception):
             items_qs = []
 
-        # Special-case: supervisor evaluations use fixed three-category weights if those items exist
+        # Calculate weighted score using actual criteria and their weights
         try:
-            if self.evaluation_type == 'supervisor' and items_qs:
-                # Map expected criteria names to their weights (percent out of 100)
-                name_to_weight = {
-                    'Technical Skills': Decimal('0.4'),
-                    'Communication': Decimal('0.3'),
-                    'Professionalism': Decimal('0.3'),
-                }
-                found = {name: None for name in name_to_weight.keys()}
+            if items_qs:
+                total_score = Decimal('0')
+                total_weight = Decimal('0')
+                
                 for item in items_qs:
-                    crit_name = (item.criteria.name or '').strip()
-                    if crit_name in found:
-                        # Normalize score to 0-100 if max_score provided
-                        try:
-                            max_s = Decimal(str(item.criteria.max_score)) if item.criteria.max_score else Decimal('100')
-                            score_val = (Decimal(str(item.score)) / max_s) * Decimal('100')
-                        except Exception:
-                            score_val = Decimal(str(item.score))
-                        found[crit_name] = score_val
-
-                # Only compute special weighted score if all three categories present
-                if all(found[name] is not None for name in name_to_weight):
-                    total_score = Decimal('0')
-                    for name, weight in name_to_weight.items():
-                        total_score += (found[name] * weight)
-                    return float(round(total_score, 2))
+                    if item.criteria and item.score is not None:
+                        # Normalize score to 0-100 based on criteria max_score
+                        max_s = Decimal(str(item.criteria.max_score)) if item.criteria.max_score else Decimal('100')
+                        score_val = (Decimal(str(item.score)) / max_s) * Decimal('100')
+                        
+                        # Get criteria weight (convert from percentage to decimal)
+                        weight = Decimal(str(item.criteria.weight_percent)) / Decimal('100')
+                        
+                        # Add weighted contribution
+                        total_score += (score_val * weight)
+                        total_weight += weight
+                
+                # Calculate final weighted score (out of 100)
+                if total_weight > 0:
+                    final_score = (total_score / total_weight)
+                    # Ensure score is within 0-100 range
+                    final_score = max(Decimal('0'), min(Decimal('100'), final_score))
+                    return float(round(final_score, 2))
         except Exception:
             pass
 
@@ -371,12 +368,62 @@ class Evaluation(models.Model):
         self.save(update_fields=['weighted_score'])
 
     class Meta:
-        unique_together = [['placement', 'evaluation_type', 'week_number']]
         ordering = ['-evaluated_at']
 
     def __str__(self):
         student_username = self.placement.student.username if self.placement.student else "Unknown"
         return f"{student_username} - {self.evaluation_type}: {self.weighted_score}"
+
+    @staticmethod
+    def combined_score_for_placement(placement):
+        """
+        Calculate combined final score for a placement by combining
+        academic and workplace supervisor evaluations according to the
+        shares configured on each EvaluationCriteria.
+        Returns the final combined score.
+        """
+        from django.db.models import Q
+        
+        # Get all evaluations for this placement
+        sup_eval = Evaluation.objects.filter(
+            placement=placement, 
+            evaluation_type='supervisor'
+        ).first()
+        
+        acad_eval = Evaluation.objects.filter(
+            placement=placement, 
+            evaluation_type='academic'
+        ).first()
+        
+        if not sup_eval and not acad_eval:
+            return 0.0
+            
+        # Calculate combined score using weighted scores from both evaluations
+        combined_score = 0.0
+        total_weight = 0.0
+        
+        # Get all criteria and their weights
+        criteria = EvaluationCriteria.objects.all()
+        for crit in criteria:
+            total_weight += float(crit.weight_percent)
+            
+        # Add supervisor contribution
+        if sup_eval and sup_eval.weighted_score:
+            sup_weight = float(crit.weight_percent) / 100.0
+            combined_score += float(sup_eval.weighted_score) * sup_weight
+            total_weight += sup_weight
+            
+        # Add academic contribution  
+        if acad_eval and acad_eval.weighted_score:
+            acad_weight = float(crit.weight_percent) / 100.0
+            combined_score += float(acad_eval.weighted_score) * acad_weight
+            total_weight += acad_weight
+            
+        # Normalize by total weight used
+        if total_weight > 0:
+            combined_score = (combined_score / total_weight) * 100
+            
+        return round(combined_score, 2)
 
     @staticmethod
     def combined_score_for_week(placement, week_number):
