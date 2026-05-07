@@ -144,6 +144,19 @@ const AcademicSupervisorDashboard = () => {
     setShowEvalEditor(true);
   };
 
+  useEffect(() => {
+    if (evaluatingLogId) {
+      const target = document.getElementById(`academic-inline-eval-${evaluatingLogId}`);
+      target?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      return;
+    }
+
+    if (showEvalEditor && evalPlacement) {
+      const target = document.getElementById('academic-eval-editor-form');
+      target?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  }, [evaluatingLogId, showEvalEditor, evalPlacement]);
+
   const getExistingEvaluationForLog = (log) => evaluations.find(
     (evaluation) => (
       Number(evaluation.placement?.id ?? evaluation.placement_id) === Number(log.placement?.id ?? log.placement_id)
@@ -239,6 +252,13 @@ const AcademicSupervisorDashboard = () => {
         nextWeekNumber += 1;
       }
       const canAddEvaluation = placementLogWeeks.includes(nextWeekNumber);
+      
+      // Check if the log for nextWeekNumber is in draft status - if so, disable evaluation
+      const nextWeekLog = logs.find(
+        (log) => Number(log.placement?.id ?? log.placement_id) === Number(placementId) &&
+                 Number(log.week_number) === Number(nextWeekNumber)
+      );
+      const canAddEvaluationFinal = canAddEvaluation && nextWeekLog && nextWeekLog.status !== 'draft';
 
       return {
         placement,
@@ -253,7 +273,7 @@ const AcademicSupervisorDashboard = () => {
         placementAverageScore: placementSummary?.placementAverageScore ?? null,
         placementAverageGPA: placementSummary?.placementAverageGPA ?? null,
         nextWeekNumber,
-        canAddEvaluation,
+        canAddEvaluation: canAddEvaluationFinal,
       };
     });
   }, [placements, groupedSummaries, logs, academicEvaluations]);
@@ -455,9 +475,13 @@ const AcademicSupervisorDashboard = () => {
                         {getExistingEvaluationForLog(log) ? 'Edit Weekly Evaluation' : 'Evaluate This Week'}
                       </button>
                     </div>
+                  ) : log.status === 'draft' ? (
+                    <div style={{ marginTop: '12px', padding: '10px', backgroundColor: '#FEF3C7', borderRadius: '4px', color: '#92400E', fontSize: '13px' }}>
+                      ⚠️ This log is still in draft status. The student must submit it before you can evaluate.
+                    </div>
                   ) : null}
                   {evaluatingLogId === log.id ? (
-                    <div style={{ marginTop: '16px' }}>
+                    <div id={`academic-inline-eval-${log.id}`} style={{ marginTop: '16px' }}>
                       <SupervisorEvaluationForm
                         placementId={log.placement?.id ?? log.placement_id}
                         evaluatorId={user?.id}
@@ -719,7 +743,7 @@ const AcademicSupervisorDashboard = () => {
             )}
             
             {showEvalEditor && evalPlacement ? (
-              <div style={{ marginTop: '24px', padding: '16px', backgroundColor: '#f5f5f5', borderRadius: '8px' }}>
+              <div id="academic-eval-editor-form" style={{ marginTop: '24px', padding: '16px', backgroundColor: '#f5f5f5', borderRadius: '8px' }}>
                 <h3 style={{ marginTop: 0 }}>
                   {editingEvaluation ? `Edit Week ${editingEvaluation.week_number} Evaluation` : 'Create New Evaluation'}
                 </h3>
