@@ -646,12 +646,21 @@ class UserSummaryView(APIView):
 class UserListView(APIView):
     permission_classes = [IsAuthenticated]
 
-    def get(self, request):
+    def get(self, request, pk=None):
         if request.user.role != "admin":
             return Response(
                 {"error": "Only admins can view users"},
                 status=status.HTTP_403_FORBIDDEN,
             )
+
+        if pk is not None:
+            try:
+                user = CustomUser.objects.get(pk=pk)
+            except CustomUser.DoesNotExist:
+                return Response({"error": "User not found"}, status=status.HTTP_404_NOT_FOUND)
+
+            serializer = CustomUserSerializer(user)
+            return Response(serializer.data)
 
         users = CustomUser.objects.all().order_by("role", "first_name", "username")
         role_filter = request.query_params.get("role")
@@ -659,8 +668,41 @@ class UserListView(APIView):
         if role_filter:
             users = users.filter(role=role_filter)
 
-        serializer = UserProfileSerializer(users, many=True)
+        serializer = CustomUserSerializer(users, many=True)
         return Response(serializer.data)
+
+    def put(self, request, pk):
+        if request.user.role != "admin":
+            return Response(
+                {"error": "Only admins can update users"},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        try:
+            user = CustomUser.objects.get(pk=pk)
+        except CustomUser.DoesNotExist:
+            return Response({"error": "User not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        serializer = CustomUserSerializer(user, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def delete(self, request, pk):
+        if request.user.role != "admin":
+            return Response(
+                {"error": "Only admins can delete users"},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        try:
+            user = CustomUser.objects.get(pk=pk)
+        except CustomUser.DoesNotExist:
+            return Response({"error": "User not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        user.delete()
+        return Response({"message": "User deleted successfully"}, status=status.HTTP_204_NO_CONTENT)
 
 
 class NotificationListView(APIView):

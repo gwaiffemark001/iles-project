@@ -21,8 +21,9 @@ function normalizePlacement(placement, logs, evaluations) {
     id: placementId,
     placement,
     studentName: placement.student?.full_name || placement.student?.username || 'Unknown Student',
-    studentDepartment: placement.student?.department || 'Not specified',
+    studentDepartment: placement.student?.department || 'Department not set',
     studentNumber: placement.student?.student_number || 'Not assigned',
+    registrationNumber: placement.student?.registration_number || 'Not assigned',
     companyName: placement.company_name || 'Not specified',
     companyAddress: placement.company_address || 'Not provided',
     startDate: placement.start_date,
@@ -372,6 +373,7 @@ export default function WorkplaceSupervisorDashboard() {
                     <p><strong>Period:</strong> {intern.startDate} - {intern.endDate}</p>
                     <p><strong>Status:</strong> <span className={`workplace-status-badge ${intern.status}`}>{intern.status}</span></p>
                     {intern.studentNumber ? <p><strong>Student No:</strong> {intern.studentNumber}</p> : null}
+                    {intern.registrationNumber ? <p><strong>Registration No:</strong> {intern.registrationNumber}</p> : null}
                   </div>
                   <div className="workplace-intern-stats">
                     <div className="workplace-intern-stat"><span className="stat-number">{intern.totalLogs}</span><span className="stat-label">Total</span></div>
@@ -582,7 +584,7 @@ export default function WorkplaceSupervisorDashboard() {
               {showEvalEditor && evalPlacement ? (
                 <div id="workplace-eval-editor-form" style={{ marginTop: '24px', padding: '16px', backgroundColor: '#f5f5f5', borderRadius: '8px' }}>
                   <h3 style={{ marginTop: 0 }}>
-                    {editingEvaluation ? `Edit Week ${editingEvaluation.week_number} Evaluation` : 'Create New Evaluation'}
+                    {editingEvaluation ? `Edit Week ${selectedWeekNumber} Evaluation` : 'Create New Evaluation'}
                   </h3>
                   <SupervisorEvaluationForm
                     placementId={evalPlacement.id}
