@@ -91,7 +91,7 @@ const StudentDashboard = () => {
     try {
       const response = await notificationsAPI.getNotifications({ limit: 100 });
       const notifications = Array.isArray(response.data) ? response.data : [];
-      const count = notifications.filter((n) => !n.is_read).length;
+      const count = notifications.filter((n) => n.is_read === false).length;
       setUnreadCount(count);
     } catch {
       // Silently fail - unread count is not critical
@@ -136,6 +136,13 @@ const StudentDashboard = () => {
 
     return () => clearInterval(pollingInterval);
   }, []);
+
+  // Refetch count when leaving Notifications page
+  useEffect(() => {
+    if (activeTab !== 'notifications') {
+      fetchUnreadCount();
+    }
+  }, [activeTab]);
 
   useEffect(() => {
     if (!loggablePlacements.length || editingLogId) {
