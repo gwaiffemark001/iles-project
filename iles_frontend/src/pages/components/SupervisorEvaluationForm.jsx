@@ -105,7 +105,7 @@ export default function SupervisorEvaluationForm({
             setSelectedCriteriaId(otherCriteriaId);
           }
         }
-      } catch (err) {
+      } catch {
         // Silently fail, this is optional enforcement
       }
     };
