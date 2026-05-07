@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { useAuth } from '../../contexts/useAuth';
+import { useAuth } from '@/auth/useAuth';
 import { logsAPI, placementsAPI, evaluationsAPI, criteriaAPI, notificationsAPI } from '@/api/api';
 import { getErrorMessage } from '@/api/api';
 import { buildWeeklyEvaluationSummaries } from '@/utils/evaluationSummary';
@@ -7,6 +7,7 @@ import NotificationPane from '../../components/NotificationPane';
 import ChatPane from '../../components/ChatPane';
 import ProfileEditor from '../../components/ProfileEditor';
 import UserGuide from '../../components/UserGuide';
+import UserAvatar from '../../components/UserAvatar';
 import './StudentDashboard.css';
 
 const createInitialLogForm = (defaultPlacementId = '') => ({
@@ -386,7 +387,7 @@ const StudentDashboard = () => {
              Chat
              {chatUnreadCount > 0 && <span style={{ marginLeft: '8px', padding: '2px 6px', backgroundColor: '#DC2626', color: 'white', borderRadius: '10px', fontSize: '11px', fontWeight: 'bold' }}>{chatUnreadCount}</span>}
            </button>
-        </nav>
+                   </nav>
         <div className="sidebar-bottom">
           <button className="nav-item logout" onClick={logout}>
             Logout
@@ -400,7 +401,7 @@ const StudentDashboard = () => {
             <h1>Welcome back, {user?.first_name || user?.username}</h1>
             <p>Student Intern — Internship Logging & Evaluation System</p>
           </div>
-          <div className="avatar">{getUserInitials(user)}</div>
+          <UserAvatar user={user} size="medium" className="avatar" />
         </div>
 
         
