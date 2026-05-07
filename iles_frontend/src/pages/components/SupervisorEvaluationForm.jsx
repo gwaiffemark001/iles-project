@@ -2,6 +2,12 @@ import { useEffect, useState } from 'react';
 import { criteriaAPI, evaluationsAPI, getErrorMessage } from '../../api/api';
 import { useAuth } from '../../contexts/useAuth';
 
+const WORKPLACE_REQUIREMENTS = [
+  { key: 'technical', label: 'Technical Skills', weight: 40 },
+  { key: 'communication', label: 'Communication', weight: 30 },
+  { key: 'professionalism', label: 'Professionalism', weight: 30 },
+];
+
 export default function SupervisorEvaluationForm({
   placementId,
   evaluatorId,
@@ -22,6 +28,7 @@ export default function SupervisorEvaluationForm({
       : evaluationType;
   const [criteria, setCriteria] = useState([]);
   const [items, setItems] = useState([]);
+  const [workplaceScores, setWorkplaceScores] = useState({});
   const [selectedCriteriaId, setSelectedCriteriaId] = useState(null);
   const [lockedCriteriaId, setLockedCriteriaId] = useState(null);
   const [lockedCriteriaName, setLockedCriteriaName] = useState(null);
@@ -57,7 +64,8 @@ export default function SupervisorEvaluationForm({
     let isMounted = true;
     if (isMounted && criteria.length > 0) {
       if (existingEvaluation && Array.isArray(existingEvaluation.items)) {
-        setSelectedCriteriaId(existingEvaluation.items[0]?.criteria?.id || existingEvaluation.items[0]?.criteria_id || null);
+        const selectedId = existingEvaluation.items[0]?.criteria?.id || existingEvaluation.items[0]?.criteria_id || null;
+        setSelectedCriteriaId(selectedId);
         setItems(
           criteria.map((c) => {
             const found = existingEvaluation.items.find(
@@ -69,6 +77,29 @@ export default function SupervisorEvaluationForm({
             };
           })
         );
+
+        // Pre-fill workplace inputs so an existing weighted score remains stable when editing.
+        if (determinedEvaluationType === 'supervisor' && selectedId) {
+          const found = existingEvaluation.items.find(
+            (it) => it.criteria?.id === selectedId || it.criteria_id === selectedId
+          );
+          const existingScore = found ? Number(found.score) : '';
+          const selectedCriterion = criteria.find((c) => c.id === selectedId);
+          const roleShare = Number(selectedCriterion?.supervisor_share || 0);
+          const normalizedSeed = existingScore !== '' && !Number.isNaN(existingScore) && roleShare > 0
+            ? Math.min(100, Math.max(0, existingScore / (roleShare / 100)))
+            : existingScore;
+          if (existingScore !== '' && !Number.isNaN(existingScore)) {
+            setWorkplaceScores((prev) => ({
+              ...prev,
+              [selectedId]: {
+                technical: normalizedSeed,
+                communication: normalizedSeed,
+                professionalism: normalizedSeed,
+              },
+            }));
+          }
+        }
       } else if (criteria.length > 0 && !existingEvaluation) {
         setItems(criteria.map((c) => ({ criteria_id: c.id, score: '' })));
         setSelectedCriteriaId(null);
@@ -77,7 +108,7 @@ export default function SupervisorEvaluationForm({
     return () => {
       isMounted = false;
     };
-  }, [criteria, existingEvaluation]);
+  }, [criteria, existingEvaluation, determinedEvaluationType]);
 
   // Check for other supervisor's evaluation to enforce same criteria
   useEffect(() => {
@@ -131,6 +162,42 @@ export default function SupervisorEvaluationForm({
     );
   };
 
+  const setWorkplaceRequirementScore = (criteriaId, key, value) => {
+    let numericValue = value === '' ? '' : Number(value);
+    if (numericValue !== '' && Number.isNaN(numericValue)) {
+      numericValue = '';
+    }
+    if (numericValue !== '' && numericValue > 100) {
+      numericValue = 100;
+    }
+    if (numericValue !== '' && numericValue < 0) {
+      numericValue = 0;
+    }
+
+    setWorkplaceScores((prev) => ({
+      ...prev,
+      [criteriaId]: {
+        technical: prev[criteriaId]?.technical ?? '',
+        communication: prev[criteriaId]?.communication ?? '',
+        professionalism: prev[criteriaId]?.professionalism ?? '',
+        [key]: numericValue,
+      },
+    }));
+  };
+
+  const calculateWorkplaceWeightedScore = (criteriaId) => {
+    const selected = workplaceScores[criteriaId] || {};
+    const criterion = criteria.find((c) => c.id === criteriaId);
+    const roleShare = Number(criterion?.supervisor_share || 0);
+    const baseScore = WORKPLACE_REQUIREMENTS.reduce((sum, req) => {
+      const raw = selected[req.key] === '' || selected[req.key] == null ? 0 : Number(selected[req.key]);
+      const safe = Number.isNaN(raw) ? 0 : Math.min(100, Math.max(0, raw));
+      return sum + (safe * (req.weight / 100));
+    }, 0);
+
+    return baseScore * (roleShare / 100);
+  };
+
   const toggleCriteriaSelection = (criteriaId) => {
     // If criteria is locked, don't allow changing it
     if (lockedCriteriaId && criteriaId !== lockedCriteriaId) {
@@ -142,6 +209,11 @@ export default function SupervisorEvaluationForm({
 
   const calculateTotalScore = () => {
     if (criteria.length === 0 || items.length === 0 || !selectedCriteriaId) return 0;
+
+    if (determinedEvaluationType === 'supervisor') {
+      const weighted = calculateWorkplaceWeightedScore(selectedCriteriaId);
+      return Math.round(weighted * 100) / 100;
+    }
 
     const selectedItem = items.find((item) => item.criteria_id === selectedCriteriaId);
     const crit = criteria.find((c) => c.id === selectedCriteriaId);
@@ -170,15 +242,42 @@ export default function SupervisorEvaluationForm({
 
     const selectedItem = items.find((item) => item.criteria_id === selectedCriteriaId);
     const selectedCriterion = criteria.find((c) => c.id === selectedCriteriaId);
-    const numericScore = Number(selectedItem?.score);
-    const maxScore = Number(selectedCriterion?.max_score || 100);
-    const hasInvalidScore =
-      !selectedItem || Number.isNaN(numericScore) || numericScore < 0 || numericScore > maxScore;
+    let scoreToSave = 0;
 
-    if (hasInvalidScore) {
-      setError(`Please provide a valid score for ${selectedCriterion?.name || 'the selected'} criteria.`);
-      setSaving(false);
-      return;
+    if (determinedEvaluationType === 'supervisor') {
+      const selected = workplaceScores[selectedCriteriaId] || {};
+      const missingRequirement = WORKPLACE_REQUIREMENTS.find((req) => selected[req.key] === '' || selected[req.key] == null);
+      if (missingRequirement) {
+        setError(`Please enter a score for ${missingRequirement.label}.`);
+        setSaving(false);
+        return;
+      }
+
+      const invalidRequirement = WORKPLACE_REQUIREMENTS.find((req) => {
+        const numeric = Number(selected[req.key]);
+        return Number.isNaN(numeric) || numeric < 0 || numeric > 100;
+      });
+
+      if (invalidRequirement) {
+        setError(`Please provide a valid ${invalidRequirement.label} score between 0 and 100.`);
+        setSaving(false);
+        return;
+      }
+
+      scoreToSave = Math.round(calculateWorkplaceWeightedScore(selectedCriteriaId) * 100) / 100;
+    } else {
+      const numericScore = Number(selectedItem?.score);
+      const maxScore = Number(selectedCriterion?.max_score || 100);
+      const hasInvalidScore =
+        !selectedItem || Number.isNaN(numericScore) || numericScore < 0 || numericScore > maxScore;
+
+      if (hasInvalidScore) {
+        setError(`Please provide a valid score for ${selectedCriterion?.name || 'the selected'} criteria.`);
+        setSaving(false);
+        return;
+      }
+
+      scoreToSave = Math.round(calculateTotalScore() * 100) / 100;
     }
 
     const payload = {
@@ -186,7 +285,7 @@ export default function SupervisorEvaluationForm({
       evaluator_id: evaluatorId,
       evaluation_type: determinedEvaluationType,
       week_number: existingEvaluation?.week_number || initialWeekNumber,
-      items: [{ criteria_id: selectedItem.criteria_id, score: numericScore }],
+      items: [{ criteria_id: selectedCriteriaId, score: scoreToSave }],
     };
 
     try {
@@ -230,7 +329,7 @@ export default function SupervisorEvaluationForm({
     >
       <div style={{ marginBottom: '16px' }}>
         <h3 style={{ marginBottom: '4px', color: '#0f172a' }}>
-          {existingEvaluation ? `Edit Week ${existingEvaluation.week_number}` : `Create Evaluation for Week ${initialWeekNumber}`}: {studentName}
+          {existingEvaluation ? `Edit Week ${existingEvaluation.week_number ?? initialWeekNumber}` : `Create Evaluation for Week ${initialWeekNumber}`}: {studentName}
         </h3>
         <p style={{ margin: '0 0 12px 0', fontSize: '12px', color: '#64748b', textTransform: 'capitalize' }}>
           Evaluation Type: <strong>{determinedEvaluationType === 'academic' ? 'Academic Supervisor' : 'Workplace Supervisor'}</strong>
@@ -314,6 +413,7 @@ export default function SupervisorEvaluationForm({
           const roleShare = determinedEvaluationType === 'academic'
             ? Number(c.academic_share || 0)
             : Number(c.supervisor_share || 0);
+          const selectedWorkplaceScores = workplaceScores[c.id] || {};
 
           return (
             <div
@@ -345,43 +445,92 @@ export default function SupervisorEvaluationForm({
                 )}
               </div>
 
-              <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-                <input
-                  type="number"
-                  step="0.1"
-                  min="0"
-                  max="100"
-                  value={itemScore}
-                  onChange={(e) => {
-                    let v = e.target.value;
-                    if (v !== '' && Number(v) > 100) {
-                      v = '100';
-                    }
-                    setItemScore(c.id, v);
-                  }}
-                  disabled={saving}
-                  style={{
-                    flex: 1,
-                    maxWidth: '120px',
-                    padding: '8px',
-                    borderRadius: '4px',
-                    border: '1px solid #cbd5e1',
-                    fontSize: '14px',
-                  }}
-                />
-                <div style={{ fontSize: '12px', color: '#64748b', minWidth: '80px' }}>{itemScore === '' ? '-' : itemScore} / {maxScore}</div>
-                <div
-                  style={{
-                    fontSize: '12px',
-                    fontWeight: 'bold',
-                    color: totalScore >= 70 ? '#27ae60' : totalScore >= 50 ? '#f39c12' : '#e74c3c',
-                    minWidth: '50px',
-                    textAlign: 'right',
-                  }}
-                >
-                  {totalScore.toFixed(2)}
+              {determinedEvaluationType === 'supervisor' ? (
+                <>
+                  <div style={{ fontSize: '12px', color: '#475569', marginBottom: '8px' }}>
+                    Enter all three requirement scores (0 to 100). The weighted sum is saved for this selected admin criterion.
+                  </div>
+                  <div style={{ display: 'grid', gap: '8px' }}>
+                    {WORKPLACE_REQUIREMENTS.map((req) => {
+                      const rawValue = selectedWorkplaceScores[req.key] ?? '';
+                      const numericValue = rawValue === '' ? '' : Number(rawValue);
+                      const appliedRoleShare = roleShare / 100;
+                      const contribution = rawValue === '' || Number.isNaN(numericValue)
+                        ? 0
+                        : (Math.max(0, Math.min(100, numericValue)) * (req.weight / 100) * appliedRoleShare);
+
+                      return (
+                        <div key={req.key} style={{ display: 'grid', gridTemplateColumns: 'minmax(180px, 1fr) 120px 80px 120px', gap: '10px', alignItems: 'center' }}>
+                          <div style={{ fontSize: '13px', color: '#0f172a', fontWeight: 500 }}>{req.label} - {req.weight}%</div>
+                          <input
+                            type="number"
+                            step="0.1"
+                            min="0"
+                            max="100"
+                            value={rawValue}
+                            onChange={(e) => {
+                              let v = e.target.value;
+                              if (v !== '' && Number(v) > 100) {
+                                v = '100';
+                              }
+                              setWorkplaceRequirementScore(c.id, req.key, v);
+                            }}
+                            disabled={saving}
+                            style={{
+                              padding: '8px',
+                              borderRadius: '4px',
+                              border: '1px solid #cbd5e1',
+                              fontSize: '14px',
+                            }}
+                          />
+                          <div style={{ fontSize: '12px', color: '#64748b' }}>/ 100</div>
+                          <div style={{ fontSize: '13px', fontWeight: 600, color: '#0f172a' }}>
+                            {contribution.toFixed(2)}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </>
+              ) : (
+                <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                  <input
+                    type="number"
+                    step="0.1"
+                    min="0"
+                    max="100"
+                    value={itemScore}
+                    onChange={(e) => {
+                      let v = e.target.value;
+                      if (v !== '' && Number(v) > 100) {
+                        v = '100';
+                      }
+                      setItemScore(c.id, v);
+                    }}
+                    disabled={saving}
+                    style={{
+                      flex: 1,
+                      maxWidth: '120px',
+                      padding: '8px',
+                      borderRadius: '4px',
+                      border: '1px solid #cbd5e1',
+                      fontSize: '14px',
+                    }}
+                  />
+                  <div style={{ fontSize: '12px', color: '#64748b', minWidth: '80px' }}>{itemScore === '' ? '-' : itemScore} / {maxScore}</div>
+                  <div
+                    style={{
+                      fontSize: '12px',
+                      fontWeight: 'bold',
+                      color: totalScore >= 70 ? '#27ae60' : totalScore >= 50 ? '#f39c12' : '#e74c3c',
+                      minWidth: '50px',
+                      textAlign: 'right',
+                    }}
+                  >
+                    {totalScore.toFixed(2)}
+                  </div>
                 </div>
-              </div>
+              )}
             </div>
           );
         })() : (
