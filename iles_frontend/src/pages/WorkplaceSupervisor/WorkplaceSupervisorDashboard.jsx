@@ -500,7 +500,7 @@ export default function WorkplaceSupervisorDashboard() {
                     ) : (
                       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '12px' }}>
                         {group.weeks.map((w) => {
-                        const evalToEdit = supervisorEvaluations.find(
+                        const evalToEdit = w.supervisorEvaluation || supervisorEvaluations.find(
                           e => Number(e.placement?.id ?? e.placement_id) === Number(group.placementId)
                             && Number(e.week_number) === Number(w.week_number)
                         );
