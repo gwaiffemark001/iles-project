@@ -25,7 +25,6 @@ const AcademicSupervisorDashboard = () => {
   const [evalPlacement, setEvalPlacement] = useState(null);
   const [editingEvaluation, setEditingEvaluation] = useState(null);
   const [selectedWeekNumber, setSelectedWeekNumber] = useState(1);
-  const [evaluatingLogId, setEvaluatingLogId] = useState(null);
   const [unreadCount, setUnreadCount] = useState(0);
 
   const fetchUnreadCount = useCallback(async () => {
@@ -172,17 +171,11 @@ const AcademicSupervisorDashboard = () => {
   };
 
   useEffect(() => {
-    if (evaluatingLogId) {
-      const target = document.getElementById(`academic-inline-eval-${evaluatingLogId}`);
-      target?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      return;
-    }
-
     if (showEvalEditor && evalPlacement) {
       const target = document.getElementById('academic-eval-editor-form');
       target?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
-  }, [evaluatingLogId, showEvalEditor, evalPlacement]);
+  }, [showEvalEditor, evalPlacement]);
 
   const getExistingEvaluationForLog = (log) => evaluations.find(
     (evaluation) => (
@@ -202,27 +195,7 @@ const AcademicSupervisorDashboard = () => {
     );
   }, [evaluations, user?.id]);
 
-  const getNextAcademicWeek = useCallback((placementId) => {
-    const placementLogWeeks = logs
-      .filter((log) => Number(log.placement?.id ?? log.placement_id) === Number(placementId))
-      .map((log) => Number(log.week_number || 1))
-      .filter((weekNumber, index, array) => array.indexOf(weekNumber) === index)
-      .sort((left, right) => left - right);
-
-    const evaluatedWeeks = new Set(
-      academicEvaluations
-        .filter((evaluation) => Number(evaluation.placement?.id ?? evaluation.placement_id) === Number(placementId))
-        .map((evaluation) => Number(evaluation.week_number || 1))
-        .filter((weekNumber) => !Number.isNaN(weekNumber)),
-    );
-
-    const maxKnownWeek = Math.max(1, ...placementLogWeeks, ...Array.from(evaluatedWeeks));
-    let nextWeekNumber = 1;
-    while (evaluatedWeeks.has(nextWeekNumber) && nextWeekNumber <= maxKnownWeek + 1) {
-      nextWeekNumber += 1;
-    }
-    return nextWeekNumber;
-  }, [logs, academicEvaluations]);
+  
 
   const { weeklySummaries: allWeeklySummaries } = useMemo(
     () => buildWeeklyEvaluationSummaries(evaluations, placements, logs, criteria),
@@ -464,8 +437,6 @@ const AcademicSupervisorDashboard = () => {
         ) : (
           <div style={{ display: "grid", gap: "12px" }}>
             {selectedStudentLogs.map((log) => {
-              const nextWeekNumber = getNextAcademicWeek(log.placement?.id ?? log.placement_id);
-              const canEvaluateThisLog = Number(log.week_number) === Number(nextWeekNumber) && log.status === 'approved';
               const displayStatus = log.status === "submitted"
                 ? "Pending"
                 : log.status === "reviewed"
@@ -485,46 +456,7 @@ const AcademicSupervisorDashboard = () => {
                   <p style={studentLogTextStyle}><strong>Learning:</strong> {log.learning || "No learning notes recorded."}</p>
                   <p style={studentLogTextStyle}><strong>Supervisor Comment:</strong> {log.supervisor_comment || "No comment yet."}</p>
                   <p style={studentLogTextStyle}><strong>Deadline:</strong> {formatDate(log.deadline)}</p>
-                  {log.status === 'approved' ? (
-                    <div style={{ marginTop: '12px' }}>
-                      <button
-                        className="eval-btn"
-                        disabled={!canEvaluateThisLog}
-                        onClick={() => {
-                          if (canEvaluateThisLog) {
-                            setEvaluatingLogId(log.id);
-                          } else {
-                            toast.error(`Week ${nextWeekNumber} must be approved before evaluation`);
-                          }
-                        }}
-                        title={canEvaluateThisLog ? 'Evaluate this week' : `Week ${nextWeekNumber} must be approved before evaluation`}
-                      >
-                        {getExistingEvaluationForLog(log) ? 'Edit Weekly Evaluation' : 'Evaluate This Week'}
-                      </button>
-                    </div>
-                  ) : (
-                    <div style={{ marginTop: '12px', padding: '10px', backgroundColor: '#FEF3C7', borderRadius: '4px', color: '#92400E', fontSize: '13px' }}>
-                      ⚠️ This log must be approved by both supervisors before you can evaluate it.
-                    </div>
-                  )}
-                  {evaluatingLogId === log.id ? (
-                    <div id={`academic-inline-eval-${log.id}`} style={{ marginTop: '16px' }}>
-                      <SupervisorEvaluationForm
-                        placementId={log.placement?.id ?? log.placement_id}
-                        evaluatorId={user?.id}
-                        evaluationType="academic"
-                        existingEvaluation={getExistingEvaluationForLog(log)}
-                        initialWeekNumber={log.week_number}
-                        studentName={selectedStudent.name}
-                        onSaved={() => {
-                          toast.success('Evaluation saved successfully');
-                          setEvaluatingLogId(null);
-                          fetchData();
-                        }}
-                        onCancel={() => setEvaluatingLogId(null)}
-                      />
-                    </div>
-                  ) : null}
+                  {/* Inline weekly evaluation button removed per request */}
                   <div style={studentActionRowStyle}>
                     {log.status === "submitted" && (
                       <>
