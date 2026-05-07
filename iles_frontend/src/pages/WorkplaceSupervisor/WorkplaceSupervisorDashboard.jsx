@@ -4,6 +4,7 @@ import { criteriaAPI, evaluationsAPI, getErrorMessage, logsAPI, placementsAPI } 
 import { buildWeeklyEvaluationSummaries } from '../../utils/evaluationSummary'
 import { useAuth } from '../../contexts/useAuth'
 import SupervisorEvaluationForm from '../components/SupervisorEvaluationForm'
+import NotificationPane from '../../components/NotificationPane'
 import './WorkplaceSupervisorDashboard.css'
 
 function normalizePlacement(placement, logs, evaluations) {
@@ -293,6 +294,7 @@ export default function WorkplaceSupervisorDashboard() {
           <button className={`workplace-nav-item ${activeTab === 'placements' ? 'active' : ''}`} onClick={() => setActiveTab('placements')}>My Interns</button>
           <button className={`workplace-nav-item ${activeTab === 'logs' ? 'active' : ''}`} onClick={() => setActiveTab('logs')}>Weekly Logs</button>
           <button className={`workplace-nav-item ${activeTab === 'evaluations' ? 'active' : ''}`} onClick={() => setActiveTab('evaluations')}>Evaluations</button>
+          <button className={`workplace-nav-item ${activeTab === 'notifications' ? 'active' : ''}`} onClick={() => setActiveTab('notifications')}>Notifications</button>
            <button className={`workplace-nav-item ${activeTab === 'criteria' ? 'active' : ''}`} onClick={() => setActiveTab('criteria')}>Criteria</button>
         </div>
         <div className="workplace-sidebar-bottom">
@@ -316,6 +318,8 @@ export default function WorkplaceSupervisorDashboard() {
           </div>
         </header>
 
+        
+
         <section className="workplace-stat-grid">
           <div className="workplace-stat-card blue"><span className="workplace-stat-label">Total Interns</span><span className="workplace-stat-value">{stats.totalInterns}</span><span className="workplace-stat-hint">Assigned to you</span></div>
           <div className="workplace-stat-card amber"><span className="workplace-stat-label">Pending Reviews</span><span className="workplace-stat-value">{stats.pendingReviews}</span><span className="workplace-stat-hint">Awaiting review</span></div>
@@ -328,6 +332,13 @@ export default function WorkplaceSupervisorDashboard() {
           <button className={`workplace-tab ${activeTab === 'logs' ? 'active' : ''}`} onClick={() => setActiveTab('logs')}>Weekly Logs</button>
           <button className={`workplace-tab ${activeTab === 'evaluations' ? 'active' : ''}`} onClick={() => setActiveTab('evaluations')}>Evaluations</button>
         </nav>
+
+        {activeTab === 'notifications' && (
+          <section className="workplace-notifications-section">
+            <div className="section-title">Notifications</div>
+            <NotificationPane title="Notifications" subtitle="Log and evaluation updates" limit={8} />
+          </section>
+        )}
 
         {activeTab === 'placements' && (
           <section className="workplace-placements-section">
