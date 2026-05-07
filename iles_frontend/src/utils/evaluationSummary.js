@@ -77,7 +77,7 @@ const calculateCombinedWeekScore = (supervisorEvaluation, academicEvaluation, cr
         const maxScore = Number(criterion.max_score ?? 100)
         const roleShare = Number(criterion.supervisor_share ?? 0)
         if (maxScore > 0) {
-          const contribution = (score / maxScore) * (roleShare / 100)
+          const contribution = ((score / maxScore) * (roleShare / 100)) * 100
           totalContribution += contribution
         }
       }
@@ -95,14 +95,14 @@ const calculateCombinedWeekScore = (supervisorEvaluation, academicEvaluation, cr
         const maxScore = Number(criterion.max_score ?? 100)
         const roleShare = Number(criterion.academic_share ?? 0)
         if (maxScore > 0) {
-          const contribution = (score / maxScore) * (roleShare / 100)
+          const contribution = ((score / maxScore) * (roleShare / 100)) * 100
           totalContribution += contribution
         }
       }
     })
   }
 
-  return Number((totalContribution * 100).toFixed(2))
+  return Number(totalContribution.toFixed(2))
 }
 
 export const buildWeeklyEvaluationSummaries = (evaluations = [], placements = [], logs = [], criteria = []) => {
