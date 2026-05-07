@@ -410,7 +410,7 @@ class EvaluationPolicyTests(TestCase):
             placement=self.placement,
             week_number=1,
             activities='Submitted work',
-            status='submitted',
+            status='approved',
         )
         self.technical = EvaluationCriteria.objects.create(name='Technical Skills', max_score=100, weight_percent=34)
         self.communication = EvaluationCriteria.objects.create(name='Communication', max_score=100, weight_percent=33)
