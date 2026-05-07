@@ -5,6 +5,7 @@ import { useAuth } from "../../contexts/useAuth";
 import { criteriaAPI, evaluationsAPI, getErrorMessage, logsAPI, placementsAPI } from "../../api/api";
 import { buildWeeklyEvaluationSummaries } from "../../utils/evaluationSummary";
 import SupervisorEvaluationForm from "../components/SupervisorEvaluationForm";
+import NotificationPane from "../../components/NotificationPane";
 import "./AcademicSupervisorDashboard.css";
 
 const AcademicSupervisorDashboard = () => {
@@ -555,10 +556,14 @@ const AcademicSupervisorDashboard = () => {
           <button className={`nav-item ${activeSection === "reports" ? "active" : ""}`} onClick={() => setActiveSection("reports")}>
             Reports
           </button>
+          <button className={`nav-item ${activeSection === "notifications" ? "active" : ""}`} onClick={() => setActiveSection("notifications")}>
+            Notifications
+          </button>
            <button className={`nav-item ${activeSection === "criteria" ? "active" : ""}`} onClick={() => setActiveSection("criteria")}>
              Criteria
            </button>
         </nav>
+        
         <div className="sidebar-bottom">
           <button className="nav-item logout" onClick={() => navigate("/")}>Logout</button>
         </div>
@@ -574,6 +579,12 @@ const AcademicSupervisorDashboard = () => {
             {user?.username ? user.username.charAt(0).toUpperCase() : "DS"}
           </div>
         </div>
+        {activeSection === 'notifications' && (
+          <div style={{ marginBottom: 18 }}>
+            <div className="section-title">Notifications</div>
+            <NotificationPane title="Notifications" subtitle="Log and evaluation updates" limit={8} />
+          </div>
+        )}
 
         {activeSection === "overview" && (
           <>
