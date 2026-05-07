@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState, useCallback } from 'react'
 import { toast } from 'react-toastify'
-import { criteriaAPI, evaluationsAPI, getErrorMessage, logsAPI, placementsAPI } from '../../api/api'
+import { criteriaAPI, evaluationsAPI, getErrorMessage, logsAPI, placementsAPI, notificationsAPI } from '../../api/api'
 import { buildWeeklyEvaluationSummaries } from '../../utils/evaluationSummary'
 import { useAuth } from '../../contexts/useAuth'
 import SupervisorEvaluationForm from '../components/SupervisorEvaluationForm'
@@ -51,6 +51,18 @@ export default function WorkplaceSupervisorDashboard() {
   const [selectedWeekNumber, setSelectedWeekNumber] = useState(1)
   const [evaluatingLogId, setEvaluatingLogId] = useState(null)
   const [editingEvaluation, setEditingEvaluation] = useState(null)
+  const [unreadCount, setUnreadCount] = useState(0)
+
+  const fetchUnreadCount = useCallback(async () => {
+    try {
+      const response = await notificationsAPI.getNotifications({ limit: 100 })
+      const notifications = Array.isArray(response.data) ? response.data : []
+      const count = notifications.filter((n) => !n.is_read).length
+      setUnreadCount(count)
+    } catch {
+      // Silently fail - unread count is not critical
+    }
+  }, [])
 
   const loadData = useCallback(async () => {
     try {
@@ -75,7 +87,14 @@ export default function WorkplaceSupervisorDashboard() {
 
   useEffect(() => {
     loadData();
-  }, [loadData])
+    fetchUnreadCount();
+
+    const pollingInterval = setInterval(() => {
+      fetchUnreadCount();
+    }, 30000);
+
+    return () => clearInterval(pollingInterval);
+  }, [loadData, fetchUnreadCount])
 
   const interns = useMemo(
     () => placements.map((placement) => normalizePlacement(placement, logs, evaluations)),
@@ -294,7 +313,10 @@ export default function WorkplaceSupervisorDashboard() {
           <button className={`workplace-nav-item ${activeTab === 'placements' ? 'active' : ''}`} onClick={() => setActiveTab('placements')}>My Interns</button>
           <button className={`workplace-nav-item ${activeTab === 'logs' ? 'active' : ''}`} onClick={() => setActiveTab('logs')}>Weekly Logs</button>
           <button className={`workplace-nav-item ${activeTab === 'evaluations' ? 'active' : ''}`} onClick={() => setActiveTab('evaluations')}>Evaluations</button>
-          <button className={`workplace-nav-item ${activeTab === 'notifications' ? 'active' : ''}`} onClick={() => setActiveTab('notifications')}>Notifications</button>
+          <button className={`workplace-nav-item ${activeTab === 'notifications' ? 'active' : ''}`} onClick={() => setActiveTab('notifications')}>
+            Notifications
+            {unreadCount > 0 && <span style={{ marginLeft: '8px', padding: '2px 6px', backgroundColor: '#DC2626', color: 'white', borderRadius: '10px', fontSize: '11px', fontWeight: 'bold' }}>{unreadCount}</span>}
+          </button>
            <button className={`workplace-nav-item ${activeTab === 'criteria' ? 'active' : ''}`} onClick={() => setActiveTab('criteria')}>Criteria</button>
         </div>
         <div className="workplace-sidebar-bottom">
