@@ -1060,13 +1060,17 @@ class ChatContactsView(APIView):
 
         if user.role == 'student':
             # Students can chat with their supervisors and admin
-            placements = InternshipPlacement.objects.filter(student=user)
+            placements = InternshipPlacement.objects.filter(student=user).select_related(
+                'workplace_supervisor', 'academic_supervisor'
+            )
             supervisor_ids = set()
             for placement in placements:
-                if placement.workplace_supervisor_id:
-                    supervisor_ids.add(placement.workplace_supervisor_id)
-                if placement.academic_supervisor_id:
-                    supervisor_ids.add(placement.academic_supervisor_id)
+                # Add workplace supervisor if exists
+                if placement.workplace_supervisor:
+                    supervisor_ids.add(placement.workplace_supervisor.id)
+                # Add academic supervisor if exists
+                if placement.academic_supervisor:
+                    supervisor_ids.add(placement.academic_supervisor.id)
             contact_ids = supervisor_ids
             # Add admins
             admin_ids = set(CustomUser.objects.filter(role='admin').values_list('id', flat=True))
@@ -1075,14 +1079,18 @@ class ChatContactsView(APIView):
         elif user.role in ['workplace_supervisor', 'academic_supervisor']:
             # Supervisors can chat with their students and admin
             if user.role == 'workplace_supervisor':
-                placements = InternshipPlacement.objects.filter(workplace_supervisor=user)
+                placements = InternshipPlacement.objects.filter(
+                    workplace_supervisor=user
+                ).select_related('student')
             else:
-                placements = InternshipPlacement.objects.filter(academic_supervisor=user)
+                placements = InternshipPlacement.objects.filter(
+                    academic_supervisor=user
+                ).select_related('student')
             
             student_ids = set()
             for placement in placements:
-                if placement.student_id:
-                    student_ids.add(placement.student_id)
+                if placement.student:
+                    student_ids.add(placement.student.id)
             contact_ids = student_ids
             # Add admins
             admin_ids = set(CustomUser.objects.filter(role='admin').values_list('id', flat=True))
@@ -1095,30 +1103,34 @@ class ChatContactsView(APIView):
         # Get contacts with message metadata
         contacts_data = []
         for contact_id in contact_ids:
-            contact_user = CustomUser.objects.get(id=contact_id)
-            
-            # Get most recent message timestamp
-            most_recent = ChatMessage.objects.filter(
-                (models.Q(sender=user, recipient=contact_user) | models.Q(sender=contact_user, recipient=user))
-            ).order_by('-created_at').first()
-            
-            # Get unread count from this contact
-            unread_count = ChatMessage.objects.filter(
-                sender=contact_user,
-                recipient=user,
-                is_read=False
-            ).count()
-            
-            contact_data = {
-                'id': contact_user.id,
-                'username': contact_user.username,
-                'email': contact_user.email,
-                'full_name': contact_user.get_full_name() or contact_user.username,
-                'role': contact_user.role,
-                'unread_count': unread_count,
-                'last_message_time': most_recent.created_at if most_recent else None,
-            }
-            contacts_data.append(contact_data)
+            try:
+                contact_user = CustomUser.objects.get(id=contact_id)
+                
+                # Get most recent message timestamp
+                most_recent = ChatMessage.objects.filter(
+                    (models.Q(sender=user, recipient=contact_user) | models.Q(sender=contact_user, recipient=user))
+                ).order_by('-created_at').first()
+                
+                # Get unread count from this contact
+                unread_count = ChatMessage.objects.filter(
+                    sender=contact_user,
+                    recipient=user,
+                    is_read=False
+                ).count()
+                
+                contact_data = {
+                    'id': contact_user.id,
+                    'username': contact_user.username,
+                    'email': contact_user.email,
+                    'full_name': contact_user.get_full_name() or contact_user.username,
+                    'role': contact_user.role,
+                    'unread_count': unread_count,
+                    'last_message_time': most_recent.created_at if most_recent else None,
+                }
+                contacts_data.append(contact_data)
+            except CustomUser.DoesNotExist:
+                # Skip if user doesn't exist
+                continue
         
         # Sort by most recent message (None values go to end)
         contacts_data.sort(key=lambda x: x['last_message_time'] or '', reverse=True)
