@@ -5,6 +5,8 @@ import { buildWeeklyEvaluationSummaries } from '../../utils/evaluationSummary'
 import { useAuth } from '../../contexts/useAuth'
 import SupervisorEvaluationForm from '../components/SupervisorEvaluationForm'
 import NotificationPane from '../../components/NotificationPane'
+import ChatPane from '../../components/ChatPane'
+import UserGuide from '../../components/UserGuide'
 import './WorkplaceSupervisorDashboard.css'
 
 function normalizePlacement(placement, logs, evaluations) {
@@ -291,6 +293,7 @@ export default function WorkplaceSupervisorDashboard() {
             Notifications
             {unreadCount > 0 && <span style={{ marginLeft: '8px', padding: '2px 6px', backgroundColor: '#DC2626', color: 'white', borderRadius: '10px', fontSize: '11px', fontWeight: 'bold' }}>{unreadCount}</span>}
           </button>
+          <button className={`workplace-nav-item ${activeTab === 'chat' ? 'active' : ''}`} onClick={() => setActiveTab('chat')}>Chat</button>
            <button className={`workplace-nav-item ${activeTab === 'criteria' ? 'active' : ''}`} onClick={() => setActiveTab('criteria')}>Criteria</button>
         </div>
         <div className="workplace-sidebar-bottom">
@@ -614,7 +617,14 @@ export default function WorkplaceSupervisorDashboard() {
                )}
              </section>
            )}
+
+           {activeTab === 'chat' && (
+             <section style={{ height: 'calc(100vh - 120px)', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+               <ChatPane currentUserId={user?.id} />
+             </section>
+           )}
       </main>
+      <UserGuide userRole="workplace_supervisor" />
     </div>
   )
 }

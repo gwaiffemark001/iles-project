@@ -151,4 +151,10 @@ export const notificationsAPI = {
   markAllAsRead: () => api.post('/notifications/mark-all-read/'),
 };
 
+export const chatAPI = {
+  getContacts: () => api.get('/chat/contacts/'),
+  getMessages: (recipientId) => api.get(`/chat/messages/${recipientId}/`),
+  sendMessage: (recipientId, message) => api.post(`/chat/messages/${recipientId}/`, { message }),
+};
+
 export default api;
