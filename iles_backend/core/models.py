@@ -583,6 +583,7 @@ class Notification(models.Model):
         ("placement_created", "Placement Created"),
         ("placement_status_updated", "Placement Status Updated"),
         ("log_submitted", "Log Submitted"),
+        ("welcome", "Welcome Message"),
     ]
 
     recipient = models.ForeignKey(
