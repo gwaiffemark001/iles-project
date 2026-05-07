@@ -4,6 +4,7 @@ import { useAuth } from '../auth/useAuth'
 import { criteriaAPI, evaluationsAPI, placementsAPI } from '../api/api'
 import { buildWeeklyEvaluationSummaries, getGradeWeight } from '../utils/evaluationSummary'
 import ChatPane from '../components/ChatPane'
+import ProfileEditor from '../components/ProfileEditor'
 import UserGuide from '../components/UserGuide'
 import './AdminDashboard.css'
 
@@ -625,6 +626,20 @@ function AdminDashboard() {
             📋 Criteria
           </button>
           <button 
+            onClick={() => setActiveSection('profile')}
+            style={{ 
+              padding: '10px', 
+              backgroundColor: activeSection === 'profile' ? '#34495e' : 'transparent',
+              color: 'white', 
+              border: 'none', 
+              borderRadius: '4px', 
+              cursor: 'pointer',
+              textAlign: 'left'
+            }}
+          >
+            👤 Profile
+          </button>
+          <button 
             onClick={() => setActiveSection('chat')}
             style={{ 
               padding: '10px', 
@@ -1109,6 +1124,13 @@ function AdminDashboard() {
                   ))}
                 </div>
               )}
+            </div>
+          )}
+
+          {activeSection === 'profile' && (
+            <div>
+              <h2 style={{ color: '#2c3e50', marginBottom: '20px' }}>My Profile</h2>
+              <ProfileEditor />
             </div>
           )}
 
