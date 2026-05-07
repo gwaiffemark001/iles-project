@@ -26,9 +26,9 @@
     width: min(100%, 580px);
     padding: 36px 34px 30px;
     border-radius: 30px;
-    border: 1px solid rgba(241, 245, 249, 0.06);
-    /* slightly darker than page background */
-    background: rgba(9, 14, 28, 0.98);
+    border: 1px solid rgba(255, 255, 255, 0.04);
+    /* match sidebar darkness */
+    background: #0A1D37;
     backdrop-filter: blur(20px);
     box-shadow: 0 28px 80px rgba(0, 0, 0, 0.5);
 }
