@@ -5,6 +5,7 @@
     display: grid;
     place-items: center;
     padding: 28px 18px;
+    /*background-image: radial-gradient(circle #1e3c72 0%, #0f172a 70%);*/
     background: #1e293b;
     color: #f1f5f9;
     font-family: "Manrope", sans-serif;
@@ -12,13 +13,7 @@
     overflow: hidden;
 }
 
-.page_1::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background: #1e293b;
-    pointer-events: none;
-}
+
 
 .centre_logins {
     position: relative;
@@ -27,7 +22,6 @@
     padding: 36px 34px 30px;
     border-radius: 30px;
     border: 1px solid rgba(241, 245, 249, 0.1);
-    background: rgba(15, 23, 42, 0.95);
     backdrop-filter: blur(20px);
     box-shadow: 0 28px 80px rgba(0, 0, 0, 0.4);
 }
@@ -84,8 +78,7 @@
     border: 1px solid rgba(241, 245, 249, 0.2);
     border-radius: 16px;
     padding: 15px 16px;
-    background: rgba(30, 41, 59, 0.8);
-    color: #f1f5f9;
+    color: #0c0c0c;
     font: inherit;
     transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease, background-color 0.2s ease;
 }
@@ -100,10 +93,10 @@
 
 .logins input:focus {
     outline: none;
-    border-color: #3b82f6;
-    background: rgba(30, 41, 59, 0.9);
+    border-bottom: 2px solid #3b82f6;
     box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.12);
 }
+
 
 .extra-fields {
     display: flex;
@@ -127,8 +120,11 @@
     transition: transform 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease, filter 0.2s ease;
 }
 
-
-
+.login-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 36px rgba(59, 130, 246, 0.4);
+    opacity: 0.9;
+}
 .login-btn:disabled {
     opacity: 0.72;
     cursor: not-allowed;
@@ -205,7 +201,7 @@
 @media (max-width: 640px) {
     .page_1 {
         padding: 18px 12px;
-        background: #eef3fa;
+
     }
 
 
@@ -222,7 +218,7 @@
 
 /* ===== ILES Auth Shell Styles (formerly ILES.css) ===== */
 
-/*.auth-shell {
+.auth-shell {
   min-height: 100vh;
   background: linear-gradient(160deg, #eff6ff 0%, #dbeafe 52%, #bfdbfe 100%);
 }
@@ -314,7 +310,7 @@ select {
   padding: 10px;
   font: inherit;
   width: 100%;
-  background: #fff;
+  background: #dedada;
 }
 
 button {
@@ -411,4 +407,4 @@ h1 {
   .tab-row {
     grid-template-columns: 1fr;
   }
-}*/
+}
