@@ -545,9 +545,15 @@ class EvaluationListView(APIView):
             if request.user.role == 'academic_supervisor' and placement.academic_supervisor_id != request.user.id:
                 return Response({'error': 'You can only evaluate your own placements'}, status=status.HTTP_403_FORBIDDEN)
 
-            if not WeeklyLog.objects.filter(placement_id=placement_id, week_number=week_number).exists():
+            weekly_log = WeeklyLog.objects.filter(placement_id=placement_id, week_number=week_number).first()
+            if weekly_log is None:
                 return Response(
                     {'error': 'No weekly log exists for this placement and week.'},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            if weekly_log.status != 'approved':
+                return Response(
+                    {'error': 'The weekly log must be approved by both supervisors before it can be evaluated.'},
                     status=status.HTTP_400_BAD_REQUEST,
                 )
 
