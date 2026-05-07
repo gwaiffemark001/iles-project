@@ -88,5 +88,8 @@ urlpatterns = [
 
     #User Summary 
     path('api/users/<int:pk>/summary/', UserSummaryView.as_view()),
+
+    # User Profile
+    path('api/profile/', UserProfileView.as_view(), name='user-profile'),
 ]
 
