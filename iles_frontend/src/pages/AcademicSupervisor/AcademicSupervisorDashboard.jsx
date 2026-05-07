@@ -280,12 +280,12 @@ const AcademicSupervisorDashboard = () => {
       }
       const canAddEvaluation = placementLogWeeks.includes(nextWeekNumber);
       
-      // Check if the log for nextWeekNumber is in draft status - if so, disable evaluation
+      // Check if the log for nextWeekNumber is approved - only approved logs can be evaluated.
       const nextWeekLog = logs.find(
         (log) => Number(log.placement?.id ?? log.placement_id) === Number(placementId) &&
                  Number(log.week_number) === Number(nextWeekNumber)
       );
-      const canAddEvaluationFinal = canAddEvaluation && nextWeekLog && nextWeekLog.status !== 'draft';
+      const canAddEvaluationFinal = canAddEvaluation && nextWeekLog && nextWeekLog.status === 'approved';
 
       return {
         placement,
@@ -465,7 +465,7 @@ const AcademicSupervisorDashboard = () => {
           <div style={{ display: "grid", gap: "12px" }}>
             {selectedStudentLogs.map((log) => {
               const nextWeekNumber = getNextAcademicWeek(log.placement?.id ?? log.placement_id);
-              const canEvaluateThisLog = Number(log.week_number) === Number(nextWeekNumber);
+              const canEvaluateThisLog = Number(log.week_number) === Number(nextWeekNumber) && log.status === 'approved';
               const displayStatus = log.status === "submitted"
                 ? "Pending"
                 : log.status === "reviewed"
@@ -485,7 +485,7 @@ const AcademicSupervisorDashboard = () => {
                   <p style={studentLogTextStyle}><strong>Learning:</strong> {log.learning || "No learning notes recorded."}</p>
                   <p style={studentLogTextStyle}><strong>Supervisor Comment:</strong> {log.supervisor_comment || "No comment yet."}</p>
                   <p style={studentLogTextStyle}><strong>Deadline:</strong> {formatDate(log.deadline)}</p>
-                  {log.status === 'submitted' ? (
+                  {log.status === 'approved' ? (
                     <div style={{ marginTop: '12px' }}>
                       <button
                         className="eval-btn"
@@ -494,19 +494,19 @@ const AcademicSupervisorDashboard = () => {
                           if (canEvaluateThisLog) {
                             setEvaluatingLogId(log.id);
                           } else {
-                            toast.error(`Week ${nextWeekNumber} must be evaluated first`);
+                            toast.error(`Week ${nextWeekNumber} must be approved before evaluation`);
                           }
                         }}
-                        title={canEvaluateThisLog ? 'Evaluate this week' : `Week ${nextWeekNumber} must be evaluated first`}
+                        title={canEvaluateThisLog ? 'Evaluate this week' : `Week ${nextWeekNumber} must be approved before evaluation`}
                       >
                         {getExistingEvaluationForLog(log) ? 'Edit Weekly Evaluation' : 'Evaluate This Week'}
                       </button>
                     </div>
-                  ) : log.status === 'draft' ? (
+                  ) : (
                     <div style={{ marginTop: '12px', padding: '10px', backgroundColor: '#FEF3C7', borderRadius: '4px', color: '#92400E', fontSize: '13px' }}>
-                      ⚠️ This log is still in draft status. The student must submit it before you can evaluate.
+                      ⚠️ This log must be approved by both supervisors before you can evaluate it.
                     </div>
-                  ) : null}
+                  )}
                   {evaluatingLogId === log.id ? (
                     <div id={`academic-inline-eval-${log.id}`} style={{ marginTop: '16px' }}>
                       <SupervisorEvaluationForm
@@ -555,7 +555,18 @@ const AcademicSupervisorDashboard = () => {
         )}
 
         <div style={{ marginTop: 18 }}>
-          <button className="eval-btn" onClick={() => openEvalEditor(selectedStudent.placement, (selectedStudentLogs.find((log) => !getExistingEvaluationForLog(log))?.week_number) || (selectedStudentLogs.length ? Math.max(...selectedStudentLogs.map((log) => Number(log.week_number || 1))) + 1 : 1))}>
+          <button
+            className="eval-btn"
+            onClick={() => {
+              const nextApprovedLog = selectedStudentLogs.find((log) => log.status === 'approved' && !getExistingEvaluationForLog(log));
+              if (nextApprovedLog) {
+                openEvalEditor(selectedStudent.placement, nextApprovedLog.week_number, null);
+                return;
+              }
+
+              toast.error('No approved log is available for evaluation yet.');
+            }}
+          >
             Evaluate Student
           </button>
         </div>
@@ -693,10 +704,10 @@ const AcademicSupervisorDashboard = () => {
                           if (group.canAddEvaluation) {
                             openEvalEditor(group.placement, group.nextWeekNumber, null);
                           } else {
-                            toast.error(`Week ${group.nextWeekNumber} must have a submitted log before adding an evaluation`);
+                            toast.error(`Week ${group.nextWeekNumber} must be approved before adding an evaluation`);
                           }
                         }}
-                        title={group.canAddEvaluation ? `Add evaluation for Week ${group.nextWeekNumber}` : `Week ${group.nextWeekNumber} log is required before evaluating`}
+                        title={group.canAddEvaluation ? `Add evaluation for Week ${group.nextWeekNumber}` : `Week ${group.nextWeekNumber} must be approved before evaluating`}
                       >
                         Add Evaluation
                       </button>
