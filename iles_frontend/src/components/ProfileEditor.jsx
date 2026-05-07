@@ -174,7 +174,7 @@ const ProfileEditor = () => {
     <div className="profile-editor">
       <div className="profile-header">
         <h2>My Profile</h2>
-        {!isEditing ? (
+        {isEditing ? (
           <div className="profile-actions">
             <button
               type="button"
