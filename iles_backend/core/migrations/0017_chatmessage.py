@@ -8,7 +8,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('core', '0016_alter_evaluation_unique_together_evaluation_score_and_more'),
+        ('core', '0016_fix_score_field_precision'),
     ]
 
     operations = [
