@@ -435,7 +435,7 @@ export default function WorkplaceSupervisorDashboard() {
                         )}
                         {log.status !== 'approved' && (
                           <div style={{ marginTop: '12px', padding: '10px', backgroundColor: '#FEF3C7', borderRadius: '4px', color: '#92400E', fontSize: '13px' }}>
-                            ⚠️ This log must be approved by both supervisors before you can evaluate it.
+                            ⚠️ This log must be approved by a supervisor before you can evaluate it.
                           </div>
                         )}
                         {/* Inline evaluation form removed */}
