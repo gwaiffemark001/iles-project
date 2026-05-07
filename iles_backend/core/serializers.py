@@ -498,8 +498,13 @@ class EvaluationSerializer(serializers.ModelSerializer):
 
         if placement and evaluation_type and week_number:
             # Ensure weekly log exists for this placement/week
-            if not WeeklyLog.objects.filter(placement=placement, week_number=week_number).exists():
+            weekly_log = WeeklyLog.objects.filter(placement=placement, week_number=week_number).first()
+            if weekly_log is None:
                 raise serializers.ValidationError({'week_number': ['Weekly log for this placement and week does not exist.']})
+            if weekly_log.status != 'approved':
+                raise serializers.ValidationError({
+                    'week_number': ['The weekly log must be approved by both supervisors before it can be evaluated.']
+                })
 
             duplicate_qs = Evaluation.objects.filter(
                 placement=placement,
