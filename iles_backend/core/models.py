@@ -12,7 +12,14 @@ class CustomUser(AbstractUser):
         ('academic_supervisor', 'Academic Supervisor'),
         ('admin', 'Administrator'),
     ]
+    STATUS_CHOICES = [
+        ('active', 'Active'),
+        ('inactive', 'Inactive'),
+        ('suspended', 'Suspended'),
+    ]
     role = models.CharField(max_length=30, choices=ROLE_CHOICES, default='student')
+    account_status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='active')
+    email_verified = models.BooleanField(default=False)
     phone= models.CharField(max_length=15, blank=True, null=True)
     department = models.CharField(max_length=100, blank=True, null=True)
     staff_number= models.CharField(max_length=20, blank=True, null=True)
