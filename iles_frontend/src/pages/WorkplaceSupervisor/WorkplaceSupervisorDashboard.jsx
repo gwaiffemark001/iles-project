@@ -199,12 +199,12 @@ export default function WorkplaceSupervisorDashboard() {
       }
       const canAddEvaluation = placementLogWeeks.includes(nextWeekNumber);
       
-      // Check if the log for nextWeekNumber is in draft status - if so, disable evaluation
+      // Check if the log for nextWeekNumber is approved - only approved logs can be evaluated.
       const nextWeekLog = logs.find(
         (log) => Number(log.placement?.id ?? log.placement_id) === Number(placementId) &&
                  Number(log.week_number) === Number(nextWeekNumber)
       );
-      const canAddEvaluationFinal = canAddEvaluation && nextWeekLog && nextWeekLog.status !== 'draft';
+      const canAddEvaluationFinal = canAddEvaluation && nextWeekLog && nextWeekLog.status === 'approved';
 
       return {
         placement,
@@ -434,7 +434,7 @@ export default function WorkplaceSupervisorDashboard() {
                       <div key={log.id} className={`workplace-log-card ${log.status}`}>
                         {(() => {
                           const nextWeekNumber = getNextSupervisorWeek(log.placement?.id ?? log.placement_id)
-                          const canEvaluateThisLog = Number(log.week_number) === Number(nextWeekNumber)
+                          const canEvaluateThisLog = Number(log.week_number) === Number(nextWeekNumber) && log.status === 'approved'
                           return (
                             <>
                         <div className="workplace-log-header">
@@ -449,40 +449,46 @@ export default function WorkplaceSupervisorDashboard() {
                           {log.submitted_at ? <div className="workplace-log-field"><strong>Submitted:</strong><p>{new Date(log.submitted_at).toLocaleString()}</p></div> : null}
                           {log.supervisor_comment ? <div className="workplace-log-field supervisor-comment"><strong>Your Comment:</strong><p>{log.supervisor_comment}</p></div> : null}
                         </div>
-                        {(log.status === 'submitted' || log.status === 'reviewed') && (
+                        {(log.status === 'submitted' || log.status === 'reviewed' || log.status === 'approved') && (
                           <div className="workplace-log-actions">
-                            <textarea placeholder="Add your comment..." value={comment} onChange={(event) => setComment(event.target.value)} className="workplace-comment-input" />
-                            <div className="workplace-action-buttons">
-                              {log.status === 'submitted' && (
-                                <button type="button" className="workplace-btn-review" onClick={() => handleReviewLog(log.id, comment)}>Review</button>
-                              )}
-                              {log.status === 'reviewed' && (
-                                <button type="button" className="workplace-btn-approve" onClick={() => handleApproveLog(log.id)}>Approve</button>
-                              )}
-                              <button type="button" className="workplace-btn-reject" onClick={() => handleRejectLog(log.id, comment)}>Request Revision</button>
-                            </div>
-                            <div style={{ marginTop: '12px' }}>
-                              <button
-                                type="button"
-                                className="workplace-btn-review"
-                                disabled={!canEvaluateThisLog}
-                                onClick={() => {
-                                  if (canEvaluateThisLog) {
-                                    setEvaluatingLogId(log.id)
-                                  } else {
-                                    toast.error(`Week ${nextWeekNumber} must be evaluated first`)
-                                  }
-                                }}
-                                title={canEvaluateThisLog ? 'Evaluate this week' : `Week ${nextWeekNumber} must be evaluated first`}
-                              >
-                                {getExistingEvaluationForLog(log) ? 'Edit Weekly Evaluation' : 'Evaluate This Week'}
-                              </button>
-                            </div>
+                            {(log.status === 'submitted' || log.status === 'reviewed') && (
+                              <>
+                                <textarea placeholder="Add your comment..." value={comment} onChange={(event) => setComment(event.target.value)} className="workplace-comment-input" />
+                                <div className="workplace-action-buttons">
+                                  {log.status === 'submitted' && (
+                                    <button type="button" className="workplace-btn-review" onClick={() => handleReviewLog(log.id, comment)}>Review</button>
+                                  )}
+                                  {log.status === 'reviewed' && (
+                                    <button type="button" className="workplace-btn-approve" onClick={() => handleApproveLog(log.id)}>Approve</button>
+                                  )}
+                                  <button type="button" className="workplace-btn-reject" onClick={() => handleRejectLog(log.id, comment)}>Request Revision</button>
+                                </div>
+                              </>
+                            )}
+                            {log.status === 'approved' && (
+                              <div style={{ marginTop: '12px' }}>
+                                <button
+                                  type="button"
+                                  className="workplace-btn-review"
+                                  disabled={!canEvaluateThisLog}
+                                  onClick={() => {
+                                    if (canEvaluateThisLog) {
+                                      setEvaluatingLogId(log.id)
+                                    } else {
+                                      toast.error(`Week ${nextWeekNumber} must be approved before evaluation`)
+                                    }
+                                  }}
+                                  title={canEvaluateThisLog ? 'Evaluate this week' : `Week ${nextWeekNumber} must be approved before evaluation`}
+                                >
+                                  {getExistingEvaluationForLog(log) ? 'Edit Weekly Evaluation' : 'Evaluate This Week'}
+                                </button>
+                              </div>
+                            )}
                           </div>
                         )}
-                        {log.status === 'draft' && (
+                        {log.status !== 'approved' && (
                           <div style={{ marginTop: '12px', padding: '10px', backgroundColor: '#FEF3C7', borderRadius: '4px', color: '#92400E', fontSize: '13px' }}>
-                            ⚠️ This log is still in draft status. The student must submit it before you can evaluate.
+                            ⚠️ This log must be approved by both supervisors before you can evaluate it.
                           </div>
                         )}
                         {evaluatingLogId === log.id ? (
@@ -543,10 +549,10 @@ export default function WorkplaceSupervisorDashboard() {
                           if (group.canAddEvaluation) {
                             openEvaluationEditor(group.placement, group.nextWeekNumber, null);
                           } else {
-                            toast.error(`Week ${group.nextWeekNumber} must have a submitted log before adding an evaluation`);
+                            toast.error(`Week ${group.nextWeekNumber} must be approved before adding an evaluation`);
                           }
                         }}
-                        title={group.canAddEvaluation ? `Add evaluation for Week ${group.nextWeekNumber}` : `Week ${group.nextWeekNumber} log is required before evaluating`}
+                        title={group.canAddEvaluation ? `Add evaluation for Week ${group.nextWeekNumber}` : `Week ${group.nextWeekNumber} must be approved before evaluating`}
                       >
                         Add Evaluation
                       </button>
