@@ -10,6 +10,11 @@ function Signup() {
     const [role, setRole] = useState('student');
     const [errorMessage, setErrorMessage] = useState('');
     const [successMessage, setSuccessMessage] = useState('');
+    const [firstName, setFirstName] = useState('');
+    const [lastName, setLastName] = useState('');
+    const [phone, setPhone] = useState('');
+    const [department, setDepartment] = useState('');
+    const [staffNumber, setStaffNumber] = useState('');
     const [studentNumber, setStudentNumber] = useState('');
     const [registrationNumber, setRegistrationNumber] = useState('');
 
@@ -20,6 +25,19 @@ function Signup() {
         setErrorMessage('');
         setSuccessMessage('');
 
+        // Role-specific validation
+        if (role === 'student') {
+            if (!studentNumber || !registrationNumber || !firstName || !lastName || !phone || !department) {
+                setErrorMessage('Students must provide: first name, last name, phone, department, student number, and registration number.');
+                return;
+            }
+        } else if (role === 'workplace_supervisor' || role === 'academic_supervisor') {
+            if (!firstName || !lastName || !phone || !department) {
+                setErrorMessage('Supervisors must provide: first name, last name, phone, and department. Staff number is optional.');
+                return;
+            }
+        }
+
         try {
             const username = email.includes('@') ? email.split('@')[0] : email;
             const body = {
@@ -27,12 +45,18 @@ function Signup() {
                 email,
                 password,
                 role,
+                first_name: firstName,
+                last_name: lastName,
+                phone,
+                department,
                 ...(role === 'student'
                     ? {
                         student_number: studentNumber,
                         registration_number: registrationNumber,
                     }
-                    : {}),
+                    : role === 'workplace_supervisor' || role === 'academic_supervisor'
+                        ? { staff_number: staffNumber || null }
+                        : {}),
             };
 
             const result = await register(body);
@@ -71,7 +95,7 @@ function Signup() {
                         required
                     >
                         <option value="student">Student</option>
-                        <option value="workplace_supervisor">Workplace</option>
+                        <option value="workplace_supervisor">Workplace Supervisor</option>
                         <option value="academic_supervisor">Academic Supervisor</option>
                     </select>
                     <input
@@ -86,6 +110,34 @@ function Signup() {
                         placeholder="Password"
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
+                        required
+                    />
+                    <input
+                        type="text"
+                        placeholder="First Name"
+                        value={firstName}
+                        onChange={(e) => setFirstName(e.target.value)}
+                        required
+                    />
+                    <input
+                        type="text"
+                        placeholder="Last Name"
+                        value={lastName}
+                        onChange={(e) => setLastName(e.target.value)}
+                        required
+                    />
+                    <input
+                        type="tel"
+                        placeholder="Phone"
+                        value={phone}
+                        onChange={(e) => setPhone(e.target.value)}
+                        required
+                    />
+                    <input
+                        type="text"
+                        placeholder="Department"
+                        value={department}
+                        onChange={(e) => setDepartment(e.target.value)}
                         required
                     />
 
@@ -111,6 +163,18 @@ function Signup() {
                         </div>
                     )}
 
+                    {(role === 'workplace_supervisor' || role === 'academic_supervisor') && (
+                        <div className="extra-fields">
+                            <p className='student_detected'>Supervisor account detected! Staff number is optional</p>
+                            <input
+                                type="text"
+                                placeholder="Staff Number (optional)"
+                                value={staffNumber}
+                                onChange={(e) => setStaffNumber(e.target.value)}
+                            />
+                        </div>
+                    )}
+
                     <button type="submit" className="login-btn">
                         Create an Account
                     </button>
@@ -119,7 +183,7 @@ function Signup() {
                 {errorMessage && <p className="error-message">{errorMessage}</p>}
                 {successMessage && <p className="success-message">{successMessage}</p>}
                 <div >
-                    <section className="failed_login" style={{width: "400px"}}>
+                    <section className="failed_login" style={{width: "480px"}}>
                         <p className="signup">
                             <Link to="/">Back to Login</Link>
                         </p>

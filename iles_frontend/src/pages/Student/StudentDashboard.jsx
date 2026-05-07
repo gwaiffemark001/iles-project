@@ -4,6 +4,8 @@ import { logsAPI, placementsAPI, evaluationsAPI, criteriaAPI, notificationsAPI }
 import { getErrorMessage } from '@/api/api';
 import { buildWeeklyEvaluationSummaries } from '@/utils/evaluationSummary';
 import NotificationPane from '../../components/NotificationPane';
+import ChatPane from '../../components/ChatPane';
+import UserGuide from '../../components/UserGuide';
 import './StudentDashboard.css';
 
 const createInitialLogForm = (defaultPlacementId = '') => ({
@@ -73,6 +75,7 @@ const StudentDashboard = () => {
   const [pageError, setPageError] = useState('');
   const [loading, setLoading] = useState(true);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [chatUnreadCount, setChatUnreadCount] = useState(0);
   const weeklyEvaluationSummaries = useMemo(
     () => buildWeeklyEvaluationSummaries(evaluations, placements, logs, criteria).weeklySummaries,
     [evaluations, placements, logs, criteria],
@@ -363,7 +366,20 @@ const StudentDashboard = () => {
             Notifications
             {unreadCount > 0 && <span style={{ marginLeft: '8px', padding: '2px 6px', backgroundColor: '#DC2626', color: 'white', borderRadius: '10px', fontSize: '11px', fontWeight: 'bold' }}>{unreadCount}</span>}
           </button>
-                   </nav>
+           <button
+             className={`nav-item ${activeTab === 'criteria' ? 'active' : ''}`}
+             onClick={() => setActiveTab('criteria')}
+           >
+             Criteria
+           </button>
+           <button
+             className={`nav-item ${activeTab === 'chat' ? 'active' : ''}`}
+             onClick={() => setActiveTab('chat')}
+           >
+             Chat
+             {chatUnreadCount > 0 && <span style={{ marginLeft: '8px', padding: '2px 6px', backgroundColor: '#DC2626', color: 'white', borderRadius: '10px', fontSize: '11px', fontWeight: 'bold' }}>{chatUnreadCount}</span>}
+           </button>
+        </nav>
         <div className="sidebar-bottom">
           <button className="nav-item logout" onClick={logout}>
             Logout
@@ -668,8 +684,37 @@ const StudentDashboard = () => {
               )}
             </div>
           )}
+          {activeTab === 'criteria' && (
+            <div className="evaluations-section">
+              <h2>Evaluation Criteria</h2>
+              {criteria.length ? (
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '16px' }}>
+                  {criteria.map((crit) => (
+                    <div key={crit.id} className="evaluation-card" style={{ border: '1px solid #e2e8f0' }}>
+                      <h3>{crit.name}</h3>
+                      {crit.description ? <p>{crit.description}</p> : null}
+                      <p><strong>Max Score:</strong> {crit.max_score}</p>
+                      <p><strong>Workplace Share:</strong> {crit.supervisor_share}%</p>
+                      <p><strong>Academic Share:</strong> {crit.academic_share}%</p>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="empty-state">
+                  <p>No criteria have been defined yet.</p>
+                </div>
+              )}
+            </div>
+          )}
+
+          {activeTab === 'chat' && (
+            <div style={{ height: 'calc(100vh - 120px)', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+              <ChatPane currentUserId={user?.id} onUnreadCountChange={setChatUnreadCount} />
+            </div>
+          )}
         </div>
       </div>
+      <UserGuide userRole="student" />
     </div>
   );
 };
