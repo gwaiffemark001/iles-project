@@ -582,7 +582,12 @@ class EvaluationListView(APIView):
         serializer = EvaluationSerializer(data=data, context={'request': request})
         if serializer.is_valid():
             evaluation = serializer.save()
-            notify_evaluation_status_changed(evaluation, actor=request.user, created=True)
+            notify_evaluation_status_changed(
+                evaluation,
+                actor=request.user,
+                created=True,
+                week_number=week_number,
+            )
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
@@ -906,7 +911,12 @@ class EvaluationDetailView(APIView):
         serializer = EvaluationSerializer(evaluation, data=data, context={'request': request})
         if serializer.is_valid():
             updated_evaluation = serializer.save()
-            notify_evaluation_status_changed(updated_evaluation, actor=request.user, created=False)
+            notify_evaluation_status_changed(
+                updated_evaluation,
+                actor=request.user,
+                created=False,
+                week_number=week_number,
+            )
             return Response(serializer.data, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
