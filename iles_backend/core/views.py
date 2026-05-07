@@ -33,6 +33,7 @@ from .serializers import (
     WeeklyLogSerializer,
 )
 from .services import (
+    notify_evaluation_status_changed,
     notify_log_submitted,
     notify_placement_created,
     notify_placement_status_updated,
@@ -560,7 +561,8 @@ class EvaluationListView(APIView):
         
         serializer = EvaluationSerializer(data=data, context={'request': request})
         if serializer.is_valid():
-            serializer.save()
+            evaluation = serializer.save()
+            notify_evaluation_status_changed(evaluation, actor=request.user, created=True)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
@@ -602,6 +604,18 @@ class UserProfileView(APIView):
         serializer.save()
         profile_serializer.save()
         return Response(CustomUserSerializer(request.user).data)
+
+
+class UserSummaryView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, pk):
+        if request.user.role != 'admin' and request.user.pk != pk:
+            return Response({'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
+
+        user = CustomUser.objects.get(pk=pk)
+        serializer = UserProfileSerializer(user)
+        return Response(serializer.data)
 
 
 class UserListView(APIView):
@@ -871,7 +885,8 @@ class EvaluationDetailView(APIView):
                 )
         serializer = EvaluationSerializer(evaluation, data=data, context={'request': request})
         if serializer.is_valid():
-            serializer.save()
+            updated_evaluation = serializer.save()
+            notify_evaluation_status_changed(updated_evaluation, actor=request.user, created=False)
             return Response(serializer.data, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -1021,69 +1036,4 @@ class AdminStatisticsView(APIView):
             ),
         }
         return Response(stats)
-
-class UserSummaryView(APIView):
-    permission_classes = [IsAuthenticated]
-
-    def get(self, request, pk):
-        if request.user.role != 'admin' and request.user.pk != pk:
-            return Response({'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
-
-        user = CustomUser.objects.get(pk=pk)
-        serializer = UserProfileSerializer(user)
-        return Response(serializer.data)
-
-
-class UserListView(APIView):
-    permission_classes = [IsAuthenticated]
-
-    def get(self, request):
-        if request.user.role != 'admin':
-            return Response(
-                {'error': 'Only admins can view users'},
-                status=status.HTTP_403_FORBIDDEN,
-            )
-
-        users = CustomUser.objects.all().order_by('role', 'first_name', 'username')
-        role_filter = request.query_params.get('role')
-
-        if role_filter:
-            users = users.filter(role=role_filter)
-
-        serializer = CustomUserSerializer(users, many=True)
-        return Response(serializer.data)
-
-    def put(self, request, pk):
-        if request.user.role != "admin":
-            return Response(
-                {"error": "Only admins can update users"},
-                status=status.HTTP_403_FORBIDDEN,
-            )
-
-        try:
-            user = CustomUser.objects.get(pk=pk)
-        except CustomUser.DoesNotExist:
-            return Response({"error": "User not found"}, status=status.HTTP_404_NOT_FOUND)
-
-        serializer = CustomUserSerializer(user, data=request.data, partial=True)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-    
-    def delete(self, request, pk):
-        if request.user.role != 'admin':
-            return Response(
-                {'error': 'Only admins can delete users'},
-                status=status.HTTP_403_FORBIDDEN,
-            )
-
-        try:
-            user = CustomUser.objects.get(pk=pk)
-            user.delete()
-            return Response({'message': 'User deleted successfully'}, status=status.HTTP_204_NO_CONTENT)
-        except CustomUser.DoesNotExist:
-            return Response({'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
-        except Exception as e:
-            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
