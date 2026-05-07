@@ -77,11 +77,30 @@ class CustomUserSerializer(serializers.ModelSerializer):
         full_name = f"{obj.first_name} {obj.last_name}".strip()
         return full_name or obj.username
 
+    def validate(self, attrs):
+        role = attrs.get('role') or getattr(self.instance, 'role', None)
+
+        if role == 'student':
+                        attrs['staff_number'] = ''
+        
+        if role in ('workplace_supervisor', 'academic_supervisor'):
+            attrs['student_number'] = ''
+            attrs['registration_number'] = ''
+
+        return attrs
+
     def update(self, instance, validated_data):
         password = validated_data.pop("password", None)
 
         for attr, value in validated_data.items():
             setattr(instance, attr, value)
+
+        if getattr(instance, 'role', None) == 'student':
+            instance.staff_number = ''
+
+        if getattr(instance, 'role', None) in ('workplace_supervisor', 'academic_supervisor'):
+            instance.student_number = ''
+            instance.registration_number = ''
 
         if password:
             instance.set_password(password)
