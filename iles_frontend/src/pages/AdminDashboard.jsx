@@ -543,7 +543,7 @@ function AdminDashboard() {
   return (
     <div style={{ display: 'flex', minHeight: '100vh', backgroundColor: '#f5f5f5' }}>
       {/* Sidebar */}
-      <div style={{ width: '250px', backgroundColor: '#2c3e50', color: 'white', padding: '20px' }}>
+      <div style={{ width: '250px', backgroundColor: '#2c3e50', color: 'white', padding: '20px', position: 'sticky', top: '0', height: '100vh', overflowY: 'auto' }}>
         <div style={{ marginBottom: '30px' }}>
           <h2 style={{ margin: '0 0 10px 0' }}>ILES</h2>
           <p style={{ margin: '0', fontSize: '14px', opacity: 0.8 }}>{user?.username || 'Admin'}</p>
