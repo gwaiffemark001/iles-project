@@ -489,22 +489,6 @@ const AcademicSupervisorDashboard = () => {
           </div>
         )}
 
-        <div style={{ marginTop: 18 }}>
-          <button
-            className="eval-btn"
-            onClick={() => {
-              const nextApprovedLog = selectedStudentLogs.find((log) => log.status === 'approved' && !getExistingEvaluationForLog(log));
-              if (nextApprovedLog) {
-                openEvalEditor(selectedStudent.placement, nextApprovedLog.week_number, null);
-                return;
-              }
-
-              toast.error('No approved log is available for evaluation yet.');
-            }}
-          >
-            Evaluate Student
-          </button>
-        </div>
       </div>
     );
   };
@@ -656,7 +640,7 @@ const AcademicSupervisorDashboard = () => {
                     ) : (
                       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '12px' }}>
                         {group.weeks.map((w) => {
-                          const evalToEdit = academicEvaluations.find(
+                          const evalToEdit = w.academicEvaluation || academicEvaluations.find(
                             (evaluation) => Number(evaluation.placement?.id ?? evaluation.placement_id) === Number(group.placementId)
                               && Number(evaluation.week_number) === Number(w.week_number)
                               && evaluation.evaluation_type === 'academic'
@@ -680,14 +664,14 @@ const AcademicSupervisorDashboard = () => {
                                 <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '4px' }}>
                                     Workplace: <strong>{w.log_status === 'missing' ? 0 : (w.supervisor_score ?? 'N/A')}</strong>
                                     {w.supervisorEvaluation && <span style={{ fontSize: '11px', color: '#7c3aed', marginLeft: '6px' }}>({supervisorCriteria})</span>}
-                                  </div>
-                                  <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '4px' }}>
-                                    Academic: <strong>{w.log_status === 'missing' ? 0 : (w.academic_score ?? 'N/A')}</strong>
-                                    {w.academicEvaluation && <span style={{ fontSize: '11px', color: '#7c3aed', marginLeft: '6px' }}>({academicCriteria})</span>}
-                                  </div>
-                                  {w.log_status === 'missing' ? (
-                                    <div style={{ fontSize: '12px', color: '#b45309', marginTop: '4px' }}>No log submitted for this week. Scores are zero.</div>
-                                  ) : null}
+                                </div>
+                                <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '4px' }}>
+                                  Academic: <strong>{w.log_status === 'missing' ? 0 : (w.academic_score ?? 'N/A')}</strong>
+                                  {w.academicEvaluation && <span style={{ fontSize: '11px', color: '#7c3aed', marginLeft: '6px' }}>({academicCriteria})</span>}
+                                </div>
+                                {w.log_status === 'missing' ? (
+                                  <div style={{ fontSize: '12px', color: '#b45309', marginTop: '4px' }}>No log submitted for this week. Scores are zero.</div>
+                                ) : null}
                               </div>
                               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '8px', borderTop: '1px solid #e2e8f0' }}>
                                 <div>
