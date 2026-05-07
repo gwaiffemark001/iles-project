@@ -415,6 +415,17 @@ class UserRegistrationView(APIView):
             student_number=request.data.get('student_number'),
             registration_number=request.data.get('registration_number'),
         )
+        
+        # Create welcome notification for the new user
+        Notification.objects.create(
+            recipient=user,
+            actor=None,  # System-generated notification
+            notification_type='welcome',
+            title='Welcome to ILES!',
+            message='Welcome to the Internship Logging & Evaluation System! Click the help button (?) on your dashboard to access the user guide and learn how to use the system.',
+            data={'user_guide': True}
+        )
+        
         return Response({
             'message': 'User created successfully',
             'username': user.username,
@@ -1132,8 +1143,11 @@ class ChatContactsView(APIView):
                 # Skip if user doesn't exist
                 continue
         
-        # Sort by most recent message (None values go to end)
-        contacts_data.sort(key=lambda x: x['last_message_time'] or '', reverse=True)
+        # Sort by most recent message (contacts without messages stay at the end)
+        contacts_data.sort(
+            key=lambda x: (x['last_message_time'] is not None, x['last_message_time'] or timezone.now()),
+            reverse=True,
+        )
         
         return Response(contacts_data)
 
