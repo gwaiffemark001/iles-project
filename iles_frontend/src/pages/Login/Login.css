@@ -1,5 +1,5 @@
 @import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;700&display=swap');
-
+/*
 .page_1 {
     min-height: 100vh;
     display: grid;
@@ -223,11 +223,11 @@
         flex-direction: column;
         gap: 8px;
     }
-}
+}*/
 
 /* ===== ILES Auth Shell Styles (formerly ILES.css) ===== */
 
-.auth-shell {
+/*.auth-shell {
   min-height: 100vh;
   background: linear-gradient(160deg, #eff6ff 0%, #dbeafe 52%, #bfdbfe 100%);
 }
@@ -416,4 +416,4 @@ h1 {
   .tab-row {
     grid-template-columns: 1fr;
   }
-}
+}*/
