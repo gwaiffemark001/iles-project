@@ -5,9 +5,10 @@ import { useAuth } from "../../contexts/useAuth";
 import { criteriaAPI, evaluationsAPI, getErrorMessage, logsAPI, placementsAPI, notificationsAPI } from "../../api/api";
 import { buildWeeklyEvaluationSummaries } from "../../utils/evaluationSummary";
 import SupervisorEvaluationForm from "../components/SupervisorEvaluationForm";
-import NotificationPane from "../../components/NotificationPane";
-import ChatPane from "../../components/ChatPane";
-import UserGuide from "../../components/UserGuide";
+import NotificationPane from '../../components/NotificationPane';
+import ChatPane from '../../components/ChatPane';
+import ProfileEditor from '../../components/ProfileEditor';
+import UserGuide from '../../components/UserGuide';
 import "./AcademicSupervisorDashboard.css";
 
 const AcademicSupervisorDashboard = () => {
@@ -523,6 +524,9 @@ const AcademicSupervisorDashboard = () => {
            <button className={`nav-item ${activeSection === "criteria" ? "active" : ""}`} onClick={() => setActiveSection("criteria")}>
              Criteria
            </button>
+           <button className={`nav-item ${activeSection === "profile" ? "active" : ""}`} onClick={() => setActiveSection("profile")}>
+             Profile
+           </button>
         </nav>
         
         <div className="sidebar-bottom">
@@ -775,6 +779,13 @@ const AcademicSupervisorDashboard = () => {
               </div>
             )}
           </>
+        )}
+
+        {activeSection === "profile" && (
+          <div>
+            <div className="section-title">My Profile</div>
+            <ProfileEditor />
+          </div>
         )}
 
         {activeSection === "chat" && (
