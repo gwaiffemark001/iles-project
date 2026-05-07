@@ -48,6 +48,7 @@ function AdminDashboard() {
   const [weeklySummary, setWeeklySummary] = useState(null)
   const [showWeeklyModal, setShowWeeklyModal] = useState(false)
   const [selectedPlacementForWeekly, setSelectedPlacementForWeekly] = useState(null)
+  const [chatUnreadCount, setChatUnreadCount] = useState(0)
 
   const { weeklySummaries: allWeeklySummaries } = useMemo(() => buildWeeklyEvaluationSummaries(evaluations, [], [], criteria), [evaluations, criteria])
   const groupedSummaries = useMemo(() => {
@@ -632,10 +633,14 @@ function AdminDashboard() {
               border: 'none', 
               borderRadius: '4px', 
               cursor: 'pointer',
-              textAlign: 'left'
+              textAlign: 'left',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px'
             }}
           >
             💬 Chat
+            {chatUnreadCount > 0 && <span style={{ padding: '2px 6px', backgroundColor: '#DC2626', color: 'white', borderRadius: '10px', fontSize: '11px', fontWeight: 'bold' }}>{chatUnreadCount}</span>}
           </button>
           <button 
             onClick={fetchDashboardData}
@@ -1110,7 +1115,7 @@ function AdminDashboard() {
           {activeSection === 'chat' && (
             <div style={{ height: 'calc(100vh - 150px)', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
               <h2 style={{ color: '#2c3e50', marginBottom: '20px', margin: 0 }}>Chat with Users</h2>
-              <ChatPane currentUserId={user?.id} />
+              <ChatPane currentUserId={user?.id} onUnreadCountChange={setChatUnreadCount} />
             </div>
           )}
         </div>
