@@ -84,7 +84,7 @@ const StudentDashboard = () => {
     [evaluations, placements, logs, criteria],
   );
   const loggablePlacements = useMemo(
-    () => placements.filter((placement) => placement.status !== 'completed'),
+    () => placements.filter((placement) => placement.status === 'active'),
     [placements],
   );
   const selectedPlacement = useMemo(
@@ -92,6 +92,7 @@ const StudentDashboard = () => {
     [placements, formData.placement_id],
   );
   const isCompletedPlacementSelected = selectedPlacement?.status === 'completed';
+  const isPendingPlacementSelected = selectedPlacement?.status === 'pending';
 
   const fetchUnreadCount = async () => {
     try {
@@ -214,6 +215,11 @@ const StudentDashboard = () => {
 
     if (isCompletedPlacementSelected) {
       setFormError('You cannot create or submit logs for a completed placement.');
+      return;
+    }
+
+    if (nextStatus === 'submitted' && isPendingPlacementSelected) {
+      setFormError('You cannot submit logs for a pending placement.');
       return;
     }
 
@@ -532,7 +538,7 @@ const StudentDashboard = () => {
                   </form>
                 ) : (
                   <div className="empty-state">
-                    <p>You have no active or pending placements available for log creation.</p>
+                    <p>You have no active placements available for log creation.</p>
                   </div>
                 )}
               </div>
