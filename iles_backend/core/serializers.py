@@ -15,6 +15,7 @@ from .models import (
 
 class UserProfileDetailSerializer(serializers.ModelSerializer):
     avatar_url = serializers.SerializerMethodField()
+    avatar_image = serializers.SerializerMethodField()
 
     class Meta:
         model = UserProfile
@@ -30,8 +31,22 @@ class UserProfileDetailSerializer(serializers.ModelSerializer):
 
     def get_avatar_url(self, obj):
         if obj.avatar_image:
-            return obj.avatar_image.url
+            return self._build_absolute_url(obj.avatar_image.url)
         return obj.avatar_url
+
+    def get_avatar_image(self, obj):
+        if obj.avatar_image:
+            return self._build_absolute_url(obj.avatar_image.url)
+        return None
+
+    def _build_absolute_url(self, relative_url):
+        """Convert relative media URL to absolute URL with full request context."""
+        if not relative_url or relative_url.startswith('http'):
+            return relative_url
+        request = self.context.get('request')
+        if request:
+            return request.build_absolute_uri(relative_url)
+        return relative_url
 
 class UserSummarySerializer(serializers.ModelSerializer):
     full_name = serializers.SerializerMethodField()
