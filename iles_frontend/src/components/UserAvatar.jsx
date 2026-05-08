@@ -20,7 +20,7 @@ const UserAvatar = ({ user, size = 'medium', className = '', onClick = null }) =
     // If it's relative, prepend the backend server URL
     if (url.startsWith('/')) {
       try {
-        const backendUrl = import.meta.env?.VITE_API_URL || 'http://localhost:8000';
+        const backendUrl = import.meta.env?.VITE_API_BASE_URL || 'http://localhost:8000';
         return `${backendUrl}${url}`;
       } catch {
         return url;
