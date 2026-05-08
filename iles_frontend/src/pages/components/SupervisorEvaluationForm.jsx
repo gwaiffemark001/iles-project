@@ -63,7 +63,6 @@ export default function SupervisorEvaluationForm({
     };
   }, []);
 
-  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => {
     let isMounted = true;
     if (isMounted && criteria.length > 0) {
