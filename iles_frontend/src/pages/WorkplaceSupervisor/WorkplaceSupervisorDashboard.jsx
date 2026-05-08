@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState, useCallback } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { toast } from 'react-toastify'
 import { criteriaAPI, evaluationsAPI, getErrorMessage, logsAPI, placementsAPI, notificationsAPI } from '../../api/api'
 import { buildWeeklyEvaluationSummaries } from '../../utils/evaluationSummary'
@@ -40,6 +41,7 @@ function normalizePlacement(placement, logs, evaluations) {
 }
 
 export default function WorkplaceSupervisorDashboard() {
+  const navigate = useNavigate()
   const { user, logout } = useAuth()
   const [placements, setPlacements] = useState([])
   const [logs, setLogs] = useState([])
@@ -302,7 +304,7 @@ export default function WorkplaceSupervisorDashboard() {
             {chatUnreadCount > 0 && <span style={{ marginLeft: '8px', padding: '2px 6px', backgroundColor: '#DC2626', color: 'white', borderRadius: '10px', fontSize: '11px', fontWeight: 'bold' }}>{chatUnreadCount}</span>}
           </button>
            <button className={`workplace-nav-item ${activeTab === 'criteria' ? 'active' : ''}`} onClick={() => setActiveTab('criteria')}>Criteria</button>
-           <button className={`workplace-nav-item ${activeTab === 'profile' ? 'active' : ''}`} onClick={() => setActiveTab('profile')}>Profile</button>
+           <button className={`workplace-nav-item ${activeTab === 'profile' ? 'active' : ''}`} onClick={() => navigate('/app/profile')}>Profile</button>
         </div>
         <div className="workplace-sidebar-bottom">
           <button className="workplace-nav-item logout" onClick={logout}>Logout</button>
@@ -321,7 +323,7 @@ export default function WorkplaceSupervisorDashboard() {
               <strong>{user?.username}</strong>
               <span>Workplace Supervisor</span>
             </div>
-            <UserAvatar user={user} size="medium" className="workplace-avatar" />
+            <UserAvatar user={user} size="medium" className="workplace-avatar" onClick={() => navigate('/app/profile')} />
           </div>
         </header>
 

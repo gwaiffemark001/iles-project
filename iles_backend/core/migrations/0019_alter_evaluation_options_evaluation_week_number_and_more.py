@@ -3,6 +3,19 @@
 from django.db import migrations, models
 
 
+def backfill_week_numbers(apps, schema_editor):
+    Evaluation = apps.get_model('core', 'Evaluation')
+    from itertools import groupby
+
+    qs = list(
+        Evaluation.objects.all().order_by('placement_id', 'evaluation_type', 'evaluated_at', 'id')
+    )
+    for key, group in groupby(qs, key=lambda e: (e.placement_id, e.evaluation_type)):
+        for i, ev in enumerate(list(group)):
+            ev.week_number = i + 1
+            ev.save(update_fields=['week_number'])
+
+
 class Migration(migrations.Migration):
 
     dependencies = [
@@ -14,16 +27,23 @@ class Migration(migrations.Migration):
             name='evaluation',
             options={'ordering': ['week_number', '-evaluated_at']},
         ),
+        # add as nullable first so we can backfill unique week numbers
         migrations.AddField(
             model_name='evaluation',
             name='week_number',
-            field=models.PositiveIntegerField(default=1),
-            preserve_default=False,
+            field=models.PositiveIntegerField(null=True),
         ),
+        migrations.RunPython(backfill_week_numbers, reverse_code=migrations.RunPython.noop),
         migrations.AlterField(
             model_name='evaluation',
             name='weighted_score',
             field=models.DecimalField(decimal_places=2, default=0, help_text='Computed weighted score', max_digits=6),
+        ),
+        # make week_number non-nullable and enforce uniqueness
+        migrations.AlterField(
+            model_name='evaluation',
+            name='week_number',
+            field=models.PositiveIntegerField(),
         ),
         migrations.AlterUniqueTogether(
             name='evaluation',

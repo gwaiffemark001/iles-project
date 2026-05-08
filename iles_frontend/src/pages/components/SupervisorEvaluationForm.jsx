@@ -299,7 +299,13 @@ export default function SupervisorEvaluationForm({
       }
       onSaved(res.data);
     } catch (err) {
-      setError(getErrorMessage(err, 'Error saving evaluation'));
+      // Prefer explicit API validation messages for 'items' when available
+      const apiItems = err?.response?.data?.items;
+      if (apiItems && Array.isArray(apiItems) && apiItems.length > 0) {
+        setError(apiItems[0]);
+      } else {
+        setError(getErrorMessage(err, 'Error saving evaluation'));
+      }
     } finally {
       setSaving(false);
     }

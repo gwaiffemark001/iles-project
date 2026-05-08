@@ -35,6 +35,7 @@ class UserProfile(models.Model):
     user = models.OneToOneField(CustomUser, on_delete=models.CASCADE, related_name='profile')
     bio = models.TextField(blank=True, null=True)
     avatar_url = models.URLField(blank=True, null=True)
+    avatar_image = models.ImageField(upload_to='avatars/', blank=True, null=True)
     location = models.CharField(max_length=120, blank=True, null=True)
     date_of_birth = models.DateField(blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -390,6 +391,7 @@ class Evaluation(models.Model):
 
     class Meta:
         ordering = ['week_number', '-evaluated_at']
+        unique_together = [['placement', 'evaluation_type', 'week_number']]
 
     def __str__(self):
         student_username = self.placement.student.username if self.placement.student else "Unknown"
