@@ -103,6 +103,12 @@ class WeeklyLogListView(APIView):
                     status=status.HTTP_400_BAD_REQUEST,
                 )
 
+            if placement and placement.get_computed_status() == 'pending' and serializer.validated_data.get('status') == 'submitted':
+                return Response(
+                    {'error': 'Cannot submit a weekly log for a pending placement.'},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
             if WeeklyLog.objects.filter(placement=placement, week_number=week_number).exists():
                 return Response(
                     {'error': 'A weekly log for this placement and week already exists.'},
@@ -185,6 +191,11 @@ class WeeklyLogDetailView(APIView):
             deadline = log.calculate_deadline()
             if status_value == 'submitted' and deadline and timezone.now().date() > deadline:
                 return Response({'error': 'Cannot submit after deadline'}, status=status.HTTP_400_BAD_REQUEST)
+            if status_value == 'submitted' and placement.get_computed_status() == 'pending':
+                return Response(
+                    {'error': 'Cannot submit a weekly log for a pending placement.'},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
             if status_value == 'submitted' and placement.get_computed_status() == 'completed':
                 return Response(
                     {'error': 'Cannot submit a weekly log for a completed placement.'},
@@ -1106,6 +1117,12 @@ class WeeklyLogSubmitView(APIView):
         if log.placement.get_computed_status() == 'completed':
             return Response(
                 {'error': 'Cannot submit a weekly log for a completed placement.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if log.placement.get_computed_status() == 'pending':
+            return Response(
+                {'error': 'Cannot submit a weekly log for a pending placement.'},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 

@@ -384,6 +384,9 @@ class WeeklyLogSerializer(serializers.ModelSerializer):
         if self.instance and self.instance.status == 'approved':
             raise serializers.ValidationError({'status': ['No editing logs after approval']})
 
+        if placement and placement.get_computed_status() == 'pending' and attrs.get('status', getattr(self.instance, 'status', None)) == 'submitted':
+            raise serializers.ValidationError({'status': ['Cannot submit a weekly log for a pending placement.']})
+
         if placement.get_computed_status() == 'completed' and attrs.get('status', getattr(self.instance, 'status', None)) == 'submitted':
             raise serializers.ValidationError({'status': ['Cannot submit a weekly log for a completed placement.']})
 
