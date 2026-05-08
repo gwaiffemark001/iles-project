@@ -129,8 +129,10 @@ const StudentDashboard = () => {
 
   useEffect(() => {
     const initializeDashboard = async () => {
-      await fetchData();
-      await fetchUnreadCount();
+      await Promise.all([
+        fetchData(),
+        fetchUnreadCount(),
+      ]);
     };
 
     initializeDashboard();

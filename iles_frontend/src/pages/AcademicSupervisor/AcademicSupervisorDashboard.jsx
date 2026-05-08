@@ -71,8 +71,10 @@ const AcademicSupervisorDashboard = () => {
 
   useEffect(() => {
     const initializeData = async () => {
-      await fetchData();
-      await fetchUnreadCount();
+      await Promise.all([
+        fetchData(),
+        fetchUnreadCount(),
+      ]);
     };
 
     initializeData();

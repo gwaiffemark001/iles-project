@@ -55,18 +55,25 @@ class WeeklyLogListView(APIView):
     permission_classes =[IsAuthenticated]   
 
     def get(self, request):
+        logs = WeeklyLog.objects.select_related(
+            'placement',
+            'placement__student',
+            'placement__workplace_supervisor',
+            'placement__academic_supervisor',
+        )
+
         if request.user.role == 'admin':
-            logs = WeeklyLog.objects.all()
+            pass
         elif request.user.role == 'workplace_supervisor':
-            logs = WeeklyLog.objects.filter(
+            logs = logs.filter(
                 placement__workplace_supervisor=request.user
             )
         elif request.user.role == 'academic_supervisor':
-            logs = WeeklyLog.objects.filter(
+            logs = logs.filter(
                 placement__academic_supervisor=request.user
             )
         else:
-            logs = WeeklyLog.objects.filter(placement__student=request.user)
+            logs = logs.filter(placement__student=request.user)
 
         # Allow filtering by status: /api/logs/?status=submitted
         status_filter = request.query_params.get('status')
@@ -218,18 +225,24 @@ class InternshipPlacementListView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
+        placements = InternshipPlacement.objects.select_related(
+            'student',
+            'workplace_supervisor',
+            'academic_supervisor',
+        )
+
         if request.user.role == 'admin':
-            placements = InternshipPlacement.objects.all()
+            pass
         elif request.user.role == 'workplace_supervisor':
-            placements = InternshipPlacement.objects.filter(
+            placements = placements.filter(
                 workplace_supervisor=request.user
             )
         elif request.user.role == 'academic_supervisor':
-            placements = InternshipPlacement.objects.filter(
+            placements = placements.filter(
                 academic_supervisor=request.user
             )
         else:
-            placements = InternshipPlacement.objects.filter(
+            placements = placements.filter(
                 student=request.user
             )
         serializer = InternshipPlacementSerializer(placements, many=True)
@@ -538,14 +551,22 @@ class EvaluationListView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
+        evaluations = Evaluation.objects.select_related(
+            'placement',
+            'placement__student',
+            'placement__workplace_supervisor',
+            'placement__academic_supervisor',
+            'evaluator',
+        ).prefetch_related('evaluation_items')
+
         if request.user.role == 'admin':
-            evaluations = Evaluation.objects.all()
+            pass
         elif request.user.role == 'workplace_supervisor':
-            evaluations = Evaluation.objects.filter(placement__workplace_supervisor=request.user)
+            evaluations = evaluations.filter(placement__workplace_supervisor=request.user)
         elif request.user.role == 'academic_supervisor':
-            evaluations = Evaluation.objects.filter(placement__academic_supervisor=request.user)
+            evaluations = evaluations.filter(placement__academic_supervisor=request.user)
         else:
-            evaluations = Evaluation.objects.filter(placement__student=request.user)
+            evaluations = evaluations.filter(placement__student=request.user)
 
         serializer = EvaluationSerializer(evaluations, many=True)
         return Response(serializer.data)
