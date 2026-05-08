@@ -64,6 +64,14 @@ export default function Applications() {
    
   }, [api])
 
+  useEffect(() => {
+    const cancelRef = { cancelled: false }
+    fetchApplications(cancelRef)
+    return () => {
+      cancelRef.cancelled = true
+    }
+  }, [fetchApplications])
+
   return (
     <div className="iles-page">
       <header className="iles-header">
