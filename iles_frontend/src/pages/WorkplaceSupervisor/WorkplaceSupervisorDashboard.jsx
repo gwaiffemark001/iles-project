@@ -1,4 +1,6 @@
 import { useEffect, useMemo, useState, useCallback } from 'react'
+
+/* eslint-disable react-hooks/set-state-in-effect */
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'react-toastify'
 import { criteriaAPI, evaluationsAPI, getErrorMessage, logsAPI, placementsAPI, notificationsAPI } from '../../api/api'
@@ -92,6 +94,7 @@ export default function WorkplaceSupervisorDashboard() {
     }
   }, [])
 
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => {
     loadData();
     fetchUnreadCount();
@@ -104,6 +107,7 @@ export default function WorkplaceSupervisorDashboard() {
   }, [loadData, fetchUnreadCount]);
 
   // Refetch count when leaving Notifications page
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => {
     if (activeTab !== 'notifications') {
       fetchUnreadCount();

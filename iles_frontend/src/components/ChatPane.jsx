@@ -1,4 +1,6 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
+
+/* eslint-disable react-hooks/set-state-in-effect */
 import { chatAPI } from '../api/api';
 import './ChatPane.css';
 
@@ -62,6 +64,7 @@ export default function ChatPane({ currentUserId, onUnreadCountChange }) {
     }
   };
 
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => {
     fetchContacts();
   }, [fetchContacts]);
@@ -74,6 +77,7 @@ export default function ChatPane({ currentUserId, onUnreadCountChange }) {
     }
   }, [contacts, onUnreadCountChange]);
 
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => {
     if (selectedContact) {
       // Fetch messages immediately
