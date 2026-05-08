@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
+import { useNavigate } from 'react-router-dom'
 import axios from 'axios'
 import { useAuth } from '@/auth/useAuth'
 import { criteriaAPI, evaluationsAPI, placementsAPI } from '../api/api'
@@ -19,6 +20,7 @@ const userRoles = [
 // use shared helper for weekly summaries and grade weights
 
 function AdminDashboard() {
+  const navigate = useNavigate()
   const { user, logout } = useAuth()
   const token = localStorage.getItem('access_token')
   const [stats, setStats] = useState(null)
@@ -227,18 +229,14 @@ function AdminDashboard() {
   }
 
   const handleDeleteUser = async (userId) => {
-    console.log('Attempting to delete user:', userId)
+    // Attempting to delete user
     if (window.confirm('Are you sure you want to delete this user?')) {
       try {
-        console.log('Making DELETE request to:', `http://127.0.0.1:8000/api/users/${userId}/`)
-        console.log('Auth headers:', authHeaders)
-        const response = await axios.delete(`http://127.0.0.1:8000/api/users/${userId}/`, authHeaders)
-        console.log('Delete response:', response)
+        await axios.delete(`http://127.0.0.1:8000/api/users/${userId}/`, authHeaders)
         setUsers(users.filter(user => user.id !== userId))
         alert('User deleted successfully')
       } catch (error) {
-        console.error('Error deleting user:', error)
-        console.error('Error response:', error.response)
+        // Error deleting user
         alert('Error deleting user: ' + (error.response?.data?.message || error.message))
       }
     }
@@ -251,7 +249,7 @@ function AdminDashboard() {
         setPlacements(placements.filter(p => p.id !== placementId))
         alert('Placement deleted successfully')
       } catch (error) {
-        console.error('Error deleting placement:', error)
+        // Error deleting placement
         alert('Error deleting placement: ' + (error.response?.data?.message || error.message))
       }
     }
@@ -264,24 +262,19 @@ function AdminDashboard() {
       return evalPlacementId === placement.id
     })
 
-    console.log('Placement ID:', placement.id)
-    console.log('Total evaluations:', evaluations.length)
-    console.log('Filtered evaluations:', placementEvaluations.length)
-    console.log('Sample evaluation:', placementEvaluations[0])
+    // placement debug info (hidden)
 
     const weekNumbers = Array.from(new Set(placementEvaluations.map((evaluation) => evaluation.week_number).filter((weekNumber) => weekNumber !== undefined && weekNumber !== null)))
       .sort((left, right) => left - right)
 
-    console.log('Week numbers found:', weekNumbers)
+    // week numbers found
 
     const summary = {
       weeks: weekNumbers.map((weekNumber) => {
         const supervisorEvaluation = placementEvaluations.find((evaluation) => evaluation.week_number === weekNumber && evaluation.evaluation_type === 'supervisor')
         const academicEvaluation = placementEvaluations.find((evaluation) => evaluation.week_number === weekNumber && evaluation.evaluation_type === 'academic')
 
-        console.log(`Week ${weekNumber} - Supervisor:`, supervisorEvaluation?.id, 'Academic:', academicEvaluation?.id)
-        console.log(`Week ${weekNumber} - Supervisor items:`, supervisorEvaluation?.items)
-        console.log(`Week ${weekNumber} - Academic items:`, academicEvaluation?.items)
+        // week evaluation debug info (hidden)
 
         const criteriaBreakdown = criteria.map((criterion) => {
           const supervisorItem = supervisorEvaluation?.items?.find((item) => item.criteria?.id === criterion.id)
@@ -349,7 +342,7 @@ function AdminDashboard() {
       ? Number((summary.weeks.reduce((total, week) => total + week.combined_score, 0) / summary.weeks.length).toFixed(2))
       : null
 
-    console.log('Final summary:', summary)
+    // final summary computed
 
     setWeeklySummary(summary)
     setSelectedPlacementForWeekly(placement)
@@ -496,11 +489,11 @@ function AdminDashboard() {
       setUsers(Array.isArray(usersResponse.data) ? usersResponse.data : [])
       setCriteria(Array.isArray(criteriaResponse.data) ? criteriaResponse.data : [])
 
-      console.log('Dashboard data loaded successfully')
+      // Dashboard data loaded successfully
     } catch (requestError) {
       const message = requestError?.response?.data?.message || requestError?.message || 'Unable to load admin dashboard data.'
       setError(message)
-      console.error('Dashboard error:', requestError)
+      // Dashboard error
     } finally {
       setLoading(false)
     }
@@ -590,7 +583,7 @@ function AdminDashboard() {
       {/* Sidebar */}
       <div style={{ width: '250px', backgroundColor: '#2c3e50', color: 'white', padding: '20px', position: 'sticky', top: '0', height: '100vh', overflowY: 'auto' }}>
         <div style={{ marginBottom: '30px', display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
-          <UserAvatar user={user} size="large" />
+          <UserAvatar user={user} size="large" onClick={() => navigate('/app/profile')} />
           <div>
             <h2 style={{ margin: '0 0 10px 0' }}>ILES</h2>
             <p style={{ margin: '0', fontSize: '14px', opacity: 0.8 }}>{user?.username || 'Admin'}</p>
@@ -670,7 +663,7 @@ function AdminDashboard() {
             📋 Criteria
           </button>
           <button 
-            onClick={() => setActiveSection('profile')}
+            onClick={() => navigate('/app/profile')}
             style={{ 
               padding: '10px', 
               backgroundColor: activeSection === 'profile' ? '#34495e' : 'transparent',
