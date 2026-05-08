@@ -12,8 +12,7 @@ const UserAvatar = ({ user, size = 'medium', className = '', onClick = null }) =
     return 'U';
   };
 
-  const profileObj = user && typeof user.profile === 'object' ? user.profile : {};
-  const avatarSrc = profileObj.avatar_image || profileObj.avatar_url || null;
+  const avatarSrc = user?.profile?.avatar_image || user?.profile?.avatar_url || null;
   const hasAvatar = Boolean(avatarSrc);
   const initials = getInitials();
   const handleClick = () => {
