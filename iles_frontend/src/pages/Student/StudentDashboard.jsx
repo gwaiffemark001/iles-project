@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/auth/useAuth';
 import { logsAPI, placementsAPI, evaluationsAPI, criteriaAPI, notificationsAPI } from '@/api/api';
 import { getErrorMessage } from '@/api/api';
@@ -56,13 +57,10 @@ const computeNextWeekNumberForPlacement = (placementId, logs = []) => {
   return Math.max(...placementWeeks) + 1
 }
 
-const getUserInitials = (user) => {
-  const firstInitial = user?.first_name?.[0] || '';
-  const lastInitial = user?.last_name?.[0] || '';
-  return `${firstInitial}${lastInitial}` || user?.username?.slice(0, 2)?.toUpperCase() || 'IL';
-};
+// getUserInitials helper removed (unused)
 
 const StudentDashboard = () => {
+  const navigate = useNavigate();
   const { user, logout } = useAuth();
   const [logs, setLogs] = useState([]);
   const [placements, setPlacements] = useState([]);
@@ -376,7 +374,7 @@ const StudentDashboard = () => {
            </button>
            <button
              className={`nav-item ${activeTab === 'profile' ? 'active' : ''}`}
-             onClick={() => setActiveTab('profile')}
+             onClick={() => navigate('/app/profile')}
            >
              Profile
            </button>
@@ -401,7 +399,7 @@ const StudentDashboard = () => {
             <h1>Welcome back, {user?.first_name || user?.username}</h1>
             <p>Student Intern — Internship Logging & Evaluation System</p>
           </div>
-          <UserAvatar user={user} size="medium" className="avatar" />
+          <UserAvatar user={user} size="medium" className="avatar" onClick={() => navigate('/app/profile')} />
         </div>
 
         
