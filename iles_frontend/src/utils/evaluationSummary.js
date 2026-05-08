@@ -62,7 +62,7 @@ const calculateCombinedWeekScore = (supervisorEvaluation, academicEvaluation) =>
   return Number((supervisorScore + academicScore).toFixed(2))
 }
 
-export const buildWeeklyEvaluationSummaries = (evaluations = [], placements = [], logs = [], criteria = []) => {
+export const buildWeeklyEvaluationSummaries = (evaluations = [], placements = [], logs = []) => {
   const groups = new Map()
   const logLookup = new Map()
 
