@@ -1,11 +1,12 @@
+/* eslint-disable react-hooks/set-state-in-effect */
 import { useEffect, useState, useCallback, useMemo } from "react";
 
-/* eslint-disable react-hooks/set-state-in-effect */
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import { useAuth } from "@/auth/useAuth";
 import { criteriaAPI, evaluationsAPI, getErrorMessage, logsAPI, placementsAPI, notificationsAPI } from "../../api/api";
 import { buildWeeklyEvaluationSummaries } from "../../utils/evaluationSummary";
+import useInterval from "@/hooks/useInterval";
 import SupervisorEvaluationForm from "../components/SupervisorEvaluationForm";
 import NotificationPane from '../../components/NotificationPane';
 import ChatPane from '../../components/ChatPane';
@@ -76,16 +77,11 @@ const AcademicSupervisorDashboard = () => {
     };
 
     initializeData();
-
-    const pollingInterval = setInterval(async () => {
-      await fetchUnreadCount();
-    }, 30000);
-
-    return () => clearInterval(pollingInterval);
   }, [fetchData, fetchUnreadCount]);
 
+  useInterval(fetchUnreadCount, 30000)
+
   // Refetch count when leaving Notifications page
-  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => {
     if (activeSection !== 'notifications') {
       fetchUnreadCount();

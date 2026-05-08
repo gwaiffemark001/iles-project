@@ -1,7 +1,8 @@
+/* eslint-disable react-hooks/set-state-in-effect */
 import { useEffect, useMemo, useState } from 'react'
 
-/* eslint-disable react-hooks/set-state-in-effect */
 import { getErrorMessage, notificationsAPI } from '../api/api'
+import useInterval from '../hooks/useInterval'
 import './NotificationPane.css'
 
 const notificationTypeLabels = {
@@ -52,18 +53,11 @@ const NotificationPane = ({ title = 'Notifications', subtitle = 'Recent workflow
     }
   }
 
-  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => {
     fetchNotifications()
-
-    const pollingInterval = setInterval(() => {
-      fetchNotifications()
-    }, 30000)
-
-    return () => {
-      clearInterval(pollingInterval)
-    }
   }, [])
+
+  useInterval(fetchNotifications, 30000)
 
   const markNotificationAsRead = async (notificationId) => {
     try {

@@ -1,11 +1,12 @@
+/* eslint-disable react-hooks/set-state-in-effect */
 import { useState, useEffect, useMemo } from 'react';
 
-/* eslint-disable react-hooks/set-state-in-effect */
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/auth/useAuth';
 import { logsAPI, placementsAPI, evaluationsAPI, criteriaAPI, notificationsAPI } from '@/api/api';
 import { getErrorMessage } from '@/api/api';
 import { buildWeeklyEvaluationSummaries } from '@/utils/evaluationSummary';
+import useInterval from '@/hooks/useInterval';
 import NotificationPane from '../../components/NotificationPane';
 import ChatPane from '../../components/ChatPane';
 import ProfileEditor from '../../components/ProfileEditor';
@@ -134,16 +135,11 @@ const StudentDashboard = () => {
     };
 
     initializeDashboard();
-
-    const pollingInterval = setInterval(async () => {
-      await fetchUnreadCount();
-    }, 30000);
-
-    return () => clearInterval(pollingInterval);
   }, []);
 
+  useInterval(fetchUnreadCount, 30000)
+
   // Refetch count when leaving Notifications page
-  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => {
     if (activeTab !== 'notifications') {
       fetchUnreadCount();
