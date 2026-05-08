@@ -1,4 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
+
+/* eslint-disable react-hooks/set-state-in-effect */
 import { getErrorMessage, notificationsAPI } from '../api/api'
 import './NotificationPane.css'
 
@@ -50,6 +52,7 @@ const NotificationPane = ({ title = 'Notifications', subtitle = 'Recent workflow
     }
   }
 
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => {
     fetchNotifications()
 

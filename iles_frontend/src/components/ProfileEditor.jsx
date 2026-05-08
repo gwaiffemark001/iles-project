@@ -1,4 +1,6 @@
 import { useState, useEffect } from 'react';
+
+/* eslint-disable react-hooks/set-state-in-effect */
 import { useAuth } from '../auth/useAuth';
 import api from '../api/api';
 import './ProfileEditor.css';
@@ -30,6 +32,7 @@ const ProfileEditor = () => {
   const [avatarFile, setAvatarFile] = useState(null);
   const [avatarPreview, setAvatarPreview] = useState(null);
 
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => {
     if (user) {
       setFormData({

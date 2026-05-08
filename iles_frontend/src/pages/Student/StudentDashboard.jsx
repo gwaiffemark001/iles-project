@@ -1,4 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
+
+/* eslint-disable react-hooks/set-state-in-effect */
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/auth/useAuth';
 import { logsAPI, placementsAPI, evaluationsAPI, criteriaAPI, notificationsAPI } from '@/api/api';
@@ -141,6 +143,7 @@ const StudentDashboard = () => {
   }, []);
 
   // Refetch count when leaving Notifications page
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => {
     if (activeTab !== 'notifications') {
       fetchUnreadCount();

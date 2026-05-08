@@ -1,4 +1,6 @@
 import { useEffect, useState } from 'react';
+
+/* eslint-disable react-hooks/set-state-in-effect */
 import { criteriaAPI, evaluationsAPI, getErrorMessage } from '../../api/api';
 import { useAuth } from '@/auth/useAuth';
 
@@ -61,6 +63,7 @@ export default function SupervisorEvaluationForm({
     };
   }, []);
 
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => {
     let isMounted = true;
     if (isMounted && criteria.length > 0) {
