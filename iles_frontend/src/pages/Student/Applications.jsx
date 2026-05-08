@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState, useMemo } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '@/auth/useAuth'
 
@@ -43,11 +43,11 @@ export default function Applications() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
-  useEffect(() => {
-    let cancelled = false
-    async function run() {
-      setLoading(true)
-      setError('')
+  const fetchApplications = useCallback(async (cancelRef) => {
+    setLoading(true)
+    setError('')
+    
+
       try {
         const data = await api.get('api/applications/')
         if (!cancelled) setApps(Array.isArray(data) ? data : [])
@@ -56,6 +56,7 @@ export default function Applications() {
       } finally {
         if (!cancelled) setLoading(false)
       }
+  }, [api])
     }
     run()
     return () => {
