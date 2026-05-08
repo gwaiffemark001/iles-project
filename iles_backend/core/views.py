@@ -13,6 +13,8 @@ from rest_framework import status
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from django.core.exceptions import ValidationError
+import logging
 from .models import (
     CustomUser,
     Evaluation,
@@ -20,6 +22,7 @@ from .models import (
     InternshipPlacement,
     Notification,
     PlacementApplication,
+    UserProfile,
     WeeklyLog,
     ChatMessage,
 )
@@ -35,6 +38,8 @@ from .serializers import (
     WeeklyLogSerializer,
     ChatMessageSerializer,
 )
+
+logger = logging.getLogger(__name__)
 from .services import (
     notify_evaluation_status_changed,
     notify_log_submitted,
@@ -238,7 +243,18 @@ class InternshipPlacementListView(APIView):
             )
         serializer = InternshipPlacementSerializer(data=request.data)
         if serializer.is_valid():
-            placement = serializer.save()
+            try:
+                placement = serializer.save()
+            except ValidationError as e:
+                # Convert model validation errors into HTTP 400 responses
+                if hasattr(e, 'message_dict'):
+                    err = e.message_dict.copy()
+                    # tests expect the field key to be 'student_id' for placement creation
+                    if 'student' in err:
+                        err['student_id'] = err.pop('student')
+                else:
+                    err = {'error': e.messages}
+                return Response(err, status=status.HTTP_400_BAD_REQUEST)
             notify_placement_created(placement, actor=request.user)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
@@ -354,12 +370,17 @@ class InternshipPlacementDetailView(APIView):
             return Response({'error': 'Placement not found'}, status=status.HTTP_404_NOT_FOUND)
         previous_status = placement.status
         requested_status = request.data.get('status', placement.status)
-        if requested_status != placement.status:
+        status_was_explicitly_set = 'status' in request.data
+
+        if status_was_explicitly_set:
             placement.status = requested_status
         serializer = InternshipPlacementSerializer(placement, data=request.data)
         if serializer.is_valid():
             updated_placement = serializer.save()
-            if previous_status != requested_status:
+            # Notify whenever admin explicitly sends a status update payload.
+            # This preserves workflow notifications even when model date-sync
+            # resolves to the same final status.
+            if status_was_explicitly_set:
                 notify_placement_status_updated(updated_placement, previous_status, actor=request.user)
             return Response(serializer.data)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
@@ -475,9 +496,9 @@ class PasswordResetRequestView(APIView):
                 fail_silently=False,
             )
         except Exception as e:
-            # Fallback: log to console if email backend not configured or sending fails
-            print('Password reset link (development):', reset_url)
-            print('Email error:', str(e))
+            # Fallback: log if email backend not configured or sending fails
+            logger.info('Password reset link (development): %s', reset_url)
+            logger.exception('Email error when sending password reset')
 
         return Response({'message': 'If an account with that email exists, a reset link has been sent.'})
 
@@ -595,7 +616,7 @@ class UserProfileView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        serializer = UserProfileSerializer(request.user)
+        serializer = CustomUserSerializer(request.user)
         return Response(serializer.data)
 
     def put(self, request):
@@ -603,20 +624,21 @@ class UserProfileView(APIView):
         if not isinstance(profile_data, dict):
             profile_data = {}
 
-        flat_profile_fields = {"bio", "avatar_url", "location", "date_of_birth"}
-        if not profile_data:
-            profile_data = {
-                key: request.data.get(key)
-                for key in flat_profile_fields
-                if key in request.data
-            }
+        flat_profile_fields = {"bio", "avatar_url", "avatar_image", "location", "date_of_birth"}
+        for key in flat_profile_fields:
+            if key in request.data and request.data.get(key) not in (None, ""):
+                profile_data[key] = request.data.get(key)
+            prefixed_key = f"profile.{key}"
+            if prefixed_key in request.data and request.data.get(prefixed_key) not in (None, ""):
+                profile_data[key] = request.data.get(prefixed_key)
 
-        serializer = UserProfileSerializer(request.user, data=request.data, partial=True)
+        serializer = CustomUserSerializer(request.user, data=request.data, partial=True)
         if not serializer.is_valid():
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+        profile, _ = UserProfile.objects.get_or_create(user=request.user)
         profile_serializer = UserProfileSerializer(
-            request.user,
+            profile,
             data=profile_data,
             partial=True,
             )
