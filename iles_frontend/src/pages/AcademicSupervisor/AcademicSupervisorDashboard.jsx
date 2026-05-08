@@ -182,14 +182,7 @@ const AcademicSupervisorDashboard = () => {
     }
   }, [showEvalEditor, evalPlacement]);
 
-  const getExistingEvaluationForLog = (log) => evaluations.find(
-    (evaluation) => (
-      Number(evaluation.placement?.id ?? evaluation.placement_id) === Number(log.placement?.id ?? log.placement_id)
-      && evaluation.evaluation_type === 'academic'
-      && Number(evaluation.evaluator?.id ?? evaluation.evaluator_id) === Number(user?.id)
-      && Number(evaluation.week_number) === Number(log.week_number)
-    ),
-  );
+  // helper removed: getExistingEvaluationForLog (was unused)
 
   const academicEvaluations = useMemo(() => {
     return evaluations.filter(
@@ -525,7 +518,7 @@ const AcademicSupervisorDashboard = () => {
            <button className={`nav-item ${activeSection === "criteria" ? "active" : ""}`} onClick={() => setActiveSection("criteria")}>
              Criteria
            </button>
-           <button className={`nav-item ${activeSection === "profile" ? "active" : ""}`} onClick={() => setActiveSection("profile")}>
+           <button className={`nav-item ${activeSection === "profile" ? "active" : ""}`} onClick={() => navigate('/app/profile')}>
              Profile
            </button>
         </nav>
@@ -541,7 +534,7 @@ const AcademicSupervisorDashboard = () => {
             <h1>Welcome back, {user?.username || "Dr. Susan"}</h1>
             <p>Academic Supervisor - Internship Logging & Evaluation System</p>
           </div>
-          <UserAvatar user={user} size="medium" className="avatar" />
+          <UserAvatar user={user} size="medium" className="avatar" onClick={() => navigate('/app/profile')} />
         </div>
         {activeSection === 'notifications' && (
           <div style={{ marginBottom: 18 }}>
