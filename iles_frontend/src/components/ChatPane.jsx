@@ -1,7 +1,8 @@
+/* eslint-disable react-hooks/set-state-in-effect */
 import { useEffect, useState, useCallback, useRef } from 'react';
 
-/* eslint-disable react-hooks/set-state-in-effect */
 import { chatAPI } from '../api/api';
+import useInterval from '../hooks/useInterval'
 import './ChatPane.css';
 
 export default function ChatPane({ currentUserId, onUnreadCountChange }) {
@@ -13,7 +14,6 @@ export default function ChatPane({ currentUserId, onUnreadCountChange }) {
   const [error, setError] = useState('');
   const messagesEndRef = useRef(null);
   const previousMessagesRef = useRef([]);
-  const pollingIntervalRef = useRef(null);
 
   const fetchContacts = useCallback(async () => {
     try {
@@ -64,7 +64,6 @@ export default function ChatPane({ currentUserId, onUnreadCountChange }) {
     }
   };
 
-  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => {
     fetchContacts();
   }, [fetchContacts]);
@@ -77,29 +76,21 @@ export default function ChatPane({ currentUserId, onUnreadCountChange }) {
     }
   }, [contacts, onUnreadCountChange]);
 
-  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => {
     if (selectedContact) {
       // Fetch messages immediately
       fetchMessages(selectedContact.id, true);
-      
-      // Clear any existing polling interval
-      if (pollingIntervalRef.current) {
-        clearInterval(pollingIntervalRef.current);
-      }
-      
-      // Poll for new messages every 3 seconds
-      pollingIntervalRef.current = setInterval(() => {
-        fetchMessages(selectedContact.id, false);
-      }, 3000);
-      
-      return () => {
-        if (pollingIntervalRef.current) {
-          clearInterval(pollingIntervalRef.current);
-        }
-      };
     }
   }, [selectedContact, fetchMessages]);
+
+  useInterval(
+    () => {
+      if (selectedContact) {
+        fetchMessages(selectedContact.id, false)
+      }
+    },
+    selectedContact ? 3000 : null,
+  )
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });

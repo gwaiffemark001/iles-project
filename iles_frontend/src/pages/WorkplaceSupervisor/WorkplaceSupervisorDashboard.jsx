@@ -1,11 +1,12 @@
+/* eslint-disable react-hooks/set-state-in-effect */
 import { useEffect, useMemo, useState, useCallback } from 'react'
 
-/* eslint-disable react-hooks/set-state-in-effect */
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'react-toastify'
 import { criteriaAPI, evaluationsAPI, getErrorMessage, logsAPI, placementsAPI, notificationsAPI } from '../../api/api'
 import { buildWeeklyEvaluationSummaries } from '../../utils/evaluationSummary'
 import { useAuth } from '@/auth/useAuth'
+import useInterval from '@/hooks/useInterval'
 import SupervisorEvaluationForm from '../components/SupervisorEvaluationForm'
 import NotificationPane from '../../components/NotificationPane'
 import ChatPane from '../../components/ChatPane'
@@ -94,20 +95,14 @@ export default function WorkplaceSupervisorDashboard() {
     }
   }, [])
 
-  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => {
     loadData();
     fetchUnreadCount();
-
-    const pollingInterval = setInterval(() => {
-      fetchUnreadCount();
-    }, 30000);
-
-    return () => clearInterval(pollingInterval);
   }, [loadData, fetchUnreadCount]);
 
+  useInterval(fetchUnreadCount, 30000)
+
   // Refetch count when leaving Notifications page
-  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => {
     if (activeTab !== 'notifications') {
       fetchUnreadCount();

@@ -34,7 +34,6 @@ from .serializers import (
     NotificationSerializer,
     PlacementApplicationSerializer,
     UserProfileSerializer,
-    UserSummarySerializer,
     WeeklyLogSerializer,
     ChatMessageSerializer,
 )
