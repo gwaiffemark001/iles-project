@@ -9,9 +9,8 @@ const Modal = ({
   size = 'medium', 
   showCloseButton = true, 
   closeOnEscape = true, 
-  closeOnOverlay = true,
-  ...props 
-}) => {
+  closeOnOverlay = true
+  }) => {
   React.useEffect(() => {
     const handleEscape = (e) => {
       if (e.key === 'Escape' && closeOnEscape) {

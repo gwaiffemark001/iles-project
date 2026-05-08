@@ -62,7 +62,7 @@ export const useFormValidation = (initialValues, validationRules) => {
     
     setErrors(newErrors);
     return isValid;
-  }, [values, validateField]);
+  }, [values, validateField, validationRules]);
 
   const resetForm = useCallback(() => {
     setValues(initialValues);
