@@ -18,6 +18,7 @@ const ProfileEditor = () => {
     profile: {
       bio: user?.profile?.bio || '',
       avatar_url: user?.profile?.avatar_url || '',
+        avatar_image: user?.profile?.avatar_image || '',
       location: user?.profile?.location || '',
       date_of_birth: user?.profile?.date_of_birth || ''
     }
@@ -43,11 +44,12 @@ const ProfileEditor = () => {
         profile: {
           bio: user.profile?.bio || '',
           avatar_url: user.profile?.avatar_url || '',
+          avatar_image: user.profile?.avatar_image || '',
           location: user.profile?.location || '',
           date_of_birth: user.profile?.date_of_birth || ''
         }
       });
-      setAvatarPreview(user.profile?.avatar_url || null);
+      setAvatarPreview(user.profile?.avatar_image || user.profile?.avatar_url || null);
       setAvatarFile(null);
     }
   }, [user]);
@@ -111,21 +113,37 @@ const ProfileEditor = () => {
       
       // Only append avatar file if a new one was selected
       if (avatarFile) {
-        uploadData.append('profile.avatar_url', avatarFile);
+        uploadData.append('profile.avatar_image', avatarFile);
       }
 
       const response = await api.put('/profile/', uploadData);
       
       if (response.data) {
-        updateUser(response.data);
+        // Profile update response received
+
+        // Normalize avatar_image to absolute URL pointing at the backend media server.
+        const profile = response.data.profile || {};
+        try {
+          const apiBase = api.defaults?.baseURL || '';
+          const mediaBase = apiBase.replace(/\/api\/?$/, '');
+          if (profile.avatar_image && typeof profile.avatar_image === 'string' && !profile.avatar_image.startsWith('http')) {
+            profile.avatar_image = profile.avatar_image.startsWith('/') ? `${mediaBase}${profile.avatar_image}` : `${mediaBase}/${profile.avatar_image}`;
+          }
+        } catch {
+          // Fallback: leave avatar_image as-is
+        }
+
+        const normalized = { ...response.data, profile };
+
+        updateUser(normalized);
         setAvatarFile(null);
-        setAvatarPreview(response.data.profile?.avatar_url || null);
+        setAvatarPreview(profile.avatar_image || profile.avatar_url || null);
         setIsEditing(false);
         setMessage('Profile updated successfully!');
         setTimeout(() => setMessage(''), 3000);
       }
     } catch (err) {
-      console.error('Profile update error:', err);
+    console.error('Profile update error:', err);
       const errorMessage = err.response?.data?.detail || 
                         err.response?.data?.message || 
                         err.message || 
