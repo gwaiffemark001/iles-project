@@ -1,6 +1,6 @@
 import './UserAvatar.css';
 
-const UserAvatar = ({ user, size = 'medium', className = '' }) => {
+const UserAvatar = ({ user, size = 'medium', className = '', onClick = null }) => {
   // Extract initials from user name
   const getInitials = () => {
     if (user?.first_name && user?.last_name) {
@@ -12,24 +12,35 @@ const UserAvatar = ({ user, size = 'medium', className = '' }) => {
     return 'U';
   };
 
-  const hasAvatar = user?.profile?.avatar_url;
+  const profileObj = user && typeof user.profile === 'object' ? user.profile : {};
+  const avatarSrc = profileObj.avatar_image || profileObj.avatar_url || null;
+  const hasAvatar = Boolean(avatarSrc);
   const initials = getInitials();
+  const handleClick = () => {
+    if (typeof onClick === 'function') onClick();
+  };
 
   return (
-    <div className={`user-avatar user-avatar-${size} ${className}`}>
+    <div
+      className={`user-avatar user-avatar-${size} ${className}`}
+      onClick={handleClick}
+      role={onClick ? 'button' : undefined}
+      style={onClick ? { cursor: 'pointer' } : undefined}
+    >
       {hasAvatar ? (
         <img
-          src={user.profile.avatar_url}
+          src={avatarSrc}
           alt={`${user?.first_name || user?.username || 'User'}'s avatar`}
           className="avatar-image"
           onError={(e) => {
             e.target.style.display = 'none';
-            e.target.nextElementSibling.style.display = 'flex';
+            const fallback = e.target.nextElementSibling;
+            if (fallback) fallback.style.display = 'flex';
           }}
         />
       ) : null}
-      <div 
-        className="avatar-fallback" 
+      <div
+        className="avatar-fallback"
         style={{ display: hasAvatar ? 'none' : 'flex' }}
       >
         {initials}

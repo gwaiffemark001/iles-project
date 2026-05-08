@@ -235,14 +235,15 @@ class NotificationWorkflowTests(TestCase):
         self.assertEqual(Notification.objects.filter(notification_type='placement_status_updated').count(), 5)
 
     def test_log_submission_creates_notifications(self):
+        today = timezone.now().date()
         placement = InternshipPlacement.objects.create(
             student=self.student,
             workplace_supervisor=self.workplace_supervisor,
             academic_supervisor=self.academic_supervisor,
             company_name='Makerere Innovation Hub',
             company_address='Kampala',
-            start_date='2026-05-01',
-            end_date='2026-07-31',
+            start_date=today,
+            end_date=today + timedelta(days=60),
             status='active',
         )
         log = WeeklyLog.objects.create(
@@ -252,7 +253,7 @@ class NotificationWorkflowTests(TestCase):
             challenges='None',
             learning='Learned DRF serializers',
             status='draft',
-            deadline='2026-05-07',
+            deadline=today + timedelta(days=6),
         )
 
         self.client.force_authenticate(user=self.student)
@@ -538,4 +539,33 @@ class EvaluationPolicyTests(TestCase):
         }, format='json')
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_locked_criterion_enforced_between_supervisors(self):
+        # Workplace supervisor creates an evaluation choosing the Technical criterion
+        self.client.force_authenticate(user=self.workplace_supervisor)
+        first_response = self.client.post('/api/evaluations/', {
+            'placement_id': self.placement.id,
+            'week_number': 1,
+            'evaluation_type': 'supervisor',
+            'items': [
+                {'criteria_id': self.technical.id, 'score': 85},
+            ],
+        }, format='json')
+        self.assertEqual(first_response.status_code, status.HTTP_201_CREATED)
+
+        # Academic supervisor attempts to create an evaluation for same placement/week with a different criterion
+        self.client.force_authenticate(user=self.academic_supervisor)
+        second_response = self.client.post('/api/evaluations/', {
+            'placement_id': self.placement.id,
+            'week_number': 1,
+            'evaluation_type': 'academic',
+            'items': [
+                {'criteria_id': self.communication.id, 'score': 75},
+            ],
+        }, format='json')
+
+        self.assertEqual(second_response.status_code, status.HTTP_400_BAD_REQUEST)
+        # API should return an items-level validation error explaining the locked criterion
+        self.assertIn('items', second_response.data)
+        self.assertIn('Selected criterion must match', str(second_response.data['items'][0]))
 

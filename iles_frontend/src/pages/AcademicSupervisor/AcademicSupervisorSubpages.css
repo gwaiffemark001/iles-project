@@ -53,7 +53,7 @@ body { font-family: 'Inter', sans-serif; }
 .avatar,
 .student-avatar {
   border-radius: 50%;
-  background: #4a7fd4;
+  background: #0A1D37; /* navy to match sidebar */
   display: flex;
   align-items: center;
   justify-content: center;

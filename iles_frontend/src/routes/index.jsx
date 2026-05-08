@@ -14,6 +14,7 @@ import AcademicSupervisorDashboard from '../pages/AcademicSupervisor/AcademicSup
 import AssignedStudents from '../pages/AcademicSupervisor/AssignedStudents'
 import WorkplaceSupervisorDashboard from '../pages/WorkplaceSupervisor/WorkplaceSupervisorDashboard'
 import AdminDashboard from '../pages/AdminDashboard'
+import ProfilePage from '../pages/ProfilePage'
 
 import ProtectedRoute from './ProtectedRoute'
 import RoleRoute from './RoleRoute'
@@ -41,6 +42,7 @@ export default function AppRoutes() {
       {/* Protected app */}
       <Route path="/app" element={<ProtectedRoute />}>
         <Route index element={<AppLanding />} />
+        <Route path="profile" element={<ProfilePage />} />
 
         <Route path="student" element={<RoleRoute allow={['student']} />}>
           <Route index element={<StudentDashboard />} />

@@ -13,20 +13,25 @@ from .models import (
     ChatMessage,
 )
 
-class CustomUserSerializer(serializers.ModelSerializer):
-    password = serializers.CharField(write_only=True)
+class UserProfileDetailSerializer(serializers.ModelSerializer):
+    avatar_url = serializers.SerializerMethodField()
+
     class Meta:
         model = UserProfile
         fields = [
-            "id",
-            "bio",
-            "avatar_url",
-            "location",
-            "date_of_birth",
-            "created_at",
-            "updated_at",
+            'bio',
+            'avatar_url',
+            'avatar_image',
+            'location',
+            'date_of_birth',
+            'created_at',
+            'updated_at',
         ]
 
+    def get_avatar_url(self, obj):
+        if obj.avatar_image:
+            return obj.avatar_image.url
+        return obj.avatar_url
 
 class UserSummarySerializer(serializers.ModelSerializer):
     full_name = serializers.SerializerMethodField()
@@ -54,6 +59,7 @@ class UserSummarySerializer(serializers.ModelSerializer):
 class CustomUserSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, required=False)
     full_name = serializers.SerializerMethodField(read_only=True)
+    profile = UserProfileDetailSerializer(read_only=True)
 
     class Meta:
         model = CustomUser
@@ -71,6 +77,7 @@ class CustomUserSerializer(serializers.ModelSerializer):
             "student_number",
             "registration_number",
             "password",
+            "profile",
         ]
 
     def get_full_name(self, obj):
@@ -573,6 +580,20 @@ class EvaluationSerializer(serializers.ModelSerializer):
             )
             if locked_criteria_id is not None:
                 self._locked_criteria_id = locked_criteria_id
+                # If caller provided items in the request, ensure they match the locked criteria
+                items_in_request = None
+                try:
+                    items_in_request = request.data.get('items') if request is not None else None
+                except Exception:
+                    items_in_request = None
+
+                if items_in_request and isinstance(items_in_request, list) and len(items_in_request) > 0:
+                    first_req = items_in_request[0] if isinstance(items_in_request[0], dict) else {}
+                    incoming_crit = first_req.get('criteria_id') or first_req.get('criteria')
+                    if incoming_crit is not None and int(incoming_crit) != int(locked_criteria_id):
+                        raise serializers.ValidationError({
+                            'items': ['Selected criterion must match the criterion already chosen by the other supervisor.']
+                        })
 
         return attrs
 
@@ -589,9 +610,8 @@ class EvaluationSerializer(serializers.ModelSerializer):
 
         evaluation = Evaluation.objects.create(**validated_data)
 
-        locked_criteria_id = getattr(self, '_locked_criteria_id', None)
-        if locked_criteria_id is not None:
-            items_data = self._normalize_items_for_locked_criteria(items_data, locked_criteria_id)
+        # Do NOT silently normalize items to another supervisor's criterion.
+        # Validation already enforces that if a locked criterion exists, incoming items must match it.
 
         if items_data and isinstance(items_data, list):
             for item in items_data:
@@ -621,9 +641,7 @@ class EvaluationSerializer(serializers.ModelSerializer):
             setattr(instance, attr, value)
         instance.save()
 
-        locked_criteria_id = getattr(self, '_locked_criteria_id', None)
-        if locked_criteria_id is not None:
-            items_data = self._normalize_items_for_locked_criteria(items_data, locked_criteria_id)
+        # Validation enforced that incoming items (if present) match the locked criterion.
 
         if items_data is not None and isinstance(items_data, list):
             # Replace existing items with provided ones for simplicity
@@ -665,7 +683,7 @@ class NotificationSerializer(serializers.ModelSerializer):
 
 class UserProfileSerializer(serializers.ModelSerializer):
     class Meta:
-        model = CustomUser
+        model = UserProfile
         fields = '__all__'
 
 
