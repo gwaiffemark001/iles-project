@@ -12,9 +12,28 @@ const UserAvatar = ({ user, size = 'medium', className = '', onClick = null }) =
     return 'U';
   };
 
-  const avatarSrc = user?.profile?.avatar_image || user?.profile?.avatar_url || null;
+  // Get avatar URL, handling both relative and absolute URLs
+  const normalizeAvatarUrl = (url) => {
+    if (!url) return null;
+    // If it's already absolute, return as-is
+    if (url.startsWith('http')) return url;
+    // If it's relative, prepend the backend server URL
+    if (url.startsWith('/')) {
+      try {
+        const backendUrl = import.meta.env?.VITE_API_URL || 'http://localhost:8000';
+        return `${backendUrl}${url}`;
+      } catch {
+        return url;
+      }
+    }
+    return url;
+  };
+
+  const rawAvatarSrc = user?.profile?.avatar_image || user?.profile?.avatar_url || null;
+  const avatarSrc = normalizeAvatarUrl(rawAvatarSrc);
   const hasAvatar = Boolean(avatarSrc);
   const initials = getInitials();
+  
   const handleClick = () => {
     if (typeof onClick === 'function') onClick();
   };
