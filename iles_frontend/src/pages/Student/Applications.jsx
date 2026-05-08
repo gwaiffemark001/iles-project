@@ -50,18 +50,18 @@ export default function Applications() {
 
       try {
         const data = await api.get('api/applications/')
-        if (!cancelled) setApps(Array.isArray(data) ? data : [])
-      } catch (e) {
-        if (!cancelled) setError(e?.message || 'Failed to load applications.')
-      } finally {
-        if (!cancelled) setLoading(false)
+        if (!cancelRef.cancelled) { 
+          setApps(Array.isArray(data) ? data : [])
+        } 
+      }catch (e) {
+        if (!cancelRef.cancelled) {
+          setError(e?.message || 'Failed to load applications.')
+      } 
+      }finally {
+        if (!cancelRef.cancelled) setLoading(false)
       }
-  }, [api])
-    }
-    run()
-    return () => {
-      cancelled = true
-    }
+ 
+   
   }, [api])
 
   return (
