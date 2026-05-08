@@ -343,6 +343,42 @@ class WeeklyLogPolicyTests(TestCase):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertIn('Cannot submit after deadline', str(response.data))
 
+    def test_student_cannot_submit_log_for_pending_placement(self):
+        today = timezone.now().date()
+        # Create a separate student to own the pending placement (avoids duplicate placement validation)
+        pending_student = CustomUser.objects.create_user(
+            username='student-pending',
+            password='pass123',
+            role='student'
+        )
+
+        pending_placement = InternshipPlacement.objects.create(
+            student=pending_student,
+            workplace_supervisor=self.workplace_supervisor,
+            academic_supervisor=CustomUser.objects.create_user(
+                username='academic-pending',
+                password='pass123',
+                role='academic_supervisor'
+            ),
+            company_name='Pending Co',
+            company_address='Kampala',
+            start_date=today + timedelta(days=7),
+            end_date=today + timedelta(days=35),
+            status='pending',
+        )
+
+        log = WeeklyLog.objects.create(
+            placement=pending_placement,
+            week_number=1,
+            activities='Draft work',
+            status='draft',
+        )
+
+        self.client.force_authenticate(user=pending_student)
+        response = self.client.put(f'/api/logs/{log.id}/submit/')
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('Cannot submit a weekly log for a pending placement.', str(response.data))
+
     def test_student_cannot_edit_approved_log(self):
         approved_log = WeeklyLog.objects.create(
             placement=self.placement,
