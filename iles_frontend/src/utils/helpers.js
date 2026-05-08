@@ -1,0 +1,123 @@
+// Date formatting utilities
+export const formatDate = (date) => {
+  if (!date) return '';
+  
+  const options = { 
+    year: 'numeric', 
+    month: 'long' 
+  };
+  
+  return new Date(date).toLocaleDateString('en-US', options);
+};
+
+export const formatDateTime = (dateTime) => {
+  if (!dateTime) return '';
+  
+  const options = { 
+    year: 'numeric', 
+    month: 'short', 
+    day: 'numeric', 
+    hour: '2-digit', 
+    minute: '2-digit' 
+  };
+  
+  return new Date(dateTime).toLocaleString('en-US', options);
+};
+
+// String utilities
+export const capitalizeFirst = (str) => {
+  if (!str) return '';
+  return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
+};
+
+export const truncateText = (text, maxLength) => {
+  if (!text || text.length <= maxLength) return text;
+  return text.substring(0, maxLength) + '...';
+};
+
+export const generateInitials = (firstName, lastName) => {
+  if (!firstName && !lastName) return '?';
+  
+  const firstInitial = firstName ? firstName.charAt(0).toUpperCase() : '';
+  const lastInitial = lastName ? lastName.charAt(0).toUpperCase() : '';
+  
+  return `${firstInitial}${lastInitial}`;
+};
+
+// Validation utilities
+export const isValidEmail = (email) => {
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return emailRegex.test(email);
+};
+
+export const isValidPhone = (phone) => {
+  const phoneRegex = /^\+?[\d\s-]{7,15}$/;
+  return phoneRegex.test(phone);
+};
+
+export const isValidRequired = (value) => {
+  return value && value.trim().length > 0;
+};
+
+// File utilities
+export const formatFileSize = (bytes) => {
+  if (bytes === 0) return '0 Bytes';
+  
+  const k = 1024;
+  const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  
+  if (i < 1) {
+    return bytes + ' ' + sizes[0];
+  }
+  
+  return (bytes / Math.pow(k, i)).toFixed(2) + ' ' + sizes[i];
+};
+
+// Array utilities
+export const sortByProperty = (array, property, direction = 'asc') => {
+  return [...array].sort((a, b) => {
+    const aValue = a[property];
+    const bValue = b[property];
+    
+    if (aValue < bValue) {
+      return direction === 'asc' ? -1 : 1;
+    }
+    if (aValue > bValue) {
+      return direction === 'asc' ? 1 : -1;
+    }
+    return 0;
+  });
+};
+
+export const filterByProperty = (array, property, value) => {
+  return array.filter(item => {
+    const itemValue = item[property];
+    return itemValue && itemValue.toString().toLowerCase().includes(value.toLowerCase());
+  });
+};
+
+// Status utilities
+export const getStatusColor = (status) => {
+  const statusColors = {
+    'pending': '#f59e0b',
+    'approved': '#10b981',
+    'rejected': '#ef4444',
+    'completed': '#3b82f6',
+    'in_progress': '#3b82f6'
+  };
+  
+  return statusColors[status] || '#6b7280';
+};
+
+export const getStatusLabel = (status) => {
+  const statusLabels = {
+    'pending': 'Pending',
+    'approved': 'Approved',
+    'rejected': 'Rejected',
+    'completed': 'Completed',
+    'in_progress': 'In Progress'
+  };
+  
+  return statusLabels[status] || status;
+};
