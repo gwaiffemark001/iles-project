@@ -6,9 +6,9 @@ const DataTable = ({
   columns = [], 
   loading = false, 
   error = null, 
-  onRowClick = null, 
-  pagination = null, 
-  ...props 
+  onRowClick = null,
+  onSort = null,
+  pagination = null
 }) => {
   const handleSort = (column) => {
     if (onSort) {
@@ -39,7 +39,7 @@ const DataTable = ({
   const renderPagination = () => {
     if (!pagination) return null;
     
-    const { currentPage, totalPages, onPageChange } = pagination;
+    const { currentPage, totalPages } = pagination;
     const pages = Array.from({ length: totalPages }, (_, i) => i + 1);
     
     return (
