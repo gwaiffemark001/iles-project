@@ -2,7 +2,6 @@ from django.core.exceptions import ValidationError
 from django.db import models
 from decimal import Decimal
 from django.contrib.auth.models import AbstractUser
-from django.core.exceptions import ValidationError
 from django.utils import timezone
 from django.utils.dateparse import parse_date
 
