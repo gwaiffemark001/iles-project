@@ -146,6 +146,10 @@ return (
       {renderedApplications}
     </div>
 
+    {!loading && !error && apps.length === 0 ? (
+      <p className="iles-muted">
+        No applications yet.</p>
+
 
 
 
