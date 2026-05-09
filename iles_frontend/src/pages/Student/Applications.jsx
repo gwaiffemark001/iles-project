@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState, useMemo } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '@/auth/useAuth'
 
@@ -43,57 +43,120 @@ export default function Applications() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
-  useEffect(() => {
-    let cancelled = false
-    async function run() {
-      setLoading(true)
-      setError('')
+  const fetchApplications = useCallback(async (cancelRef) => {
+    setLoading(true)
+    setError('')
+    
+
       try {
-        const data = await api.get('api/applications/')
-        if (!cancelled) setApps(Array.isArray(data) ? data : [])
-      } catch (e) {
-        if (!cancelled) setError(e?.message || 'Failed to load applications.')
-      } finally {
-        if (!cancelled) setLoading(false)
+        const {data} = await api.get('api/applications/')
+        if (!cancelRef.cancelled) { 
+          setApps(Array.isArray(data) ? data : [])
+        } 
+      }catch (e) {
+        if (!cancelRef.cancelled) {
+          setError(e?.message || 'Failed to load applications.')
+      } 
+      }finally {
+        if (!cancelRef.cancelled) setLoading(false)
       }
-    }
-    run()
-    return () => {
-      cancelled = true
-    }
+ 
+   
   }, [api])
 
+  useEffect(() => {
+    const cancelRef = { cancelled: false }
+    fetchApplications(cancelRef)
+    return () => {
+      cancelRef.cancelled = true
+    }
+  }, [fetchApplications])
+
+ const renderedApplications = useMemo(() => {
+    return apps.map((a) => (
+      <div 
+        key={a.id} 
+        className="iles-card"
+        role='article'
+        aria-label={`Application for ${placementLabel(a)}`}
+      >
+       <div className="iles-row">
+          <span className={`iles-badge ${badgeClass(a.status)}`}
+            aria-label={`Application status: ${statusLabel(a.status)}`} 
+          >
+          {statusLabel(a.status)}
+          </span>
+          <span 
+          className="iles-muted"
+          title={a.created_at || ''}
+          >
+          {formatDate(a.created_at)}
+          </span>
+      </div>
+      <div className="iles-stack">
+        <div className="iles-strong">
+          {placementLabel(a)}
+        </div>
+        {a.note ? (
+          <div className="iles-muted">{a.note}</div>
+        ) : (
+        <div className="iles-muted">No note</div>
+        )}
+      </div>
+    </div>
+    ))
+  }, [apps])
+
+
   return (
-    <div className="iles-page">
+    <div className="iles-page"> 
       <header className="iles-header">
         <h1 className="iles-title">My applications</h1>
+
         <p className="iles-subtitle">
-          <Link className="iles-link" to="/app/student/placements">
+          <Link 
+            className="iles-link" 
+            to="/app/student/placements"
+            aria-label="Browse available placements"
+          >
             Browse placements
           </Link>
         </p>
       </header>
 
-      {loading ? <p className="iles-muted">Loading...</p> : null}
-      {error ? <p className="error-message">{error}</p> : null}
+      {loading ? (
+        <p 
+          className="iles-muted"
+          aria-live='polite'
+        >
+          Loading...
+        </p>
+      ) : null}
 
-      <div className="iles-grid">
-        {apps.map((a) => (
-          <div key={a.id} className="iles-card">
-            <div className="iles-row">
-              <span className={`iles-badge ${badgeClass(a.status)}`}>{statusLabel(a.status)}</span>
-              <span className="iles-muted">{formatDate(a.created_at)}</span>
-            </div>
-            <div className="iles-stack">
-              <div className="iles-strong">{placementLabel(a)}</div>
-              {a.note ? <div className="iles-muted">{a.note}</div> : <div className="iles-muted">No note</div>}
-            </div>
-          </div>
-        ))}
+      {error ? (
+        <p
+          className="error-message"
+          role='alert'
+        >
+          {error}
+        </p>
+      ) : null}
+
+      <div className="iles-grid"
+        aria-live='polite'
+      >
+        {renderedApplications}
       </div>
 
-      {!loading && !error && apps.length === 0 ? <p className="iles-muted">No applications yet.</p> : null}
+      {!loading && !error && apps.length === 0 ? (
+        <p className="iles-muted">
+          No applications yet.
+        </p>
+      ) : null}
     </div>
   )
 }
+
+
+
 
