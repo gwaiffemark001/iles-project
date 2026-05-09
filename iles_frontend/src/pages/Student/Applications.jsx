@@ -72,6 +72,36 @@ export default function Applications() {
     }
   }, [fetchApplications])
 
+ const renderedApplications = useMemo(() => {
+    return apps.map((a) => (
+      <div 
+        key={a.id} 
+        className="iles-card"
+        role='article'
+        aria-label='{`Application for ${placementLabel(a)}`}'
+      >
+       <div className="iles-row">
+          <span className={`iles-badge ${badgeClass(a.status)}`}
+            aria-label={`Application status: ${statusLabel(a.status)}`} 
+          >
+          {statusLabel(a.status)}
+          </span>
+          <span 
+          className="iles-muted"
+          title={a.created_at || ''}
+          >
+          {formatDate(a.created_at)}
+          </span>
+      </div>
+      <div className="iles-stack">
+        <div className="iles-strong">
+          {placementLabel(a)}
+        </div>
+        {a.note ? (
+
+
+ }  )
+
   return (
     <div className="iles-page">
       <header className="iles-header">
