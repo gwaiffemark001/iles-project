@@ -77,6 +77,4 @@ function Login() {
     );
 }
 
-export default Login
-
-//comment 0//
+export default Login;
