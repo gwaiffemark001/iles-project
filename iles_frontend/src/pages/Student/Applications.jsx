@@ -130,7 +130,15 @@ return (
         Loading...
       </p>
       ) : null}
-      
+
+    {error ? (
+      <p
+        className="error-message"
+        role='alert'
+      >
+        {error}
+      </p>
+
 
 
 
