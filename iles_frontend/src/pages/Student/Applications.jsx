@@ -98,9 +98,17 @@ export default function Applications() {
           {placementLabel(a)}
         </div>
         {a.note ? (
+          <div className="iles-muted">{a.note}</div>
+        ) : (
+        <div className="iles-muted">No note</div>
+        )}
+      </div>
+    </div>
+    ))
+  }, [apps]
 
 
- }  )
+ 
 
   return (
     <div className="iles-page">
