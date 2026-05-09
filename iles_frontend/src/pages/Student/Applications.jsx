@@ -138,6 +138,14 @@ return (
       >
         {error}
       </p>
+      ) : null}
+
+    <div className="iles-grid"
+      aria-live='polite'
+    >
+      {renderedApplications}
+    </div>
+
 
 
 
