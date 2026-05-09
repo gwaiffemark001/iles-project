@@ -108,7 +108,32 @@ export default function Applications() {
   }, [apps]
 
 
- 
+return (
+  <div className="iles-page"> 
+    <header className="iles-header">
+      <h1 className="iles-title">My applications</h1>
+
+      <p className="iles-subtitle">
+        <Link className="iles-link" 
+          to="/app/student/placements"
+          aria-label="Browse available placements"
+        >
+          Browse placements
+        </Link>
+      </p>
+    </header>
+    {loading ? (
+      <p 
+        className="iles-muted"
+        aria-live='polite'
+      >
+        Loading...
+      </p>
+      ) : null}
+      
+
+
+
 
   return (
     <div className="iles-page">
