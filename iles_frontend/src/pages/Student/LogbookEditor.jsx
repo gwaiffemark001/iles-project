@@ -104,7 +104,12 @@ export default function LogbookEditor() {
     }
   }
 
-  if (loading) return <div className="iles-page"><p className="iles-muted">Loading...</p></div>
+  if (loading) 
+    return(
+      <div className="iles-page" aria-busy="true" >
+        <p className='iles-muted'>Loading...</p>
+      </div>>) 
+      
 
   return (
     <div className="iles-page">
