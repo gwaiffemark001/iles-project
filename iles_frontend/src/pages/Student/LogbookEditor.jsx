@@ -37,12 +37,8 @@ export default function LogbookEditor() {
 
   useEffect(() => {
     let cancelled = false
-    async function loadPlacementId() {
-      const placements = await api.get('api/placements/')
-      const first = Array.isArray(placements) ? placements[0] : null
-      return first?.id || null
-    }
 
+   
     async function run() {
       setLoading(true)
       setError('')
@@ -72,9 +68,10 @@ export default function LogbookEditor() {
     return () => {
       cancelled = true
     }
-  }, [api, id, isNew])
+  }, [api, id, isNew, loadPlacementId])
 
   const save = async (nextStatus) => {
+    if (saving) return
     setSaving(true)
     setError('')
     setSuccess('')
@@ -83,7 +80,7 @@ export default function LogbookEditor() {
 
       const payload = {
         placement: placementId,
-        week_number: Number(weekNumber),
+        week_number: Number(weekNumber) || 0,
         activities,
         challenges,
         learning,
