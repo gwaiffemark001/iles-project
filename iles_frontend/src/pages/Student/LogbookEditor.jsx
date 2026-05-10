@@ -194,10 +194,19 @@ export default function LogbookEditor() {
             </label>
 
             <div className="iles-row">
-              <button className="iles-button secondary" onClick={() => save('draft')} disabled={saving}>
+              <button 
+                className="iles-button secondary" 
+                onClick={() => save('draft')} 
+                disabled={saving}
+              >
                 {saving ? 'Saving...' : 'Save draft'}
               </button>
-              <button className="iles-button" onClick={() => save('submitted')} disabled={saving}>
+
+              <button 
+                className="iles-button" 
+                onClick={() => save('submitted')} 
+                disabled={saving}
+              >
                 {saving ? 'Saving...' : 'Submit'}
               </button>
             </div>
