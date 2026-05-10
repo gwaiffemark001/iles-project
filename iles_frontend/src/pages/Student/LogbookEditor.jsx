@@ -108,11 +108,12 @@ export default function LogbookEditor() {
     return(
       <div className="iles-page" aria-busy="true" >
         <p className='iles-muted'>Loading...</p>
-      </div>>) 
+      </div>>
+    ) 
       
 
   return (
-    <div className="iles-page">
+    <div className="iles-page"  aria-busy>
       <header className="iles-header">
         <h1 className="iles-title">{isNew ? 'New weekly log' : `Edit log #${id}`}</h1>
         <p className="iles-subtitle">
