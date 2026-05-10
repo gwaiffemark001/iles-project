@@ -52,7 +52,7 @@ export const apiService = {
         return response.data;
       } catch (error) {
         console.error('Error refreshing token:', error);
-        throw error;
+        throw new Error(`Failed to refresh token: ${error.message || 'Unknown error'}`);
       }
     }
   },
