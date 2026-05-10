@@ -25,14 +25,20 @@ export default function LogbookEditor() {
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
 
-  useEffect(() => {
-    let cancelled = false
-    async function loadPlacementId() {
+  const loadPlacementId = useCallback(async () => {
+    try {
       const placements = await api.get('api/placements/')
       const first = Array.isArray(placements) ? placements[0] : null
       return first?.id || null
+    } catch {
+      return null
     }
+  }, [api])
 
+  useEffect(() => {
+    let cancelled = false
+
+   
     async function run() {
       setLoading(true)
       setError('')
@@ -62,9 +68,10 @@ export default function LogbookEditor() {
     return () => {
       cancelled = true
     }
-  }, [api, id, isNew])
+  }, [api, id, isNew, loadPlacementId])
 
   const save = async (nextStatus) => {
+    if (saving) return
     setSaving(true)
     setError('')
     setSuccess('')
@@ -73,7 +80,7 @@ export default function LogbookEditor() {
 
       const payload = {
         placement: placementId,
-        week_number: Number(weekNumber),
+        week_number: Number(weekNumber) || 0,
         activities,
         challenges,
         learning,
@@ -97,12 +104,19 @@ export default function LogbookEditor() {
     }
   }
 
-  if (loading) return <div className="iles-page"><p className="iles-muted">Loading...</p></div>
+  if (loading) 
+    return(
+      <div className="iles-page" aria-busy="true">
+        <p className='iles-muted'>Loading...</p>
+      </div>
+    )
 
   return (
-    <div className="iles-page">
+    <div className="iles-page"  aria-busy={saving}>
       <header className="iles-header">
-        <h1 className="iles-title">{isNew ? 'New weekly log' : `Edit log #${id}`}</h1>
+        <h1 className="iles-title">
+          {isNew ? 'New weekly log' : `Edit log #${id}`}
+        </h1>
         <p className="iles-subtitle">
           <Link className="iles-link" to="/app/student/logbook">
             ← Back to logbook
@@ -180,10 +194,19 @@ export default function LogbookEditor() {
             </label>
 
             <div className="iles-row">
-              <button className="iles-button secondary" onClick={() => save('draft')} disabled={saving}>
+              <button 
+                className="iles-button secondary" 
+                onClick={() => save('draft')} 
+                disabled={saving}
+              >
                 {saving ? 'Saving...' : 'Save draft'}
               </button>
-              <button className="iles-button" onClick={() => save('submitted')} disabled={saving}>
+
+              <button 
+                className="iles-button" 
+                onClick={() => save('submitted')} 
+                disabled={saving}
+              >
                 {saving ? 'Saving...' : 'Submit'}
               </button>
             </div>
