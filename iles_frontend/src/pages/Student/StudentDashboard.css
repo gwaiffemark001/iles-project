@@ -8,7 +8,7 @@ body {
 .student-dashboard {
   display: flex;
   min-height: 100vh;
-  background: #f4f7f8;
+  background: linear-gradient(180deg, #f4f7f8, #eaf2f1);
 }
 
 .sidebar {
