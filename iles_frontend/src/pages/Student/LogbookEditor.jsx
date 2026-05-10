@@ -25,6 +25,15 @@ export default function LogbookEditor() {
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
 
+  const loadPlacementId = useCallback(async () => {
+    try {
+      const placements = await api.get('api/placements/')
+      const first = Array.isArray(placements) ? placements[0] : null
+      return first?.id || null
+    } catch {
+      return null
+  }, [api])
+
   useEffect(() => {
     let cancelled = false
     async function loadPlacementId() {
