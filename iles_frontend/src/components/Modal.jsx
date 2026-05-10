@@ -9,7 +9,8 @@ const Modal = ({
   size = 'medium', 
   showCloseButton = true, 
   closeOnEscape = true, 
-  closeOnOverlay = true
+  closeOnOverlay = true,
+  loading = false
   }) => {
   React.useEffect(() => {
     const handleEscape = (e) => {
@@ -37,6 +38,11 @@ const Modal = ({
 
   return (
     <div className={`modal-overlay ${isOpen ? 'open' : ''}`} onClick={handleOverlayClick}>
+      {loading && (
+        <div className="modal-backdrop">
+          <div className="modal-loading">Loading...</div>
+        </div>
+      )}
       <div className={`modal-container modal-${size}`} onClick={(e) => e.stopPropagation()}>
         {title && (
           <div className="modal-header">
