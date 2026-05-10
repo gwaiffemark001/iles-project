@@ -28,7 +28,7 @@ function clearStoredTokens() {
 }
 
 export function AuthProvider({ children }) {
-  const baseUrl = import.meta.env?.VITE_API_BASE_URL || ''
+  const baseUrl = import.meta.env?.VITE_API_BASE_URL || 'http://localhost:8000'
 
   const [accessToken, setAccessToken] = useState(getStoredAccess())
   const [refreshToken, setRefreshToken] = useState(getStoredRefresh())
