@@ -32,6 +32,7 @@ export default function LogbookEditor() {
       return first?.id || null
     } catch {
       return null
+    }
   }, [api])
 
   useEffect(() => {
