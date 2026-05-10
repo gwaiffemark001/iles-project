@@ -24,6 +24,9 @@ const FormField = ({
             onChange={onChange}
             disabled={disabled}
             className={`form-input ${error ? 'error' : ''}`}
+            aria-label={label}
+            aria-invalid={error ? 'true' : 'false'}
+            required={required}
           >
             {options.map(option => (
               <option key={option.value} value={option.value}>

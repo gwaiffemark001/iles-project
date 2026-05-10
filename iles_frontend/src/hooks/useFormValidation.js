@@ -35,6 +35,10 @@ export const useFormValidation = (initialValues, validationRules) => {
       return 'Please enter a valid phone number';
     }
     
+    if (rule.number && !/^\d+$/.test(value)) {
+      return `${name} must contain only numbers`;
+    }
+    
     return '';
   }, [validationRules]);
 
