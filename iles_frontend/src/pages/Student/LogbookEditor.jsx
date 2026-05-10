@@ -106,16 +106,17 @@ export default function LogbookEditor() {
 
   if (loading) 
     return(
-      <div className="iles-page" aria-busy="true" >
+      <div className="iles-page" aria-busy="true">
         <p className='iles-muted'>Loading...</p>
-      </div>>
-    ) 
-      
+      </div>
+    )
 
   return (
-    <div className="iles-page"  aria-busy>
+    <div className="iles-page"  aria-busy={saving}>
       <header className="iles-header">
-        <h1 className="iles-title">{isNew ? 'New weekly log' : `Edit log #${id}`}</h1>
+        <h1 className="iles-title">
+          {isNew ? 'New weekly log' : `Edit log #${id}`}
+        </h1>
         <p className="iles-subtitle">
           <Link className="iles-link" to="/app/student/logbook">
             ← Back to logbook
