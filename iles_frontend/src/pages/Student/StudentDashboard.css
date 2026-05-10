@@ -280,9 +280,12 @@
   background: #ffffff;
   border: 1px dashed #c8d8d1;
   border-radius: 10px;
-  padding: 20px;
+  padding: 30px;
   color: #5f6c76;
+  text-align: center;
+  font-style: italic;
 }
+
 
 .status {
   padding: 4px 8px;
