@@ -61,7 +61,8 @@
 
 .nav-item:hover, .nav-item.active {
   background: #34495e;
-  transition: all 0.3s ease;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.25);
+  transform: translateY(-2px);
 }
 
 .logout {
