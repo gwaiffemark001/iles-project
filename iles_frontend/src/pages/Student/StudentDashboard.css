@@ -41,6 +41,9 @@
 
 .sidebar-nav {
   flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 
 .nav-item {
@@ -58,6 +61,7 @@
 
 .nav-item:hover, .nav-item.active {
   background: #34495e;
+  transition: all 0.3s ease;
 }
 
 .logout {
