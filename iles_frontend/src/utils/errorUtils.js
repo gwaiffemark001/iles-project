@@ -8,7 +8,8 @@ export const errorHandler = {
       return {
         message: 'Network error occurred',
         type: 'network',
-        details: error.message
+        details: error.message,
+        action: 'Check your internet connection'
       };
     }
     
@@ -21,7 +22,8 @@ export const errorHandler = {
         return {
           message: data?.message || 'Bad request',
           type: 'validation',
-          details: data?.errors || data
+          details: data?.errors || data,
+          action: 'Please check your input and try again'
         };
       
       case 401:
@@ -35,34 +37,37 @@ export const errorHandler = {
         return {
           message: 'Access denied',
           type: 'permission',
-          action: 'Contact administrator'
+          action: 'Contact administrator for access'
         };
       
       case 404:
         return {
           message: 'Resource not found',
-          type: 'not_found'
+          type: 'not_found',
+          action: 'Check the URL and try again'
         };
       
       case 422:
         return {
           message: data?.detail || 'Validation error',
           type: 'validation',
-          details: data?.errors || data
+          details: data?.errors || data,
+          action: 'Please correct the errors and try again'
         };
       
       case 500:
         return {
           message: 'Server error occurred',
           type: 'server',
-          action: 'Please try again later'
+          action: 'Please try again later or contact support'
         };
       
       default:
         return {
           message: data?.message || data?.detail || 'An error occurred',
           type: 'unknown',
-          details: data
+          details: data,
+          action: 'Please try again or contact support'
         };
     }
   },
