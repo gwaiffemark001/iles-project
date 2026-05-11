@@ -1,11 +1,13 @@
 @import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;700&display=swap');
 
+/* Main page container styling */
 .page_1 {
     min-height: 100vh;
     display: grid;
     place-items: center;
     padding: 28px 18px;
     /*background-image: radial-gradient(circle #1e3c72 0%, #0f172a 70%);*/
+    /*background color for the page */
     background: #1e293b;
     color: #f1f5f9;
     font-family: "Manrope", sans-serif;
@@ -15,6 +17,7 @@
 
 
 
+/* Center login container */
 .centre_logins {
     position: relative;
     z-index: 1;
@@ -26,8 +29,10 @@
     box-shadow: 0 28px 80px rgba(0, 0, 0, 0.4);
 }
 
+/* Header styling for login/signup pages */
 .header,
 .header_1 {
+    /* Flexbox layout for vertical centering */
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -38,13 +43,17 @@
     border-bottom: 1px solid rgba(241, 245, 249, 0.1);
 }
 
+/* Main heading styling */
 .head {
     margin: 0;
     color: #f1f5f9;
     text-transform: uppercase;
     letter-spacing: 0.16em;
+    /* Custom font for headings */
     font-family: "Space Grotesk", sans-serif;
+    /* Responsive font size using clamp */
     font-size: clamp(1.38rem, 2vw, 2rem);
+    /* Tight line height for headings */
     line-height: 1.05;
 }
 
