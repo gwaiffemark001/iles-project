@@ -57,6 +57,7 @@
     line-height: 1.05;
 }
 
+/* Subheading styling with  color */
 .subhead {
     margin: 0;
     color: #94a3b8;
@@ -65,6 +66,7 @@
     letter-spacing: 0.01em;
 }
 
+/* Logo styling with background and shadow */
 .logo {
     display: block;
     width: 106px;
@@ -76,12 +78,14 @@
     box-shadow: 0 16px 28px rgba(0, 0, 0, 0.3);
 }
 
+/* Form container for login inputs */
 .logins {
     display: flex;
     flex-direction: column;
     gap: 14px;
 }
 
+/* Input field styling with transitions */
 .logins input {
     width: 100%;
     border: 1px solid rgba(241, 245, 249, 0.2);
@@ -92,21 +96,24 @@
     transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease, background-color 0.2s ease;
 }
 
+/* Placeholder text color */
 .logins input::placeholder {
     color: #64748b;
 }
+/* Hover effect for inputs */
 .logins input:hover {
     opacity: 0.9;
     scale: 1.02;
 }
 
+/* Focus state for inputs*/
 .logins input:focus {
     outline: none;
     border-bottom: 2px solid #3b82f6;
     box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.12);
 }
 
-
+/* Container for additional form fields */
 .extra-fields {
     display: flex;
     flex-direction: column;
@@ -114,6 +121,7 @@
     padding: 8px 0 2px;
 }
 
+/* Primary login button styling */
 .login-btn {
     margin-top: 2px;
     border: none;
@@ -129,17 +137,20 @@
     transition: transform 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease, filter 0.2s ease;
 }
 
+/* Hover effect for login button */
 .login-btn:hover {
     transform: translateY(-2px);
     box-shadow: 0 12px 36px rgba(59, 130, 246, 0.4);
     opacity: 0.9;
 }
+/* Disabled state for login button */
 .login-btn:disabled {
     opacity: 0.72;
     cursor: not-allowed;
     box-shadow: none;
 }
 
+/* Failed login message container */
 .failed_login {
     display: flex;
     flex-wrap: wrap;
@@ -151,6 +162,7 @@
     border-top: 1px solid rgba(241, 245, 249, 0.1);
 }
 
+/* Signup link styling */
 .signup {
     margin: 0;
     font-size: 0.95rem;
@@ -167,6 +179,7 @@
     text-decoration: underline;
 }
 
+/* Error and success message styling */
 .error-message,
 .success-message {
     margin-top: 14px;
@@ -176,18 +189,21 @@
     line-height: 1.45;
 }
 
+/* Error message background and border */
 .error-message {
     background: rgba(239, 68, 68, 0.1);
     color: #fca5a5;
     border: 1px solid rgba(239, 68, 68, 0.2);
 }
 
+/* Success message background and border */
 .success-message {
     background: rgba(34, 197, 94, 0.1);
     color: #86efac;
     border: 1px solid rgba(34, 197, 94, 0.2);
 }
 
+/* Student detection indicator */
 .student_detected {
     margin: 2px 0 0;
     color: #34d399;
@@ -195,6 +211,7 @@
     font-weight: 700;
 }
 
+/* Footer text styling */
 .footer {
     margin-top: 18px;
     color: #64748b;
@@ -207,6 +224,7 @@
     z-index: 1;
 }
 
+/* Mobile responsive adjustments */
 @media (max-width: 640px) {
     .page_1 {
         padding: 18px 12px;
@@ -227,11 +245,13 @@
 
 /* ===== ILES Auth Shell Styles (formerly ILES.css) ===== */
 
+/* Main auth shell background */
 .auth-shell {
   min-height: 100vh;
   background: linear-gradient(160deg, #eff6ff 0%, #dbeafe 52%, #bfdbfe 100%);
 }
 
+/* Top navigation bar */
 .top-nav {
   height: 84px;
   border-top: 4px solid #166534;
@@ -243,6 +263,7 @@
   padding: 0 16px;
 }
 
+/* Brand section in navigation */
 .brand {
   width: min(1100px, 100%);
   display: flex;
@@ -268,6 +289,7 @@
   font-size: 14px;
 }
 
+/* Auth stage container */
 .auth-stage {
   min-height: calc(100vh - 84px);
   display: flex;
@@ -277,6 +299,7 @@
   background: linear-gradient(120deg, rgba(8, 84, 39, 0.25), rgba(30, 64, 175, 0.18));
 }
 
+/* Auth card container */
 .auth-card {
   width: 100%;
   max-width: 560px;
@@ -287,17 +310,20 @@
   box-shadow: 0 20px 48px rgba(2, 12, 27, 0.16);
 }
 
+/* Stack layout utility */
 .stack {
   display: grid;
   gap: 10px;
 }
 
+/* Row layout utility */
 .row {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
 }
 
+/* Form label styling */
 label {
   display: grid;
   gap: 6px;
@@ -305,6 +331,7 @@ label {
   font-size: 14px;
 }
 
+/* Input field styling */
 input {
   border: 1px solid #ccd7e6;
   border-radius: 8px;
@@ -313,6 +340,7 @@ input {
   width: 100%;
 }
 
+/* Select dropdown styling */
 select {
   border: 1px solid #ccd7e6;
   border-radius: 8px;
