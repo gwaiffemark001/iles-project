@@ -19,7 +19,7 @@ const ProfileEditor = () => {
     profile: {
       bio: user?.profile?.bio || '',
       avatar_url: user?.profile?.avatar_url || '',
-        avatar_image: user?.profile?.avatar_image || '',
+      avatar_image: user?.profile?.avatar_image || '',
       location: user?.profile?.location || '',
       date_of_birth: user?.profile?.date_of_birth || ''
     }
