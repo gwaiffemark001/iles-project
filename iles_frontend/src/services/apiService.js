@@ -74,8 +74,7 @@ export const apiService = {
         const response = await api.post(`/students/${studentId}/logs/`, logData);
         return response.data;
       } catch (error) {
-        console.error('Error creating student log:', error);
-        throw error;
+        throw new Error(`Failed to create student log: ${error.message || 'Unknown error'}`);
       }
     }
   },
@@ -87,8 +86,7 @@ export const apiService = {
         const response = await api.get(`/supervisors/${supervisorId}/students/`);
         return response.data;
       } catch (error) {
-        console.error('Error fetching students:', error);
-        throw error;
+        throw new Error(`Failed to fetch students: ${error.message || 'Unknown error'}`);
       }
     },
     
@@ -97,8 +95,7 @@ export const apiService = {
         const response = await api.post('/evaluations/', evaluationData);
         return response.data;
       } catch (error) {
-        console.error('Error creating evaluation:', error);
-        throw error;
+        throw new Error(`Failed to create evaluation: ${error.message || 'Unknown error'}`);
       }
     }
   }
