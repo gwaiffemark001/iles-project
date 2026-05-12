@@ -306,7 +306,10 @@ class PlacementApplicationListCreateView(APIView):
         elif request.user.role == 'student':
             apps = PlacementApplication.objects.filter(student=request.user).order_by('-created_at')
         else:
-            return Response({'error': 'Not allowed'}, status=status.HTTP_403_FORBIDDEN)
+            return Response(
+                {'error': 'Access denied', 'detail': 'You do not have permission to access placement applications'}, 
+                status=status.HTTP_403_FORBIDDEN
+            )
         serializer = PlacementApplicationSerializer(apps, many=True)
         return Response(serializer.data)
 
