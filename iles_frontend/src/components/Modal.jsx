@@ -1,4 +1,5 @@
 import React from 'react';
+import PropTypes from 'prop-types';
 import './Modal.css';
 
 const Modal = ({ 
@@ -61,6 +62,26 @@ const Modal = ({
       </div>
     </div>
   );
+};
+
+Modal.propTypes = {
+  isOpen: PropTypes.bool.isRequired,
+  onClose: PropTypes.func.isRequired,
+  title: PropTypes.string,
+  children: PropTypes.node.isRequired,
+  size: PropTypes.oneOf(['small', 'medium', 'large']),
+  showCloseButton: PropTypes.bool,
+  closeOnEscape: PropTypes.bool,
+  closeOnOverlay: PropTypes.bool,
+  loading: PropTypes.bool
+};
+
+Modal.defaultProps = {
+  size: 'medium',
+  showCloseButton: true,
+  closeOnEscape: true,
+  closeOnOverlay: true,
+  loading: false
 };
 
 export default Modal;
