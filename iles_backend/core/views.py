@@ -109,7 +109,7 @@ class WeeklyLogListView(APIView):
                     status=status.HTTP_400_BAD_REQUEST,
                 )
 
-            if WeeklyLog.objects.filter(placement=placement, week_number=week_number).exists():
+            if WeeklyLog.objects.filter(placement=placement, week_number=week_number).select_related('placement').exists():
                 return Response(
                     {'error': 'A weekly log for this placement and week already exists.'},
                     status=status.HTTP_400_BAD_REQUEST,
