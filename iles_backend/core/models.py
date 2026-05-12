@@ -4,6 +4,7 @@ from decimal import Decimal
 from django.contrib.auth.models import AbstractUser
 from django.utils import timezone
 from django.utils.dateparse import parse_date
+from django.db.models import Q
 
 class CustomUser(AbstractUser):
     ROLE_CHOICES =[
@@ -456,8 +457,6 @@ class Evaluation(models.Model):
 
         Returns a dict with per-role scores and the combined total.
         """
-        from django.db.models import Q
-
         log = WeeklyLog.objects.filter(placement=placement, week_number=week_number).first()
         if log is None:
             deadline = WeeklyLog(placement=placement, week_number=week_number).calculate_deadline()
@@ -493,7 +492,7 @@ class Evaluation(models.Model):
         criteria = EvaluationCriteria.objects.all()
 
         total = Decimal('0')
-            # Track per-role totals (weighted by the evaluator role share for each criterion)
+        # Track per-role totals (weighted by the evaluator role share for each criterion)
         sup_total = None
         acad_total = None
 
