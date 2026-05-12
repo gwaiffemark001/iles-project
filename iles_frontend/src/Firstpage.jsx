@@ -6,6 +6,7 @@ import { roleToHomePath } from './routes/roleRedirect'
 
 function Firstpage() {
     const navigate = useNavigate()
+    // const login = useAuth((state) => state.login)
     const { login } = useAuth()
     const [usernameOrEmail, setUsernameOrEmail] = useState('')
     const [password, setPassword] = useState('')
