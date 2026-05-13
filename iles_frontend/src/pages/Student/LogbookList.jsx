@@ -12,7 +12,10 @@ export default function LogbookList() {
     if (!value) return 'Not set'
     try {
       return new Date(value).toLocaleDateString()
-      } catch 
+      } catch {
+        return 'Not set'
+      }
+  }, [])
 
   useEffect(() => {
     let cancelled = false
