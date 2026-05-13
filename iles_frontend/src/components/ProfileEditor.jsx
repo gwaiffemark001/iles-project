@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-
 import { useAuth } from '../auth/useAuth';
 import api from '../api/api';
 import './ProfileEditor.css';
