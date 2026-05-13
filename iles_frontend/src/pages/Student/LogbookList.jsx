@@ -37,6 +37,52 @@ export default function LogbookList() {
     }
   }, [api])
 
+  const renderedLogs = useMemo(() => {
+    return logs.map((l) => (
+      <Link 
+        key={l.id} 
+        to={`/app/student/logbook/${l.id}`} 
+        className="iles-card link-card"
+        aria-label={`View log for week ${l.week_number} 
+      >
+        <div className="iles-stack">
+          <div className="iles-row">
+            <div className="iles-strong">
+              Week {l.week_number??'N/A'}
+            </div>
+            <span className={`iles-badge ${l.status || ''}`}>
+              {l.status || 'draft'}
+            </span>
+          </div>
+          <div className="iles-muted">
+            Deadline: {formatDate(l.deadline)}
+          </div>
+
+          {l.supervisor_comment ? (
+            <div className="iles-muted">
+              Comment: {l.supervisor_comment}
+            </div>
+          ) : (
+            <div className="iles-muted">
+              No supervisor comment
+            </div>
+          )}
+          {l.submitted_at ? (
+            <div className="iles-muted">
+              Submitted: {formatDate(l.submitted_at)}
+            </div>
+          ) : (
+            <div className="iles-muted">
+              Not submitted yet
+            </div>
+          )}
+        </div>
+      </Link>
+    ))
+
+  }, )
+
+
   return (
     <div className="iles-page">
       <header className="iles-header">
