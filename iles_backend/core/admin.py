@@ -29,7 +29,6 @@ class PlacementAdmin(admin.ModelAdmin):
     list_filter = ['status']
     search_fields = ['student__username', 'company_name']
 
-
 class NotificationAdmin(admin.ModelAdmin):
     list_display = ['recipient', 'notification_type', 'title', 'is_read', 'created_at']
     list_filter = ['notification_type', 'is_read']
