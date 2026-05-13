@@ -2,7 +2,6 @@
 Enhanced Notification Service (Lecture 7: Notifications and Workflow Integration)
 Implements email and SMS notifications with Django signals integration
 """
-
 from django.core.mail import send_mail
 from django.conf import settings
 from django.db.models.signals import post_save
@@ -12,7 +11,6 @@ from .services import create_notification
 import logging
 
 logger = logging.getLogger(__name__)
-
 
 class NotificationService:
     """Enhanced notification service for email, SMS, and in-app notifications"""
@@ -92,7 +90,6 @@ class NotificationService:
         
         return notification
 
-
 # Django Signal Handlers for Workflow Integration (Lecture 7)
 
 @receiver(post_save, sender=WeeklyLog)
@@ -150,7 +147,6 @@ def weekly_log_workflow_notification(sender, instance, created, **kwargs):
                 send_email=True,
                 send_sms=True  # Send SMS for important approval
             )
-
 
 @receiver(post_save, sender=InternshipPlacement)
 def placement_workflow_notification(sender, instance, created, **kwargs):
