@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useState } from 'react'
-
 import { getErrorMessage, notificationsAPI } from '../api/api'
 import useInterval from '../hooks/useInterval'
 import './NotificationPane.css'
