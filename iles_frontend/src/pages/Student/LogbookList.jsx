@@ -85,3 +85,18 @@ export default function LogbookList() {
 return (
     <div className="iles-page" aria-busy={loading}>
       <header className="iles-header">
+        <h1 className="iles-title">Weekly Logs</h1>
+        <p className="iles-subtitle">
+          Create, edit, and submit your weekly logs here.
+        </p>
+      </header>
+      
+      <div className="iles-row">
+        <Link to="/app/student/logbook/new" className="iles-button">
+          + New Log
+        </Link>
+        <Link className='iles-button secondary' to="/app/student/logbook/new"
+          Back to Dashboard
+        </Link>
+      </div>
+      
