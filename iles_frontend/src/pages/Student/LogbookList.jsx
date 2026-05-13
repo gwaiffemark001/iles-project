@@ -1,4 +1,4 @@
-import { useEffect, useState , useCallback} from 'react'
+import { useEffect, useState , useCallback, useMemo} from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '@/auth/useAuth'
 
@@ -8,14 +8,11 @@ export default function LogbookList() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
-  function formatDate(value) {
+  const formatDate = useCallback((value) => {
     if (!value) return 'Not set'
     try {
       return new Date(value).toLocaleDateString()
-    } catch {
-      return 'Not set'
-    }
-  }
+      } catch 
 
   useEffect(() => {
     let cancelled = false
