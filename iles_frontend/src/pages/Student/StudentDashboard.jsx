@@ -1,6 +1,5 @@
 /* eslint-disable react-hooks/set-state-in-effect */
 import { useState, useEffect, useMemo } from 'react';
-
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/auth/useAuth';
 import { logsAPI, placementsAPI, evaluationsAPI, criteriaAPI, notificationsAPI } from '@/api/api';
