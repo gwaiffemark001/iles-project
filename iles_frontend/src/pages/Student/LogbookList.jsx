@@ -80,7 +80,7 @@ export default function LogbookList() {
       </Link>
     ))
 
-  }, )
+  }, [logs, formatDate])
 
 
   return (
