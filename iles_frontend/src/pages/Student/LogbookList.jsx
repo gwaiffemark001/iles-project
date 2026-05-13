@@ -43,12 +43,12 @@ export default function LogbookList() {
         key={l.id} 
         to={`/app/student/logbook/${l.id}`} 
         className="iles-card link-card"
-        aria-label={`View log for week ${l.week_number} 
+        aria-label={`View log for week ${l.week_number}`} 
       >
         <div className="iles-stack">
           <div className="iles-row">
             <div className="iles-strong">
-              Week {l.week_number??'N/A'}
+              Week {l.week_number?? 'N/A'}
             </div>
             <span className={`iles-badge ${l.status || ''}`}>
               {l.status || 'draft'}
@@ -82,7 +82,7 @@ export default function LogbookList() {
 
   }, [logs, formatDate])
 
-return (
+  return (
     <div className="iles-page" aria-busy={loading}>
       <header className="iles-header">
         <h1 className="iles-title">Weekly Logs</h1>
@@ -93,10 +93,21 @@ return (
       
       <div className="iles-row">
         <Link to="/app/student/logbook/new" className="iles-button">
-          + New Log
+          Add New Log
         </Link>
-        <Link className='iles-button secondary' to="/app/student/logbook/new"
+        <Link className='iles-button secondary' to="/app/student">
           Back to Dashboard
         </Link>
       </div>
-      
+
+      {loading ? <p className='iles-muted'>Loading...</p> : null}
+      {error ? <p className="error-message">{error}</p> : null}
+      <div className="iles-grid">
+        {renderedLogs}
+      </div>
+      {!loading && !error && logs.length === 0 ? (
+        <p className="iles-muted">No logs found. </p>
+        ) : null}
+    </div>
+  )
+}    
