@@ -1,6 +1,5 @@
 /* eslint-disable react-hooks/set-state-in-effect */
 import { useEffect, useMemo, useState, useCallback } from 'react'
-
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'react-toastify'
 import { criteriaAPI, evaluationsAPI, getErrorMessage, logsAPI, placementsAPI, notificationsAPI } from '../../api/api'
@@ -124,9 +123,7 @@ export default function WorkplaceSupervisorDashboard() {
   // Get evaluations filtered for workplace supervisors (evaluation_type = 'supervisor')
   const supervisorEvaluations = useMemo(() => {
     return evaluations.filter(e => e.evaluation_type === 'supervisor');
-  }, [evaluations]);
-
-  
+  }, [evaluations]);  
 
   // Build weekly summaries from all evaluation types so both scores appear on each card.
   const { weeklySummaries: allWeeklySummaries } = useMemo(
@@ -261,9 +258,7 @@ export default function WorkplaceSupervisorDashboard() {
       toast.error(getErrorMessage(requestError))
     }
   }
-
   
-
   const handleRejectLog = async (logId, supervisorComment) => {
     try {
       // Send to revise endpoint (supervisor requests revision)
