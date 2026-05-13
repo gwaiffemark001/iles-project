@@ -53,7 +53,6 @@ function AdminDashboard() {
   const [showWeeklyModal, setShowWeeklyModal] = useState(false)
   const [selectedPlacementForWeekly, setSelectedPlacementForWeekly] = useState(null)
   const [chatUnreadCount, setChatUnreadCount] = useState(0)
-
   const { weeklySummaries: allWeeklySummaries } = useMemo(() => buildWeeklyEvaluationSummaries(evaluations, [], [], criteria), [evaluations, criteria])
   const groupedSummaries = useMemo(() => {
     if (!allWeeklySummaries || allWeeklySummaries.length === 0) return []
@@ -66,7 +65,6 @@ function AdminDashboard() {
   }, [allWeeklySummaries])
 
   const authHeaders = useMemo(() => ({ headers: { Authorization: `Bearer ${token}` } }), [token])
-
   const closeEditModal = () => {
     if (editSaving) {
       return
@@ -342,8 +340,7 @@ function AdminDashboard() {
       ? Number((summary.weeks.reduce((total, week) => total + week.combined_score, 0) / summary.weeks.length).toFixed(2))
       : null
 
-    // final summary computed
-
+    // final summary computed 
     setWeeklySummary(summary)
     setSelectedPlacementForWeekly(placement)
     setShowWeeklyModal(true)
