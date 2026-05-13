@@ -11,7 +11,6 @@ export default function LogbookEditor() {
   const isNew = id === 'new' || !id
   const navigate = useNavigate()
   const { api } = useAuth()
-
   const [placementId, setPlacementId] = useState(null)
   const [weekNumber, setWeekNumber] = useState('')
   const [activities, setActivities] = useState('')
@@ -19,12 +18,10 @@ export default function LogbookEditor() {
   const [learning, setLearning] = useState('')
   const [deadline, setDeadline] = useState(todayISO())
   const [status, setStatus] = useState('draft')
-
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
-
   const loadPlacementId = useCallback(async () => {
     try {
       const placements = await api.get('api/placements/')
