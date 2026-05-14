@@ -15,6 +15,14 @@ export default function PlacementDetail() {
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
 
+  const isMountedRef = useRef(true)
+  
+  useEffect(() => {
+    return () => {
+      isMountedRef.current = false
+      }
+    }, [])
+
   useEffect(() => {
     let cancelled = false
     async function run() {
