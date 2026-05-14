@@ -59,6 +59,7 @@ export default function PlacementDetail() {
   }, [api, id, placementIdNum])
 
   const apply = async () => {
+    if (submitting) return
     setSubmitting(true)
     setError('')
     setSuccess('')
