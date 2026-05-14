@@ -21,7 +21,7 @@ export default function PlacementDetail() {
     return () => {
       isMountedRef.current = false
       }
-    }, [])
+    }, )
 
   useEffect(() => {
     let cancelled = false
