@@ -105,7 +105,7 @@ export default function PlacementDetail() {
       {placement ? (
         <div className="iles-grid">
           <section className="iles-card">
-            <h2 className="iles-card-title">{placement.company_name}</h2>
+            <h2 className="iles-card-title">{placement.company_name || 'Company'}</h2>
             <div className="iles-stack">
               <div className="iles-row">
                 <span className={`iles-badge ${placement.status || ''}`}>{placement.status}</span>
