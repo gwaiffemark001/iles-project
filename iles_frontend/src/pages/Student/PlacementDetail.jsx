@@ -56,7 +56,7 @@ export default function PlacementDetail() {
     return () => {
       cancelled = true
     }
-  }, [api, id, ])
+  }, [api, id, placementIdNum])
 
   const apply = async () => {
     if (submitting) return
