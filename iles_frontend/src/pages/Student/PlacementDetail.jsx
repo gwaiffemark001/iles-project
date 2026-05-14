@@ -35,7 +35,12 @@ export default function PlacementDetail() {
         ])
         if (!cancelled) {
           setPlacement(data)
-          const nextApps = Array.isArray(apps) ? apps : []
+
+          const nextApps = Array.isArray(apps) 
+            ? apps 
+            : Array.isArray(apps?.results) 
+            ? apps.results 
+            : []
           const applied = nextApps.some(
             (a) => Number(a?.placement) === placementIdNum && ['pending', 'approved'].includes((a?.status || '').toLowerCase()),
           )
