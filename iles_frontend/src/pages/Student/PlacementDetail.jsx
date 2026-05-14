@@ -69,11 +69,22 @@ export default function PlacementDetail() {
       }
       await api.post('api/applications/', { placement: placementIdNum, note })
       setSuccess('Application submitted.')
-      setTimeout(() => navigate('/app/student/applications'), 500)
+
+      const timer = setTimeout(() => {
+        if (isMountedRef.current) {
+          navigate('/app/student/applications')
+        }
+      }, 500)
+
+      return () => clearTimeout(timer)
     } catch (e) {
-      setError(e?.message || 'Failed to submit application.')
-    } finally {
-      setSubmitting(false)
+      if(isMountedRef.current) {
+        setError(e?.message || 'Failed to submit application.')
+      }
+      } finally {
+      if(isMountedRef.current){
+        setSubmitting(false)
+      }
     }
   }
 
