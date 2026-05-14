@@ -21,7 +21,7 @@ export default function PlacementDetail() {
     return () => {
       isMountedRef.current = false
       }
-    }, )
+    }, []) 
 
   useEffect(() => {
     let cancelled = false
@@ -56,7 +56,7 @@ export default function PlacementDetail() {
     return () => {
       cancelled = true
     }
-  }, [api, id, placementIdNum])
+  }, [api, id, ])
 
   const apply = async () => {
     if (submitting) return
