@@ -1,10 +1,3 @@
-/**
- * Firstpage.jsx
- * Landing/welcome page component displayed before authentication,
- * providing navigation to login and signup flows with system overview.
- * Features: Role-aware routing, authentication state checking, welcome messaging.
- */
-
 import { Link, useNavigate } from 'react-router-dom';
 import { useState } from 'react'
 import './Firstpage.css';
