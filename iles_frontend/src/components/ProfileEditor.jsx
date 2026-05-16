@@ -32,7 +32,7 @@ const ProfileEditor = () => {
 
   useEffect(() => {
     if (user) {
-      setFormData({
+      const nextFormData = {
         first_name: user.first_name || '',
         last_name: user.last_name || '',
         email: user.email || '',
@@ -48,9 +48,16 @@ const ProfileEditor = () => {
           location: user.profile?.location || '',
           date_of_birth: user.profile?.date_of_birth || ''
         }
-      });
-      setAvatarPreview(user.profile?.avatar_image || user.profile?.avatar_url || null);
-      setAvatarFile(null);
+      };
+
+      const nextAvatarPreview = user.profile?.avatar_image || user.profile?.avatar_url || null;
+      const timer = setTimeout(() => {
+        setFormData(nextFormData);
+        setAvatarPreview(nextAvatarPreview);
+        setAvatarFile(null);
+      }, 0);
+
+      return () => clearTimeout(timer);
     }
   }, [user]);
 
