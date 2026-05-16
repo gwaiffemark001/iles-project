@@ -1,11 +1,3 @@
-/**
- * ILES.jsx
- * Integrated Internship Logbook and Evaluation System main component.
- * Routes between login interface and role-specific dashboards for students,
- * supervisors, and administrators managing internship placements.
- * Features: Multi-role routing, dynamic dashboard selection, API client configuration.
- */
-
 import { useMemo, useState } from 'react'
 import './pages/Login/Login.css'
 import { createApiClient } from './api/client'
