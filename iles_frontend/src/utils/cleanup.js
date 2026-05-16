@@ -2,7 +2,7 @@
 
 export const removeConsoleLogs = () => {
   // Remove all console.log statements in production
-  if (process.env.NODE_ENV === 'production') {
+  if (import.meta.env.MODE === 'production') {
     console.log = () => {};
     console.warn = () => {};
     console.error = () => {};
