@@ -510,6 +510,35 @@
 }
 
 .workplace-intern-stat .stat-number {
+
+.placement-progress {
+  margin: 6px 0 0;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.placement-progress-label {
+  font-size: 13px;
+  color: #475569;
+  min-width: 120px;
+}
+
+.progress-bar {
+  height: 8px;
+  background: linear-gradient(90deg, rgba(45,55,72,0.08), rgba(45,55,72,0.04));
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.progress-bar-inner {
+  height: 100%;
+  background: linear-gradient(90deg, #7c3aed, #6d28d9);
+  border-radius: 999px;
+  transition: width 400ms ease;
+}
+
+.progress-percent { font-size: 12px; color: #475569; min-width: 60px; text-align: right; }
   display: block;
   font-size: 20px;
   font-weight: 600;
