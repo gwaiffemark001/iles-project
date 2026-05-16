@@ -133,6 +133,42 @@ body {
   margin-bottom: 15px;
 }
 
+.placement-progress {
+  margin: 12px 0 8px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.placement-progress-label {
+  font-size: 13px;
+  color: #475569;
+  min-width: 140px;
+}
+
+.progress-bar {
+  flex: 1;
+  height: 10px;
+  background: linear-gradient(90deg, rgba(45,55,72,0.12), rgba(45,55,72,0.06));
+  border-radius: 999px;
+  overflow: hidden;
+  box-shadow: inset 0 1px 2px rgba(0,0,0,0.06);
+}
+
+.progress-bar-inner {
+  height: 100%;
+  background: linear-gradient(90deg, #7c3aed, #6d28d9);
+  border-radius: 999px;
+  transition: width 400ms ease;
+}
+
+.progress-percent {
+  font-size: 13px;
+  color: #475569;
+  min-width: 80px;
+  text-align: right;
+}
+
 .log-editor-card {
   margin-bottom: 24px;
   border: 1px solid #d7e5e3;
