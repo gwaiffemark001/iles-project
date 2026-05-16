@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { useAuth } from '@/auth/useAuth'
 
@@ -35,7 +35,6 @@ export default function LogbookEditor() {
   useEffect(() => {
     let cancelled = false
 
-   
     async function run() {
       setLoading(true)
       setError('')
