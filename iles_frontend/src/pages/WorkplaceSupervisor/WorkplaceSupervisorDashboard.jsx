@@ -1,10 +1,3 @@
-/**
- * WorkplaceSupervisorDashboard.jsx
- * Dashboard for workplace supervisors to monitor intern activities, review submitted logs,
- * record on-site evaluations, and assess job performance during placement period.
- * Features: Log review, performance evaluation, intern tracking, real-time notifications.
- */
-
 /* eslint-disable react-hooks/set-state-in-effect */
 import { useEffect, useMemo, useState, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
