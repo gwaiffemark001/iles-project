@@ -1,11 +1,3 @@
-/**
- * AdminDashboard.jsx
- * Central administration dashboard for managing placements, users, evaluations, and system criteria.
- * Provides complete oversight of internship program operations including placement approval,
- * performance evaluation review, and system configuration management.
- * Features: Placement management, user administration, evaluation oversight, criteria configuration.
- */
-
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import axios from 'axios'
