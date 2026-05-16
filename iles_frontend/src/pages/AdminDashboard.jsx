@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import axios from 'axios'
 import { useAuth } from '@/auth/useAuth'
-import { criteriaAPI, evaluationsAPI, placementsAPI, logsAPI } from '../api/api'
+import { criteriaAPI, evaluationsAPI, placementsAPI } from '../api/api'
 import { buildWeeklyEvaluationSummaries, getGradeWeight } from '../utils/evaluationSummary'
 import ChatPane from '../components/ChatPane'
 import ProfileEditor from '../components/ProfileEditor'
@@ -51,7 +51,6 @@ function AdminDashboard() {
   const [error, setError] = useState('')
   const [activeSection, setActiveSection] = useState('overview')
   const [placements, setPlacements] = useState([])
-  const [logs, setLogs] = useState([])
   const [users, setUsers] = useState([])
   const [evaluations, setEvaluations] = useState([])
   const [searchTerm, setSearchTerm] = useState('')
@@ -495,12 +494,11 @@ function AdminDashboard() {
       setLoading(true)
       setError(null)
 
-      const [statsResponse, placementsResponse, evaluationsResponse, logsResponse, usersResponse, criteriaResponse] =
+      const [statsResponse, placementsResponse, evaluationsResponse, usersResponse, criteriaResponse] =
         await Promise.all([
           axios.get('http://127.0.0.1:8000/api/admin/statistics/', authHeaders),
           axios.get('http://127.0.0.1:8000/api/placements/', authHeaders),
           axios.get('http://127.0.0.1:8000/api/evaluations/', authHeaders),
-          logsAPI.getLogs(),
           axios.get('http://127.0.0.1:8000/api/users/', authHeaders),
           criteriaAPI.getCriteria(),
         ])
@@ -508,7 +506,6 @@ function AdminDashboard() {
       setStats(statsResponse.data)
       setPlacements(Array.isArray(placementsResponse.data) ? placementsResponse.data : [])
       setEvaluations(Array.isArray(evaluationsResponse.data) ? evaluationsResponse.data : [])
-      setLogs(Array.isArray(logsResponse?.data) ? logsResponse.data : [])
       setUsers(Array.isArray(usersResponse.data) ? usersResponse.data : [])
       setCriteria(Array.isArray(criteriaResponse.data) ? criteriaResponse.data : [])
 
