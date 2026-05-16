@@ -1,10 +1,3 @@
-/**
- * StudentDashboard.jsx
- * Main dashboard component for student interns to manage weekly logs,
- * track placement progress, view evaluations, and monitor performance metrics.
- * Features: Log submission, placement tracking, evaluation review, notifications.
- */
-
 /* eslint-disable react-hooks/set-state-in-effect */
 import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
