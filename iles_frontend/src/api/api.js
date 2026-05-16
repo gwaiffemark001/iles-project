@@ -1,5 +1,12 @@
-import axios from 'axios';
 
+/**
+ * api.js
+ * Centralized API integration module providing axios client configuration,
+ * token management, error handling, and RESTful API endpoints for all dashboard modules.
+ * Implements JWT token refresh, automatic header injection, and consistent error response parsing.
+ */
+
+import axios from 'axios';
 const API_BASE_URL = 'http://localhost:8000/api'; // Adjust for your backend URL
 
 const api = axios.create({
