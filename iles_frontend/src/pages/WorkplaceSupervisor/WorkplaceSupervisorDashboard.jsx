@@ -14,6 +14,31 @@ import UserGuide from '../../components/UserGuide'
 import UserAvatar from '../../components/UserAvatar'
 import './WorkplaceSupervisorDashboard.css'
 
+const MS_PER_DAY = 24 * 60 * 60 * 1000;
+
+const computePlacementProgress = (placement, logs = [], today = new Date()) => {
+  if (!placement || !placement.start_date) return 0;
+
+  const start = new Date(placement.start_date);
+  if (Number.isNaN(start.getTime())) return 0;
+
+  const end = placement.end_date ? new Date(placement.end_date) : today;
+  const totalDays = Math.max(0, Math.floor((end.getTime() - start.getTime()) / MS_PER_DAY));
+  const totalWeeks = Math.max(1, Math.ceil(totalDays / 7));
+
+  const uniqueSubmittedWeeks = new Set(
+    logs
+      .filter((log) => Number(log.placement?.id ?? log.placement_id) === Number(placement.id))
+      .filter((log) => ['submitted', 'reviewed', 'approved'].includes(log.status))
+      .map((l) => Number(l.week_number || 0))
+      .filter((w) => !Number.isNaN(w) && w > 0),
+  );
+
+  const completedWeeks = uniqueSubmittedWeeks.size;
+  const percent = Math.round((completedWeeks / totalWeeks) * 100);
+  return Math.min(100, Math.max(0, Number.isNaN(percent) ? 0 : percent));
+};
+
 function normalizePlacement(placement, logs, evaluations) {
   const placementId = placement.id
   const internLogs = logs.filter((log) => (log.placement?.id ?? log.placement_id) === placementId)
@@ -37,6 +62,7 @@ function normalizePlacement(placement, logs, evaluations) {
     reviewedLogs: internLogs.filter((log) => log.status === 'reviewed').length,
     approvedLogs: internLogs.filter((log) => log.status === 'approved').length,
     totalLogs: internLogs.length,
+    progress: computePlacementProgress(placement, logs),
     evaluationScore: supervisorEvaluation?.weighted_score ?? supervisorEvaluation?.score ?? null,
     evaluatedAt: supervisorEvaluation?.evaluated_at || null,
   }
@@ -370,6 +396,15 @@ export default function WorkplaceSupervisorDashboard() {
                     <p><strong>Status:</strong> <span className={`workplace-status-badge ${intern.status}`}>{intern.status}</span></p>
                     {intern.studentNumber ? <p><strong>Student No:</strong> {intern.studentNumber}</p> : null}
                     {intern.registrationNumber ? <p><strong>Registration No:</strong> {intern.registrationNumber}</p> : null}
+                  </div>
+                  <div style={{ marginTop: 8, width: '100%' }}>
+                    <div className="placement-progress">
+                      <div className="placement-progress-label">Internship progress</div>
+                      <div className="progress-bar" style={{ flex: 1 }}>
+                        <div className="progress-bar-inner" style={{ width: `${intern.progress}%` }} />
+                      </div>
+                      <div className="progress-percent">{intern.progress}%</div>
+                    </div>
                   </div>
                   <div className="workplace-intern-stats">
                     <div className="workplace-intern-stat"><span className="stat-number">{intern.totalLogs}</span><span className="stat-label">Total</span></div>
