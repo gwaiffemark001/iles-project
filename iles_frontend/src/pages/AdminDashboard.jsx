@@ -2,13 +2,40 @@ import { useState, useEffect, useCallback, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import axios from 'axios'
 import { useAuth } from '@/auth/useAuth'
-import { criteriaAPI, evaluationsAPI, placementsAPI } from '../api/api'
+import { criteriaAPI, evaluationsAPI, placementsAPI, logsAPI } from '../api/api'
 import { buildWeeklyEvaluationSummaries, getGradeWeight } from '../utils/evaluationSummary'
 import ChatPane from '../components/ChatPane'
 import ProfileEditor from '../components/ProfileEditor'
 import UserGuide from '../components/UserGuide'
 import UserAvatar from '../components/UserAvatar'
 import './AdminDashboard.css'
+
+const MS_PER_DAY = 24 * 60 * 60 * 1000;
+
+const computePlacementProgress = (placement, logs = [], today = new Date()) => {
+  if (!placement || !placement.start_date) return 0;
+
+  const start = new Date(placement.start_date);
+  if (Number.isNaN(start.getTime())) return 0;
+
+  const end = placement.end_date ? new Date(placement.end_date) : today;
+  const totalDays = Math.max(0, Math.floor((end.getTime() - start.getTime()) / MS_PER_DAY));
+  const totalWeeks = Math.max(1, Math.ceil(totalDays / 7));
+
+  // use provided logs array to determine submitted weeks for this placement
+  const placementLogs = Array.isArray(logs) ? logs : [];
+  const uniqueSubmittedWeeks = new Set(
+    placementLogs
+      .filter((log) => Number(log.placement?.id ?? log.placement_id) === Number(placement.id))
+      .filter((log) => ['submitted', 'reviewed', 'approved'].includes(log.status))
+      .map((l) => Number(l.week_number || 0))
+      .filter((w) => !Number.isNaN(w) && w > 0),
+  );
+
+  const completedWeeks = uniqueSubmittedWeeks.size;
+  const percent = Math.round((completedWeeks / totalWeeks) * 100);
+  return Math.min(100, Math.max(0, Number.isNaN(percent) ? 0 : percent));
+};
 
 const userRoles = [
   { value: 'student', label: 'Student' },
@@ -28,6 +55,7 @@ function AdminDashboard() {
   const [error, setError] = useState('')
   const [activeSection, setActiveSection] = useState('overview')
   const [placements, setPlacements] = useState([])
+  const [logs, setLogs] = useState([])
   const [users, setUsers] = useState([])
   const [evaluations, setEvaluations] = useState([])
   const [searchTerm, setSearchTerm] = useState('')
@@ -471,11 +499,12 @@ function AdminDashboard() {
       setLoading(true)
       setError(null)
 
-      const [statsResponse, placementsResponse, evaluationsResponse, usersResponse, criteriaResponse] =
+      const [statsResponse, placementsResponse, evaluationsResponse, logsResponse, usersResponse, criteriaResponse] =
         await Promise.all([
           axios.get('http://127.0.0.1:8000/api/admin/statistics/', authHeaders),
           axios.get('http://127.0.0.1:8000/api/placements/', authHeaders),
           axios.get('http://127.0.0.1:8000/api/evaluations/', authHeaders),
+          logsAPI.getLogs(),
           axios.get('http://127.0.0.1:8000/api/users/', authHeaders),
           criteriaAPI.getCriteria(),
         ])
@@ -483,6 +512,7 @@ function AdminDashboard() {
       setStats(statsResponse.data)
       setPlacements(Array.isArray(placementsResponse.data) ? placementsResponse.data : [])
       setEvaluations(Array.isArray(evaluationsResponse.data) ? evaluationsResponse.data : [])
+      setLogs(Array.isArray(logsResponse?.data) ? logsResponse.data : [])
       setUsers(Array.isArray(usersResponse.data) ? usersResponse.data : [])
       setCriteria(Array.isArray(criteriaResponse.data) ? criteriaResponse.data : [])
 
@@ -961,6 +991,15 @@ function AdminDashboard() {
                       <p style={{ margin: '5px 0', color: '#7f8c8d' }}>Student: {placement.student?.full_name || placement.student?.username || 'Not assigned'}</p>
                       <p style={{ margin: '5px 0', color: '#7f8c8d' }}>Status: <span style={{ backgroundColor: '#27AE60', color: 'white', padding: '2px 6px', borderRadius: '4px', fontSize: '12px' }}>{placement.status}</span></p>
                       <p style={{ margin: '5px 0', color: '#7f8c8d' }}>Duration: {formatDate(placement.start_date)} - {formatDate(placement.end_date)}</p>
+                      <div style={{ marginTop: 12, width: '100%' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                          <div style={{ minWidth: 130, fontSize: 13, color: '#475569' }}>Internship progress</div>
+                          <div style={{ flex: 1, height: 10, background: 'linear-gradient(90deg, rgba(45,55,72,0.12), rgba(45,55,72,0.06))', borderRadius: 999, overflow: 'hidden' }}>
+                            <div style={{ height: '100%', width: `${computePlacementProgress(placement, logs)}%`, background: 'linear-gradient(90deg, #b49bff, #8b5cf6)', borderRadius: 999, transition: 'width 400ms ease' }} />
+                          </div>
+                          <div style={{ minWidth: 80, textAlign: 'right', color: '#475569' }}>{computePlacementProgress(placement, logs)}% complete</div>
+                        </div>
+                      </div>
                       <div style={{ marginTop: '15px', display: 'flex', gap: '10px' }}>
                         <button 
                           onClick={() => handleEditPlacement(placement)}
