@@ -52,7 +52,11 @@ const NotificationPane = ({ title = 'Notifications', subtitle = 'Recent workflow
   }
 
   useEffect(() => {
-    fetchNotifications()
+    const timer = setTimeout(() => {
+      void fetchNotifications()
+    }, 0)
+
+    return () => clearTimeout(timer)
   }, [])
 
   useInterval(fetchNotifications, 30000)
