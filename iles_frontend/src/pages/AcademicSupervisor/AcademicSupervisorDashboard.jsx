@@ -418,7 +418,7 @@ const AcademicSupervisorDashboard = () => {
                 <div className="progress-bar">
                   <div className="progress-bar-inner" style={{ width: `${student.progress}%` }} />
                 </div>
-                <div className="progress-percent" style={{ marginLeft: 8 }}>{student.progress}%</div>
+                <div className="progress-percent">{student.progress}%</div>
               </div>
             </div>
             <div>{student.logs}</div>
