@@ -1,10 +1,3 @@
-/**
- * main.jsx
- * React application entry point that initializes the root DOM node,
- * wraps app with providers (Auth, Toast notifications), and renders the main App component.
- * Bootstraps the complete React application with necessary context providers.
- */
-
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { ToastContainer } from 'react-toastify'
