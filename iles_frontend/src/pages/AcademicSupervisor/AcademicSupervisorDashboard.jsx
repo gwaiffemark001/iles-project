@@ -1,10 +1,3 @@
-/**
- * AcademicSupervisorDashboard.jsx
- * Dashboard for academic supervisors to review student logs, record evaluations,
- * manage grading criteria, and monitor placement progress across assigned students.
- * Features: Log review, evaluation recording, student progress tracking, notification management.
- */
-
 /* eslint-disable react-hooks/set-state-in-effect */
 import { useEffect, useState, useCallback, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
