@@ -135,6 +135,3 @@ export function createApiClient({
   }
 }
 
-
-const DEFAULT_BASE_URL = ''
-
