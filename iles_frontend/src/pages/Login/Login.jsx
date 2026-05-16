@@ -1,10 +1,3 @@
-/**
- * Login.jsx
- * User authentication login component supporting all user roles (student, supervisor, admin).
- * Provides login form with username/password validation, error handling, and role-based routing.
- * Features: Credential verification, session token management, forgot password support.
- */
-
 import { Link, useNavigate } from 'react-router-dom';
 import { useState } from 'react';
 import { useAuth } from '@/auth/useAuth';
