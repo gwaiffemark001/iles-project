@@ -282,7 +282,6 @@ class InternshipPlacementListView(APIView):
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-
 class AvailablePlacementListView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -295,7 +294,6 @@ class AvailablePlacementListView(APIView):
         placements = InternshipPlacement.objects.filter(student__isnull=True, status='pending')
         serializer = InternshipPlacementSerializer(placements, many=True)
         return Response(serializer.data)
-
 
 class PlacementApplicationListCreateView(APIView):
     permission_classes = [IsAuthenticated]
