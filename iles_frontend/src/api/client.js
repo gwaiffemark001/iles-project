@@ -135,3 +135,13 @@ export function createApiClient({
   }
 }
 
+
+/**
+ * client.js
+ * Utility functions for API client operations including URL joining, safe JSON parsing,
+ * request/response handling, and retry logic for resilient API communication.
+ * Provides foundational utilities for building HTTP request clients.
+ */
+
+const DEFAULT_BASE_URL = ''
+
