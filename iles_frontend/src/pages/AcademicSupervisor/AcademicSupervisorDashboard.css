@@ -181,7 +181,7 @@ body { font-family: 'Inter', sans-serif; }
 
 .table-header {
   display: grid;
-  grid-template-columns: 2fr 2fr 1fr 1fr 1fr;
+  grid-template-columns: 2fr 2fr 1fr 1fr 1fr 1fr;
   padding: 12px 16px;
   background: #E8DCC4;
   border-bottom: 1px solid rgba(0, 0, 0, 0.05);
@@ -192,7 +192,7 @@ body { font-family: 'Inter', sans-serif; }
 
 .table-row {
   display: grid;
-  grid-template-columns: 2fr 2fr 1fr 1fr 1fr;
+  grid-template-columns: 2fr 2fr 1fr 1fr 1fr 1fr;
   padding: 14px 16px;
   border-bottom: 1px solid #f1f5f9;
   font-size: 13px;
@@ -231,6 +231,46 @@ body { font-family: 'Inter', sans-serif; }
 }
 
 .eval-btn:hover { background: #0E6245; }
+
+.placement-progress {
+  margin: 12px 0 8px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.placement-progress-label {
+  font-size: 13px;
+  color: #475569;
+  min-width: 140px;
+}
+
+.progress-bar {
+  height: 10px;
+  background: linear-gradient(90deg, rgba(45,55,72,0.12), rgba(45,55,72,0.06));
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.progress-bar-inner {
+  height: 100%;
+  background: linear-gradient(90deg, #7c3aed, #6d28d9);
+  border-radius: 999px;
+  transition: width 400ms ease;
+}
+
+.progress-percent {
+  font-size: 13px;
+  color: #475569;
+  min-width: 120px;
+  text-align: right;
+}
+
+.table-progress { display: flex; align-items: center; }
+
+.table-progress .progress-bar { width: 120px; }
+
+.table-progress .progress-percent { margin-left: 8px; font-size: 12px; color: #475569; }
 
 
 
