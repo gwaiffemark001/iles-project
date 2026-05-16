@@ -16,11 +16,11 @@ const DataTable = ({
     }
   };
 
-  const handlePageChange = (page) => {
+  const handlePageChange = React.useCallback((page) => {
     if (pagination && pagination.onPageChange) {
       pagination.onPageChange(page);
     }
-  };
+  }, [pagination]);
 
   const renderCell = (row, column) => {
     const value = row[column.key];
