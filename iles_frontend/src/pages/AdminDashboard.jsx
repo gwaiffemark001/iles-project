@@ -12,28 +12,24 @@ import './AdminDashboard.css'
 
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
 
-const computePlacementProgress = (placement, logs = [], today = new Date()) => {
-  if (!placement || !placement.start_date) return 0;
+const computePlacementProgress = (placement, today = new Date()) => {
+  if (!placement || !placement.start_date || !placement.end_date) return 0;
 
   const start = new Date(placement.start_date);
-  if (Number.isNaN(start.getTime())) return 0;
+  const end = new Date(placement.end_date);
+  if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) return 0;
 
-  const end = placement.end_date ? new Date(placement.end_date) : today;
+  // Total weeks for the entire placement duration
   const totalDays = Math.max(0, Math.floor((end.getTime() - start.getTime()) / MS_PER_DAY));
   const totalWeeks = Math.max(1, Math.ceil(totalDays / 7));
 
-  // use provided logs array to determine submitted weeks for this placement
-  const placementLogs = Array.isArray(logs) ? logs : [];
-  const uniqueSubmittedWeeks = new Set(
-    placementLogs
-      .filter((log) => Number(log.placement?.id ?? log.placement_id) === Number(placement.id))
-      .filter((log) => ['submitted', 'reviewed', 'approved'].includes(log.status))
-      .map((l) => Number(l.week_number || 0))
-      .filter((w) => !Number.isNaN(w) && w > 0),
-  );
+  // Elapsed weeks from start to today (or end if placement already ended)
+  const effectiveDate = end < today ? end : today;
+  const elapsedDays = Math.max(0, Math.floor((effectiveDate.getTime() - start.getTime()) / MS_PER_DAY));
+  const elapsedWeeks = Math.max(1, Math.ceil(elapsedDays / 7));
 
-  const completedWeeks = uniqueSubmittedWeeks.size;
-  const percent = Math.round((completedWeeks / totalWeeks) * 100);
+  // Progress is elapsed weeks / total weeks
+  const percent = Math.round((Math.min(elapsedWeeks, totalWeeks) / totalWeeks) * 100);
   return Math.min(100, Math.max(0, Number.isNaN(percent) ? 0 : percent));
 };
 
@@ -995,9 +991,9 @@ function AdminDashboard() {
                         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                           <div style={{ minWidth: 130, fontSize: 13, color: '#475569' }}>Internship progress</div>
                           <div style={{ flex: 1, height: 10, background: 'linear-gradient(90deg, rgba(45,55,72,0.12), rgba(45,55,72,0.06))', borderRadius: 999, overflow: 'hidden' }}>
-                            <div style={{ height: '100%', width: `${computePlacementProgress(placement, logs)}%`, background: 'linear-gradient(90deg, #b49bff, #8b5cf6)', borderRadius: 999, transition: 'width 400ms ease' }} />
+                            <div style={{ height: '100%', width: `${computePlacementProgress(placement)}%`, background: 'linear-gradient(90deg, #b49bff, #8b5cf6)', borderRadius: 999, transition: 'width 400ms ease' }} />
                           </div>
-                          <div style={{ minWidth: 80, textAlign: 'right', color: '#475569' }}>{computePlacementProgress(placement, logs)}% complete</div>
+                          <div style={{ minWidth: 80, textAlign: 'right', color: '#475569' }}>{computePlacementProgress(placement)}% complete</div>
                         </div>
                       </div>
                       <div style={{ marginTop: '15px', display: 'flex', gap: '10px' }}>
