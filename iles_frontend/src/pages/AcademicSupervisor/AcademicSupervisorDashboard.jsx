@@ -16,26 +16,24 @@ import "./AcademicSupervisorDashboard.css";
 
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
 
-const computePlacementProgress = (placement, logs = [], today = new Date()) => {
-  if (!placement || !placement.start_date) return 0;
+const computePlacementProgress = (placement, today = new Date()) => {
+  if (!placement || !placement.start_date || !placement.end_date) return 0;
 
   const start = new Date(placement.start_date);
-  if (Number.isNaN(start.getTime())) return 0;
+  const end = new Date(placement.end_date);
+  if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) return 0;
 
-  const end = placement.end_date ? new Date(placement.end_date) : today;
+  // Total weeks for the entire placement duration
   const totalDays = Math.max(0, Math.floor((end.getTime() - start.getTime()) / MS_PER_DAY));
   const totalWeeks = Math.max(1, Math.ceil(totalDays / 7));
 
-  const uniqueSubmittedWeeks = new Set(
-    logs
-      .filter((log) => Number(log.placement?.id ?? log.placement_id) === Number(placement.id))
-      .filter((log) => ['submitted', 'reviewed', 'approved'].includes(log.status))
-      .map((l) => Number(l.week_number || 0))
-      .filter((w) => !Number.isNaN(w) && w > 0),
-  );
+  // Elapsed weeks from start to today (or end if placement already ended)
+  const effectiveDate = end < today ? end : today;
+  const elapsedDays = Math.max(0, Math.floor((effectiveDate.getTime() - start.getTime()) / MS_PER_DAY));
+  const elapsedWeeks = Math.max(1, Math.ceil(elapsedDays / 7));
 
-  const completedWeeks = uniqueSubmittedWeeks.size;
-  const percent = Math.round((completedWeeks / totalWeeks) * 100);
+  // Progress is elapsed weeks / total weeks
+  const percent = Math.round((Math.min(elapsedWeeks, totalWeeks) / totalWeeks) * 100);
   return Math.min(100, Math.max(0, Number.isNaN(percent) ? 0 : percent));
 };
 
@@ -140,7 +138,7 @@ const AcademicSupervisorDashboard = () => {
         startDate: placement.start_date,
         endDate: placement.end_date,
         logs: totalLogs,
-        progress: computePlacementProgress(placement, logs),
+        progress: computePlacementProgress(placement),
         logsData: placementLogs,
         pendingLogs,
         reviewedLogs,
