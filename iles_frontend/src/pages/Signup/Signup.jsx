@@ -1,11 +1,3 @@
-/**
- * Signup.jsx
- * New user registration component supporting role selection and account creation.
- * Validates user input, creates accounts with appropriate role assignments,
- * and manages initial user setup workflow.
- * Features: Email validation, password requirements, role selection, account verification.
- */
-
 import { Link, useNavigate } from 'react-router-dom';
 import { useState } from 'react';
 import { useAuth } from '@/auth/useAuth';
