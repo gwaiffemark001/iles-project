@@ -1,6 +1,7 @@
 import React from 'react';
 import { render, screen } from '@testing-library/react';
 import '@testing-library/jest-dom';
+import { describe, expect, test, vi } from 'vitest';
 import FormField from '../FormField';
 
 describe('FormField Component', () => {
@@ -19,7 +20,7 @@ describe('FormField Component', () => {
     
     const select = screen.getByLabelText('Test');
     expect(select).toBeInTheDocument();
-    expect(select).toHaveAttribute('type', 'select');
+    expect(select.tagName).toBe('SELECT');
   });
 
   test('displays error message when error prop is provided', () => {
@@ -34,15 +35,13 @@ describe('FormField Component', () => {
   });
 
   test('calls onChange when input value changes', () => {
-    const handleChange = jest.fn();
+    const handleChange = vi.fn();
     render(<FormField label="Test" name="test" onChange={handleChange} />);
     
     const input = screen.getByLabelText('Test');
-    input.value = 'new value';
-    
-    // Simulate user input
     const event = { target: { value: 'new value', name: 'test' } };
-    input.props.onChange(event);
+    input.dispatchEvent(new Event('change', { bubbles: true }));
+    input.onchange?.(event);
     
     expect(handleChange).toHaveBeenCalledWith(event);
   });
