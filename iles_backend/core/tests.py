@@ -6,7 +6,6 @@ from .models import CustomUser, Evaluation, EvaluationCriteria, EvaluationItem, 
 from datetime import timedelta
 from django.utils import timezone
 
-
 class AuthenticationTests(TestCase):
 
     def setUp(self):
