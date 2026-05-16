@@ -59,6 +59,34 @@ const computeNextWeekNumberForPlacement = (placementId, logs = []) => {
   return Math.max(...placementWeeks) + 1
 }
 
+const computePlacementProgress = (placement, logs = [], today = new Date()) => {
+  if (!placement || !placement.start_date) return 0;
+
+  const start = new Date(placement.start_date);
+  if (Number.isNaN(start.getTime())) return 0;
+
+  const end = placement.end_date ? new Date(placement.end_date) : today;
+  const totalDays = Math.max(0, Math.floor((end.getTime() - start.getTime()) / MS_PER_DAY));
+  const totalWeeks = Math.max(1, Math.ceil(totalDays / 7));
+
+  const placementLogs = logs
+    .filter((log) => String(log.placement?.id ?? log.placement_id) === String(placement.id))
+    .map((l) => Number(l.week_number || 0))
+    .filter((w) => !Number.isNaN(w) && w > 0);
+
+  const uniqueSubmittedWeeks = new Set(
+    logs
+      .filter((log) => String(log.placement?.id ?? log.placement_id) === String(placement.id))
+      .filter((log) => ['submitted', 'reviewed', 'approved'].includes(log.status))
+      .map((l) => Number(l.week_number || 0))
+      .filter((w) => !Number.isNaN(w) && w > 0),
+  );
+
+  const completedWeeks = uniqueSubmittedWeeks.size;
+  const percent = Math.round((completedWeeks / totalWeeks) * 100);
+  return Math.min(100, Math.max(0, Number.isNaN(percent) ? 0 : percent));
+};
+
 // getUserInitials helper removed (unused)
 
 const StudentDashboard = () => {
@@ -589,16 +617,28 @@ const StudentDashboard = () => {
             <div className="placements-section">
               <h2>My Internship Placement</h2>
               {placements.length ? (
-                placements.map((placement) => (
-                  <div key={placement.id} className="placement-card">
-                    <h3>{placement.company_name}</h3>
-                    <p>Status: <span className={`status ${placement.status}`}>{placement.status}</span></p>
-                    <p>Period: {formatDisplayDate(placement.start_date)} to {formatDisplayDate(placement.end_date)}</p>
-                    <p>Workplace Supervisor: {placement.workplace_supervisor_name || placement.workplace_supervisor?.full_name || 'Not assigned'}</p>
-                    <p>Academic Supervisor: {placement.academic_supervisor_name || placement.academic_supervisor?.full_name || 'Not assigned'}</p>
-                    <p>Address: {placement.company_address || 'Not provided yet.'}</p>
-                  </div>
-                ))
+                placements.map((placement) => {
+                  const progress = computePlacementProgress(placement, logs);
+                  return (
+                    <div key={placement.id} className="placement-card">
+                      <h3>{placement.company_name}</h3>
+                      <p>Status: <span className={`status ${placement.status}`}>{placement.status}</span></p>
+
+                      <div className="placement-progress">
+                        <div className="placement-progress-label">Internship progress</div>
+                        <div className="progress-bar">
+                          <div className="progress-bar-inner" style={{ width: `${progress}%` }} />
+                        </div>
+                        <div className="progress-percent">{progress}% complete</div>
+                      </div>
+
+                      <p>Period: {formatDisplayDate(placement.start_date)} to {formatDisplayDate(placement.end_date)}</p>
+                      <p>Workplace Supervisor: {placement.workplace_supervisor_name || placement.workplace_supervisor?.full_name || 'Not assigned'}</p>
+                      <p>Academic Supervisor: {placement.academic_supervisor_name || placement.academic_supervisor?.full_name || 'Not assigned'}</p>
+                      <p>Address: {placement.company_address || 'Not provided yet.'}</p>
+                    </div>
+                  );
+                })
               ) : (
                 <div className="empty-state">
                   <p>No placement has been assigned to your account yet.</p>
