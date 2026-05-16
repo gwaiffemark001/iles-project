@@ -14,6 +14,31 @@ import UserGuide from '../../components/UserGuide';
 import UserAvatar from '../../components/UserAvatar';
 import "./AcademicSupervisorDashboard.css";
 
+const MS_PER_DAY = 24 * 60 * 60 * 1000;
+
+const computePlacementProgress = (placement, logs = [], today = new Date()) => {
+  if (!placement || !placement.start_date) return 0;
+
+  const start = new Date(placement.start_date);
+  if (Number.isNaN(start.getTime())) return 0;
+
+  const end = placement.end_date ? new Date(placement.end_date) : today;
+  const totalDays = Math.max(0, Math.floor((end.getTime() - start.getTime()) / MS_PER_DAY));
+  const totalWeeks = Math.max(1, Math.ceil(totalDays / 7));
+
+  const uniqueSubmittedWeeks = new Set(
+    logs
+      .filter((log) => Number(log.placement?.id ?? log.placement_id) === Number(placement.id))
+      .filter((log) => ['submitted', 'reviewed', 'approved'].includes(log.status))
+      .map((l) => Number(l.week_number || 0))
+      .filter((w) => !Number.isNaN(w) && w > 0),
+  );
+
+  const completedWeeks = uniqueSubmittedWeeks.size;
+  const percent = Math.round((completedWeeks / totalWeeks) * 100);
+  return Math.min(100, Math.max(0, Number.isNaN(percent) ? 0 : percent));
+};
+
 const AcademicSupervisorDashboard = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -115,6 +140,7 @@ const AcademicSupervisorDashboard = () => {
         startDate: placement.start_date,
         endDate: placement.end_date,
         logs: totalLogs,
+        progress: computePlacementProgress(placement, logs),
         logsData: placementLogs,
         pendingLogs,
         reviewedLogs,
@@ -375,6 +401,7 @@ const AcademicSupervisorDashboard = () => {
       <div className="table-header">
         <div>Student Name</div>
         <div>Place of Internship</div>
+        <div>Progress</div>
         <div>Logs Submitted</div>
         <div>Status</div>
         <div>Action</div>
@@ -388,6 +415,14 @@ const AcademicSupervisorDashboard = () => {
           <div className="table-row" key={student.id}>
             <div>{student.name}</div>
             <div>{student.placementName}</div>
+            <div>
+              <div className="table-progress">
+                <div className="progress-bar">
+                  <div className="progress-bar-inner" style={{ width: `${student.progress}%` }} />
+                </div>
+                <div className="progress-percent" style={{ marginLeft: 8 }}>{student.progress}%</div>
+              </div>
+            </div>
             <div>{student.logs}</div>
             <div>
               <span className={getStatusClass(student.status)}>{student.statusLabel}</span>
@@ -608,7 +643,18 @@ const AcademicSupervisorDashboard = () => {
                   <div key={group.placementId} style={{ marginBottom: '18px', padding: '16px', background: '#fff', borderRadius: '8px', border: '1px solid #e9ecef' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
                       <div>
-                        <h3 style={{ margin: '0 0 8px 0', color: '#2c3e50' }}>{group.placementName}</h3>
+                              <h3 style={{ margin: '0 0 8px 0', color: '#2c3e50' }}>{group.placementName}</h3>
+                              {group.placement && (
+                                <div style={{ marginTop: 8 }}>
+                                  <div className="placement-progress">
+                                    <div className="placement-progress-label">Internship progress</div>
+                                    <div className="progress-bar" style={{ flex: 1 }}>
+                                      <div className="progress-bar-inner" style={{ width: `${computePlacementProgress(group.placement, logs)}%` }} />
+                                    </div>
+                                    <div className="progress-percent">{computePlacementProgress(group.placement, logs)}% complete</div>
+                                  </div>
+                                </div>
+                              )}
                         <div style={{ color: '#7f8c8d', fontSize: '14px' }}>
                           <strong>Student:</strong> {group.studentName}
                         </div>
