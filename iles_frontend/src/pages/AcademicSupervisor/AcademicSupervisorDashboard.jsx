@@ -44,7 +44,7 @@ const AcademicSupervisorDashboard = () => {
   const [logs, setLogs] = useState([]);
   const [evaluations, setEvaluations] = useState([]);
   const [criteria, setCriteria] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [actionError, setActionError] = useState("");
   const [activeSection, setActiveSection] = useState("overview");
