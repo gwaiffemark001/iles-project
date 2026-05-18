@@ -295,6 +295,17 @@ export default function WorkplaceSupervisorDashboard() {
     }
   }
 
+  if (loading) {
+    return (
+      <div className="workplace-dashboard" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', background: '#F4F7F9' }}>
+        <div className="loading-container">
+          <div className="loading-spinner"></div>
+          <p className="loading-text">Loading dashboard...</p>
+        </div>
+      </div>
+    );
+  }
+
   if (error) {
     return <div className="workplace-dashboard"><div className="workplace-error">Error: {error}</div></div>
   }
