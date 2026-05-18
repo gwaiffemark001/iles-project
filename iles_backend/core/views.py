@@ -2,6 +2,7 @@
 # Built by Mugabe Gideon
 # Endpoints: WeeklyLog, Placement, Evaluation, Auth, Profile, Supervisor Workflow
 from django.db import models
+from django.db.models import Count
 from django.contrib.auth.tokens import PasswordResetTokenGenerator
 from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
 from django.utils.encoding import force_bytes, force_str
@@ -108,7 +109,7 @@ class WeeklyLogListView(APIView):
                     status=status.HTTP_400_BAD_REQUEST,
                 )
 
-            if WeeklyLog.objects.filter(placement=placement, week_number=week_number).exists():
+            if WeeklyLog.objects.filter(placement=placement, week_number=week_number).select_related('placement').exists():
                 return Response(
                     {'error': 'A weekly log for this placement and week already exists.'},
                     status=status.HTTP_400_BAD_REQUEST,
@@ -281,7 +282,6 @@ class InternshipPlacementListView(APIView):
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-
 class AvailablePlacementListView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -295,7 +295,6 @@ class AvailablePlacementListView(APIView):
         serializer = InternshipPlacementSerializer(placements, many=True)
         return Response(serializer.data)
 
-
 class PlacementApplicationListCreateView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -305,7 +304,10 @@ class PlacementApplicationListCreateView(APIView):
         elif request.user.role == 'student':
             apps = PlacementApplication.objects.filter(student=request.user).order_by('-created_at')
         else:
-            return Response({'error': 'Not allowed'}, status=status.HTTP_403_FORBIDDEN)
+            return Response(
+                {'error': 'Access denied', 'detail': 'You do not have permission to access placement applications'}, 
+                status=status.HTTP_403_FORBIDDEN
+            )
         serializer = PlacementApplicationSerializer(apps, many=True)
         return Response(serializer.data)
 

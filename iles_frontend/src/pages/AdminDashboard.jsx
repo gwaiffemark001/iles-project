@@ -10,6 +10,29 @@ import UserGuide from '../components/UserGuide'
 import UserAvatar from '../components/UserAvatar'
 import './AdminDashboard.css'
 
+const MS_PER_DAY = 24 * 60 * 60 * 1000;
+
+const computePlacementProgress = (placement, today = new Date()) => {
+  if (!placement || !placement.start_date || !placement.end_date) return 0;
+
+  const start = new Date(placement.start_date);
+  const end = new Date(placement.end_date);
+  if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) return 0;
+
+  // Total weeks for the entire placement duration
+  const totalDays = Math.max(0, Math.floor((end.getTime() - start.getTime()) / MS_PER_DAY));
+  const totalWeeks = Math.max(1, Math.ceil(totalDays / 7));
+
+  // Elapsed weeks from start to today (or end if placement already ended)
+  const effectiveDate = end < today ? end : today;
+  const elapsedDays = Math.max(0, Math.floor((effectiveDate.getTime() - start.getTime()) / MS_PER_DAY));
+  const elapsedWeeks = Math.max(1, Math.ceil(elapsedDays / 7));
+
+  // Progress is elapsed weeks / total weeks
+  const percent = Math.round((Math.min(elapsedWeeks, totalWeeks) / totalWeeks) * 100);
+  return Math.min(100, Math.max(0, Number.isNaN(percent) ? 0 : percent));
+};
+
 const userRoles = [
   { value: 'student', label: 'Student' },
   { value: 'workplace_supervisor', label: 'Workplace Supervisor' },
@@ -53,7 +76,6 @@ function AdminDashboard() {
   const [showWeeklyModal, setShowWeeklyModal] = useState(false)
   const [selectedPlacementForWeekly, setSelectedPlacementForWeekly] = useState(null)
   const [chatUnreadCount, setChatUnreadCount] = useState(0)
-
   const { weeklySummaries: allWeeklySummaries } = useMemo(() => buildWeeklyEvaluationSummaries(evaluations, [], [], criteria), [evaluations, criteria])
   const groupedSummaries = useMemo(() => {
     if (!allWeeklySummaries || allWeeklySummaries.length === 0) return []
@@ -66,7 +88,6 @@ function AdminDashboard() {
   }, [allWeeklySummaries])
 
   const authHeaders = useMemo(() => ({ headers: { Authorization: `Bearer ${token}` } }), [token])
-
   const closeEditModal = () => {
     if (editSaving) {
       return
@@ -342,8 +363,7 @@ function AdminDashboard() {
       ? Number((summary.weeks.reduce((total, week) => total + week.combined_score, 0) / summary.weeks.length).toFixed(2))
       : null
 
-    // final summary computed
-
+    // final summary computed 
     setWeeklySummary(summary)
     setSelectedPlacementForWeekly(placement)
     setShowWeeklyModal(true)
@@ -560,7 +580,14 @@ function AdminDashboard() {
   }
 
   if (loading) {
-    return <p style={{ margin: '40px', textAlign: 'center' }}>Loading dashboard data...</p>
+    return (
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', background: '#F4F7F9' }}>
+        <div className="loading-container">
+          <div className="loading-spinner"></div>
+          <p className="loading-text">Loading admin dashboard...</p>
+        </div>
+      </div>
+    );
   }
 
   if (error) {
@@ -964,6 +991,15 @@ function AdminDashboard() {
                       <p style={{ margin: '5px 0', color: '#7f8c8d' }}>Student: {placement.student?.full_name || placement.student?.username || 'Not assigned'}</p>
                       <p style={{ margin: '5px 0', color: '#7f8c8d' }}>Status: <span style={{ backgroundColor: '#27AE60', color: 'white', padding: '2px 6px', borderRadius: '4px', fontSize: '12px' }}>{placement.status}</span></p>
                       <p style={{ margin: '5px 0', color: '#7f8c8d' }}>Duration: {formatDate(placement.start_date)} - {formatDate(placement.end_date)}</p>
+                      <div style={{ marginTop: 12, width: '100%' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                          <div style={{ minWidth: 130, fontSize: 13, color: '#475569' }}>Internship progress</div>
+                          <div style={{ flex: 1, height: 10, background: 'linear-gradient(90deg, rgba(45,55,72,0.12), rgba(45,55,72,0.06))', borderRadius: 999, overflow: 'hidden' }}>
+                            <div style={{ height: '100%', width: `${computePlacementProgress(placement)}%`, background: 'linear-gradient(90deg, #b49bff, #8b5cf6)', borderRadius: 999, transition: 'width 400ms ease' }} />
+                          </div>
+                          <div style={{ minWidth: 80, textAlign: 'right', color: '#475569' }}>{computePlacementProgress(placement)}% complete</div>
+                        </div>
+                      </div>
                       <div style={{ marginTop: '15px', display: 'flex', gap: '10px' }}>
                         <button 
                           onClick={() => handleEditPlacement(placement)}

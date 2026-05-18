@@ -17,7 +17,6 @@ function Signup() {
     const [staffNumber, setStaffNumber] = useState('');
     const [studentNumber, setStudentNumber] = useState('');
     const [registrationNumber, setRegistrationNumber] = useState('');
-
     const navigate = useNavigate();
     const { register, login } = useAuth();
     const handleSignup = async (e) => {

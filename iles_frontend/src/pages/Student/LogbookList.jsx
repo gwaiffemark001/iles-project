@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState , useCallback, useMemo} from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '@/auth/useAuth'
 
@@ -8,14 +8,14 @@ export default function LogbookList() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
-  function formatDate(value) {
+  const formatDate = useCallback((value) => {
     if (!value) return 'Not set'
     try {
       return new Date(value).toLocaleDateString()
-    } catch {
-      return 'Not set'
-    }
-  }
+      } catch {
+        return 'Not set'
+      }
+  }, [])
 
   useEffect(() => {
     let cancelled = false
@@ -37,51 +37,77 @@ export default function LogbookList() {
     }
   }, [api])
 
-  return (
-    <div className="iles-page">
-      <header className="iles-header">
-        <h1 className="iles-title">Weekly logbook</h1>
-        <p className="iles-subtitle">Create, edit, and submit your weekly logs.</p>
-      </header>
-
-      <div className="iles-row">
-        <Link className="iles-button" to="/app/student/logbook/new">
-          New log
-        </Link>
-        <Link className="iles-button secondary" to="/app/student">
-          Back to dashboard
-        </Link>
-      </div>
-
-      {loading ? <p className="iles-muted">Loading...</p> : null}
-      {error ? <p className="error-message">{error}</p> : null}
-
-      <div className="iles-grid">
-        {logs.map((l) => (
-          <Link key={l.id} to={`/app/student/logbook/${l.id}`} className="iles-card link-card">
-            <div className="iles-stack">
-              <div className="iles-row">
-                <div className="iles-strong">Week {l.week_number}</div>
-                <span className={`iles-badge ${l.status || ''}`}>{l.status}</span>
-              </div>
-              <div className="iles-muted">Deadline: {formatDate(l.deadline)}</div>
-              {l.supervisor_comment ? (
-                <div className="iles-muted">Comment: {l.supervisor_comment}</div>
-              ) : (
-                <div className="iles-muted">No supervisor comment</div>
-              )}
-              {l.submitted_at ? (
-                <div className="iles-muted">Submitted: {formatDate(l.submitted_at)}</div>
-              ) : (
-                <div className="iles-muted">Not submitted yet</div>
-              )}
+  const renderedLogs = useMemo(() => {
+    return logs.map((l) => (
+      <Link 
+        key={l.id} 
+        to={`/app/student/logbook/${l.id}`} 
+        className="iles-card link-card"
+        aria-label={`View log for week ${l.week_number}`} 
+      >
+        <div className="iles-stack">
+          <div className="iles-row">
+            <div className="iles-strong">
+              Week {l.week_number?? 'N/A'}
             </div>
-          </Link>
-        ))}
+            <span className={`iles-badge ${l.status || ''}`}>
+              {l.status || 'draft'}
+            </span>
+          </div>
+          <div className="iles-muted">
+            Deadline: {formatDate(l.deadline)}
+          </div>
+
+          {l.supervisor_comment ? (
+            <div className="iles-muted">
+              Comment: {l.supervisor_comment}
+            </div>
+          ) : (
+            <div className="iles-muted">
+              No supervisor comment
+            </div>
+          )}
+          {l.submitted_at ? (
+            <div className="iles-muted">
+              Submitted: {formatDate(l.submitted_at)}
+            </div>
+          ) : (
+            <div className="iles-muted">
+              Not submitted yet
+            </div>
+          )}
+        </div>
+      </Link>
+    ))
+
+  }, [logs, formatDate])
+
+  return (
+    <div className="iles-page" aria-busy={loading}>
+      <header className="iles-header">
+        <h1 className="iles-title">Weekly Logs</h1>
+        <p className="iles-subtitle">
+          Create, edit, and submit your weekly logs here.
+        </p>
+      </header>
+      
+      <div className="iles-row">
+        <Link to="/app/student/logbook/new" className="iles-button">
+          Add New Log
+        </Link>
+        <Link className='iles-button secondary' to="/app/student">
+          Back to Dashboard
+        </Link>
       </div>
 
-      {!loading && !error && logs.length === 0 ? <p className="iles-muted">No logs yet.</p> : null}
+      {loading ? <p className='iles-muted'>Loading...</p> : null}
+      {error ? <p className="error-message">{error}</p> : null}
+      <div className="iles-grid">
+        {renderedLogs}
+      </div>
+      {!loading && !error && logs.length === 0 ? (
+        <p className="iles-muted">No logs found. </p>
+        ) : null}
     </div>
   )
-}
-
+}    

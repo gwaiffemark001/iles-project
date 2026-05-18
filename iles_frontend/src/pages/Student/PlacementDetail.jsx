@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { useAuth } from '@/auth/useAuth'
 
@@ -15,6 +15,14 @@ export default function PlacementDetail() {
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
 
+  const isMountedRef = useRef(true)
+  
+  useEffect(() => {
+    return () => {
+      isMountedRef.current = false
+      }
+    }, []) 
+
   useEffect(() => {
     let cancelled = false
     async function run() {
@@ -27,7 +35,12 @@ export default function PlacementDetail() {
         ])
         if (!cancelled) {
           setPlacement(data)
-          const nextApps = Array.isArray(apps) ? apps : []
+
+          const nextApps = Array.isArray(apps) 
+            ? apps 
+            : Array.isArray(apps?.results) 
+            ? apps.results 
+            : []
           const applied = nextApps.some(
             (a) => Number(a?.placement) === placementIdNum && ['pending', 'approved'].includes((a?.status || '').toLowerCase()),
           )
@@ -46,6 +59,7 @@ export default function PlacementDetail() {
   }, [api, id, placementIdNum])
 
   const apply = async () => {
+    if (submitting) return
     setSubmitting(true)
     setError('')
     setSuccess('')
@@ -55,11 +69,22 @@ export default function PlacementDetail() {
       }
       await api.post('api/applications/', { placement: placementIdNum, note })
       setSuccess('Application submitted.')
-      setTimeout(() => navigate('/app/student/applications'), 500)
+
+      const timer = setTimeout(() => {
+        if (isMountedRef.current) {
+          navigate('/app/student/applications')
+        }
+      }, 500)
+
+      return () => clearTimeout(timer)
     } catch (e) {
-      setError(e?.message || 'Failed to submit application.')
-    } finally {
-      setSubmitting(false)
+      if(isMountedRef.current) {
+        setError(e?.message || 'Failed to submit application.')
+      }
+      } finally {
+      if(isMountedRef.current){
+        setSubmitting(false)
+      }
     }
   }
 
@@ -80,7 +105,7 @@ export default function PlacementDetail() {
       {placement ? (
         <div className="iles-grid">
           <section className="iles-card">
-            <h2 className="iles-card-title">{placement.company_name}</h2>
+            <h2 className="iles-card-title">{placement.company_name || 'Company'}</h2>
             <div className="iles-stack">
               <div className="iles-row">
                 <span className={`iles-badge ${placement.status || ''}`}>{placement.status}</span>

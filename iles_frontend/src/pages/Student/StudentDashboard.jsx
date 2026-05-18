@@ -1,6 +1,5 @@
 /* eslint-disable react-hooks/set-state-in-effect */
 import { useState, useEffect, useMemo } from 'react';
-
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/auth/useAuth';
 import { logsAPI, placementsAPI, evaluationsAPI, criteriaAPI, notificationsAPI } from '@/api/api';
@@ -59,6 +58,27 @@ const computeNextWeekNumberForPlacement = (placementId, logs = []) => {
 
   return Math.max(...placementWeeks) + 1
 }
+
+const computePlacementProgress = (placement, today = new Date()) => {
+  if (!placement || !placement.start_date || !placement.end_date) return 0;
+
+  const start = new Date(placement.start_date);
+  const end = new Date(placement.end_date);
+  if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) return 0;
+
+  // Total weeks for the entire placement duration
+  const totalDays = Math.max(0, Math.floor((end.getTime() - start.getTime()) / MS_PER_DAY));
+  const totalWeeks = Math.max(1, Math.ceil(totalDays / 7));
+
+  // Elapsed weeks from start to today (or end if placement already ended)
+  const effectiveDate = end < today ? end : today;
+  const elapsedDays = Math.max(0, Math.floor((effectiveDate.getTime() - start.getTime()) / MS_PER_DAY));
+  const elapsedWeeks = Math.max(1, Math.ceil(elapsedDays / 7));
+
+  // Progress is elapsed weeks / total weeks
+  const percent = Math.round((Math.min(elapsedWeeks, totalWeeks) / totalWeeks) * 100);
+  return Math.min(100, Math.max(0, Number.isNaN(percent) ? 0 : percent));
+};
 
 // getUserInitials helper removed (unused)
 
@@ -337,7 +357,16 @@ const StudentDashboard = () => {
     }
   };
 
-  if (loading) return <div>Loading...</div>;
+  if (loading) {
+    return (
+      <div className="student-dashboard" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh' }}>
+        <div className="loading-container">
+          <div className="loading-spinner"></div>
+          <p className="loading-text">Loading your dashboard...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="student-dashboard">
@@ -590,16 +619,28 @@ const StudentDashboard = () => {
             <div className="placements-section">
               <h2>My Internship Placement</h2>
               {placements.length ? (
-                placements.map((placement) => (
-                  <div key={placement.id} className="placement-card">
-                    <h3>{placement.company_name}</h3>
-                    <p>Status: <span className={`status ${placement.status}`}>{placement.status}</span></p>
-                    <p>Period: {formatDisplayDate(placement.start_date)} to {formatDisplayDate(placement.end_date)}</p>
-                    <p>Workplace Supervisor: {placement.workplace_supervisor_name || placement.workplace_supervisor?.full_name || 'Not assigned'}</p>
-                    <p>Academic Supervisor: {placement.academic_supervisor_name || placement.academic_supervisor?.full_name || 'Not assigned'}</p>
-                    <p>Address: {placement.company_address || 'Not provided yet.'}</p>
-                  </div>
-                ))
+                placements.map((placement) => {
+                  const progress = computePlacementProgress(placement);
+                  return (
+                    <div key={placement.id} className="placement-card">
+                      <h3>{placement.company_name}</h3>
+                      <p>Status: <span className={`status ${placement.status}`}>{placement.status}</span></p>
+
+                      <div className="placement-progress">
+                        <div className="placement-progress-label">Internship progress</div>
+                        <div className="progress-bar">
+                          <div className="progress-bar-inner" style={{ width: `${progress}%` }} />
+                        </div>
+                        <div className="progress-percent">{progress}% complete</div>
+                      </div>
+
+                      <p>Period: {formatDisplayDate(placement.start_date)} to {formatDisplayDate(placement.end_date)}</p>
+                      <p>Workplace Supervisor: {placement.workplace_supervisor_name || placement.workplace_supervisor?.full_name || 'Not assigned'}</p>
+                      <p>Academic Supervisor: {placement.academic_supervisor_name || placement.academic_supervisor?.full_name || 'Not assigned'}</p>
+                      <p>Address: {placement.company_address || 'Not provided yet.'}</p>
+                    </div>
+                  );
+                })
               ) : (
                 <div className="empty-state">
                   <p>No placement has been assigned to your account yet.</p>

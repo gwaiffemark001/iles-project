@@ -1,6 +1,5 @@
 /* eslint-disable react-hooks/set-state-in-effect */
 import { useEffect, useMemo, useState, useCallback } from 'react'
-
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'react-toastify'
 import { criteriaAPI, evaluationsAPI, getErrorMessage, logsAPI, placementsAPI, notificationsAPI } from '../../api/api'
@@ -14,6 +13,29 @@ import ProfileEditor from '../../components/ProfileEditor'
 import UserGuide from '../../components/UserGuide'
 import UserAvatar from '../../components/UserAvatar'
 import './WorkplaceSupervisorDashboard.css'
+
+const MS_PER_DAY = 24 * 60 * 60 * 1000;
+
+const computePlacementProgress = (placement, today = new Date()) => {
+  if (!placement || !placement.start_date || !placement.end_date) return 0;
+
+  const start = new Date(placement.start_date);
+  const end = new Date(placement.end_date);
+  if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) return 0;
+
+  // Total weeks for the entire placement duration
+  const totalDays = Math.max(0, Math.floor((end.getTime() - start.getTime()) / MS_PER_DAY));
+  const totalWeeks = Math.max(1, Math.ceil(totalDays / 7));
+
+  // Elapsed weeks from start to today (or end if placement already ended)
+  const effectiveDate = end < today ? end : today;
+  const elapsedDays = Math.max(0, Math.floor((effectiveDate.getTime() - start.getTime()) / MS_PER_DAY));
+  const elapsedWeeks = Math.max(1, Math.ceil(elapsedDays / 7));
+
+  // Progress is elapsed weeks / total weeks
+  const percent = Math.round((Math.min(elapsedWeeks, totalWeeks) / totalWeeks) * 100);
+  return Math.min(100, Math.max(0, Number.isNaN(percent) ? 0 : percent));
+};
 
 function normalizePlacement(placement, logs, evaluations) {
   const placementId = placement.id
@@ -38,6 +60,7 @@ function normalizePlacement(placement, logs, evaluations) {
     reviewedLogs: internLogs.filter((log) => log.status === 'reviewed').length,
     approvedLogs: internLogs.filter((log) => log.status === 'approved').length,
     totalLogs: internLogs.length,
+    progress: computePlacementProgress(placement),
     evaluationScore: supervisorEvaluation?.weighted_score ?? supervisorEvaluation?.score ?? null,
     evaluatedAt: supervisorEvaluation?.evaluated_at || null,
   }
@@ -124,9 +147,7 @@ export default function WorkplaceSupervisorDashboard() {
   // Get evaluations filtered for workplace supervisors (evaluation_type = 'supervisor')
   const supervisorEvaluations = useMemo(() => {
     return evaluations.filter(e => e.evaluation_type === 'supervisor');
-  }, [evaluations]);
-
-  
+  }, [evaluations]);  
 
   // Build weekly summaries from all evaluation types so both scores appear on each card.
   const { weeklySummaries: allWeeklySummaries } = useMemo(
@@ -261,9 +282,7 @@ export default function WorkplaceSupervisorDashboard() {
       toast.error(getErrorMessage(requestError))
     }
   }
-
   
-
   const handleRejectLog = async (logId, supervisorComment) => {
     try {
       // Send to revise endpoint (supervisor requests revision)
@@ -277,7 +296,14 @@ export default function WorkplaceSupervisorDashboard() {
   }
 
   if (loading) {
-    return <div className="workplace-dashboard"><div className="workplace-loading">Loading...</div></div>
+    return (
+      <div className="workplace-dashboard" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', background: '#F4F7F9' }}>
+        <div className="loading-container">
+          <div className="loading-spinner"></div>
+          <p className="loading-text">Loading dashboard...</p>
+        </div>
+      </div>
+    );
   }
 
   if (error) {
@@ -375,6 +401,15 @@ export default function WorkplaceSupervisorDashboard() {
                     <p><strong>Status:</strong> <span className={`workplace-status-badge ${intern.status}`}>{intern.status}</span></p>
                     {intern.studentNumber ? <p><strong>Student No:</strong> {intern.studentNumber}</p> : null}
                     {intern.registrationNumber ? <p><strong>Registration No:</strong> {intern.registrationNumber}</p> : null}
+                  </div>
+                  <div style={{ marginTop: 8, width: '100%' }}>
+                    <div className="placement-progress">
+                      <div className="placement-progress-label">Internship progress</div>
+                      <div className="progress-bar" style={{ flex: 1 }}>
+                        <div className="progress-bar-inner" style={{ width: `${intern.progress}%` }} />
+                      </div>
+                      <div className="progress-percent">{intern.progress}%</div>
+                    </div>
                   </div>
                   <div className="workplace-intern-stats">
                     <div className="workplace-intern-stat"><span className="stat-number">{intern.totalLogs}</span><span className="stat-label">Total</span></div>

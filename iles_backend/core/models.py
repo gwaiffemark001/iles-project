@@ -4,6 +4,7 @@ from decimal import Decimal
 from django.contrib.auth.models import AbstractUser
 from django.utils import timezone
 from django.utils.dateparse import parse_date
+from django.db.models import Q
 
 class CustomUser(AbstractUser):
     ROLE_CHOICES =[
@@ -28,7 +29,6 @@ class CustomUser(AbstractUser):
 
     def __str__(self):
         return (f"{self.username},({self.role})")
-
 
 class UserProfile(models.Model):
     user = models.OneToOneField(CustomUser, on_delete=models.CASCADE, related_name='profile')
@@ -142,7 +142,6 @@ class InternshipPlacement(models.Model):
         self.full_clean()
         super().save(*args, **kwargs)
 
-
 class PlacementApplication(models.Model):
     STATUS_CHOICES = [
         ('pending', 'Pending'),
@@ -195,7 +194,6 @@ class WeeklyLog(models.Model):
     rejected_at =models.DateTimeField(blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    
     # Audit fields for tracking review actions
     reviewed_by = models.ForeignKey(
         CustomUser, 
@@ -319,7 +317,6 @@ class Evaluation(models.Model):
     placement = models.ForeignKey(InternshipPlacement, on_delete=models.CASCADE, related_name='evaluations')
     evaluator = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='given_evaluations')
     week_number = models.PositiveIntegerField()
-
     # Optional raw evaluator score (0-100 scale) and computed weighted score stored here
     score = models.DecimalField(max_digits=6, decimal_places=2, null=True, blank=True, help_text="Evaluator raw score (0-100)")
     weighted_score = models.DecimalField(max_digits=6, decimal_places=2, default=0, help_text="Computed weighted score")
@@ -456,8 +453,6 @@ class Evaluation(models.Model):
 
         Returns a dict with per-role scores and the combined total.
         """
-        from django.db.models import Q
-
         log = WeeklyLog.objects.filter(placement=placement, week_number=week_number).first()
         if log is None:
             deadline = WeeklyLog(placement=placement, week_number=week_number).calculate_deadline()
@@ -493,7 +488,7 @@ class Evaluation(models.Model):
         criteria = EvaluationCriteria.objects.all()
 
         total = Decimal('0')
-            # Track per-role totals (weighted by the evaluator role share for each criterion)
+        # Track per-role totals (weighted by the evaluator role share for each criterion)
         sup_total = None
         acad_total = None
 
@@ -604,7 +599,7 @@ class Evaluation(models.Model):
             'log_status': log.status,
             'missing_log': False,
         }
-
+    
     @staticmethod
     def weekly_summary_for_placement(placement):
         """
@@ -640,7 +635,6 @@ class Evaluation(models.Model):
 
         return {'weeks': summaries, 'average': average}
 
-
 class EvaluationItem(models.Model):
     """Stores a per-criteria score for an Evaluation."""
     evaluation = models.ForeignKey(Evaluation, on_delete=models.CASCADE, related_name='evaluation_items')
@@ -652,7 +646,6 @@ class EvaluationItem(models.Model):
 
     def __str__(self):
         return f"{self.evaluation} - {self.criteria.name}: {self.score}"
-
 
 class Notification(models.Model):
     NOTIFICATION_TYPES = [
@@ -686,7 +679,6 @@ class Notification(models.Model):
 
     def __str__(self):
         return f"{self.recipient.username} - {self.title}"
-
 
 class ChatMessage(models.Model):
     sender = models.ForeignKey(
