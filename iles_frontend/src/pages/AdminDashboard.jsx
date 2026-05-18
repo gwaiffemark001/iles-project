@@ -579,10 +579,6 @@ function AdminDashboard() {
     }).format(new Date(value))
   }
 
-  if (loading) {
-    return <p style={{ margin: '40px', textAlign: 'center' }}>Loading dashboard data...</p>
-  }
-
   if (error) {
     return (
       <div style={{ maxWidth: '900px', margin: '40px auto', padding: '20px', textAlign: 'center' }}>
