@@ -1,6 +1,4 @@
-/* eslint-disable react-hooks/set-state-in-effect */
 import { useEffect, useMemo, useState } from 'react'
-
 import { getErrorMessage, notificationsAPI } from '../api/api'
 import useInterval from '../hooks/useInterval'
 import './NotificationPane.css'
@@ -54,7 +52,11 @@ const NotificationPane = ({ title = 'Notifications', subtitle = 'Recent workflow
   }
 
   useEffect(() => {
-    fetchNotifications()
+    const timer = setTimeout(() => {
+      void fetchNotifications()
+    }, 0)
+
+    return () => clearTimeout(timer)
   }, [])
 
   useInterval(fetchNotifications, 30000)

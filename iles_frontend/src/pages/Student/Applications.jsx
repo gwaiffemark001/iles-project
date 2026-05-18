@@ -66,9 +66,12 @@ export default function Applications() {
 
   useEffect(() => {
     const cancelRef = { cancelled: false }
-    fetchApplications(cancelRef)
+    const timer = setTimeout(() => {
+      void fetchApplications(cancelRef)
+    }, 0)
     return () => {
       cancelRef.cancelled = true
+      clearTimeout(timer)
     }
   }, [fetchApplications])
 

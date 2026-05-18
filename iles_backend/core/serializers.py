@@ -429,7 +429,6 @@ class EvaluationCriteriaSerializer(serializers.ModelSerializer):
         model = EvaluationCriteria
         fields = "__all__"
 
-
 class EvaluationItemSerializer(serializers.ModelSerializer):
     criteria = EvaluationCriteriaSerializer(read_only=True)
     criteria_id = serializers.PrimaryKeyRelatedField(
@@ -464,7 +463,6 @@ class EvaluationItemSerializer(serializers.ModelSerializer):
                 })
         
         return attrs
-
 
 class EvaluationSerializer(serializers.ModelSerializer):
     placement = InternshipPlacementSerializer(read_only=True)
@@ -703,7 +701,6 @@ class UserProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = UserProfile
         fields = '__all__'
-
 
 class ChatMessageSerializer(serializers.ModelSerializer):
     sender_name = serializers.SerializerMethodField()

@@ -11,28 +11,35 @@ export const useFormValidation = (initialValues, validationRules) => {
     const rule = validationRules[name];
     if (!rule) return '';
     
-    if (rule.required && (!value || value.trim() === '')) {
+    // Handle null/undefined values
+    const cleanValue = value || '';
+    
+    if (rule.required && (!cleanValue || cleanValue.trim() === '')) {
       return `${name} is required`;
     }
     
-    if (rule.minLength && value.length < rule.minLength) {
+    if (rule.minLength && cleanValue.length < rule.minLength) {
       return `${name} must be at least ${rule.minLength} characters`;
     }
     
-    if (rule.maxLength && value.length > rule.maxLength) {
+    if (rule.maxLength && cleanValue.length > rule.maxLength) {
       return `${name} must be no more than ${rule.maxLength} characters`;
     }
     
-    if (rule.pattern && !rule.pattern.test(value)) {
+    if (rule.pattern && cleanValue && !rule.pattern.test(cleanValue)) {
       return `${name} format is invalid`;
     }
     
-    if (rule.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
+    if (rule.email && cleanValue && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanValue)) {
       return 'Please enter a valid email address';
     }
     
-    if (rule.phone && !/^\+?[\d\s-]{7,15}$/.test(value)) {
+    if (rule.phone && cleanValue && !/^\+?[\d\s-]{7,15}$/.test(cleanValue)) {
       return 'Please enter a valid phone number';
+    }
+    
+    if (rule.number && cleanValue && !/^\d+$/.test(cleanValue)) {
+      return `${name} must contain only numbers`;
     }
     
     return '';

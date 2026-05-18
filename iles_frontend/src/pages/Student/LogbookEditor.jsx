@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { useAuth } from '@/auth/useAuth'
 
@@ -11,7 +11,6 @@ export default function LogbookEditor() {
   const isNew = id === 'new' || !id
   const navigate = useNavigate()
   const { api } = useAuth()
-
   const [placementId, setPlacementId] = useState(null)
   const [weekNumber, setWeekNumber] = useState('')
   const [activities, setActivities] = useState('')
@@ -19,19 +18,22 @@ export default function LogbookEditor() {
   const [learning, setLearning] = useState('')
   const [deadline, setDeadline] = useState(todayISO())
   const [status, setStatus] = useState('draft')
-
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
-
-  useEffect(() => {
-    let cancelled = false
-    async function loadPlacementId() {
+  const loadPlacementId = useCallback(async () => {
+    try {
       const placements = await api.get('api/placements/')
       const first = Array.isArray(placements) ? placements[0] : null
       return first?.id || null
+    } catch {
+      return null
     }
+  }, [api])
+
+  useEffect(() => {
+    let cancelled = false
 
     async function run() {
       setLoading(true)
@@ -62,9 +64,10 @@ export default function LogbookEditor() {
     return () => {
       cancelled = true
     }
-  }, [api, id, isNew])
+  }, [api, id, isNew, loadPlacementId])
 
   const save = async (nextStatus) => {
+    if (saving) return
     setSaving(true)
     setError('')
     setSuccess('')
@@ -73,7 +76,7 @@ export default function LogbookEditor() {
 
       const payload = {
         placement: placementId,
-        week_number: Number(weekNumber),
+        week_number: Number(weekNumber) || 0,
         activities,
         challenges,
         learning,
@@ -97,12 +100,19 @@ export default function LogbookEditor() {
     }
   }
 
-  if (loading) return <div className="iles-page"><p className="iles-muted">Loading...</p></div>
+  if (loading) 
+    return(
+      <div className="iles-page" aria-busy="true">
+        <p className='iles-muted'>Loading...</p>
+      </div>
+    )
 
   return (
-    <div className="iles-page">
+    <div className="iles-page"  aria-busy={saving}>
       <header className="iles-header">
-        <h1 className="iles-title">{isNew ? 'New weekly log' : `Edit log #${id}`}</h1>
+        <h1 className="iles-title">
+          {isNew ? 'New weekly log' : `Edit log #${id}`}
+        </h1>
         <p className="iles-subtitle">
           <Link className="iles-link" to="/app/student/logbook">
             ← Back to logbook
@@ -180,10 +190,19 @@ export default function LogbookEditor() {
             </label>
 
             <div className="iles-row">
-              <button className="iles-button secondary" onClick={() => save('draft')} disabled={saving}>
+              <button 
+                className="iles-button secondary" 
+                onClick={() => save('draft')} 
+                disabled={saving}
+              >
                 {saving ? 'Saving...' : 'Save draft'}
               </button>
-              <button className="iles-button" onClick={() => save('submitted')} disabled={saving}>
+
+              <button 
+                className="iles-button" 
+                onClick={() => save('submitted')} 
+                disabled={saving}
+              >
                 {saving ? 'Saving...' : 'Submit'}
               </button>
             </div>

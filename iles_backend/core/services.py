@@ -1,10 +1,8 @@
 from .models import CustomUser, Notification
 
-
 def _get_user_display_name(user):
     full_name = f"{user.first_name} {user.last_name}".strip()
     return full_name or user.username
-
 
 def _dedupe_users(users):
     unique_users = []
@@ -31,7 +29,6 @@ def create_notification(recipient, title, message, notification_type, actor=None
         notification_type=notification_type,
         data=data or {},
     )
-
 
 def create_notifications(recipients, title, message, notification_type, actor=None, data=None):
     unique_recipients = _dedupe_users(recipients)
