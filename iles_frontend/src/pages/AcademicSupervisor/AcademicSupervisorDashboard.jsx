@@ -44,7 +44,7 @@ const AcademicSupervisorDashboard = () => {
   const [logs, setLogs] = useState([]);
   const [evaluations, setEvaluations] = useState([]);
   const [criteria, setCriteria] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [actionError, setActionError] = useState("");
   const [activeSection, setActiveSection] = useState("overview");
@@ -377,6 +377,23 @@ const AcademicSupervisorDashboard = () => {
     { label: "Approved logs", value: stats.approvedLogs },
     { label: "Evaluations recorded", value: stats.evaluationsCompleted },
   ];
+
+  if (loading) {
+    return (
+      <div className="dashboard-wrap">
+        <div className="sidebar">
+          <div className="sidebar-logo">ILES</div>
+          <div className="sidebar-role">Academic Supervisor</div>
+        </div>
+        <div className="main" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div className="loading-container">
+            <div className="loading-spinner"></div>
+            <p className="loading-text">Loading dashboard...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (error) {
     return (
