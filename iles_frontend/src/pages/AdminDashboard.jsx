@@ -579,6 +579,17 @@ function AdminDashboard() {
     }).format(new Date(value))
   }
 
+  if (loading) {
+    return (
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', background: '#F4F7F9' }}>
+        <div className="loading-container">
+          <div className="loading-spinner"></div>
+          <p className="loading-text">Loading admin dashboard...</p>
+        </div>
+      </div>
+    );
+  }
+
   if (error) {
     return (
       <div style={{ maxWidth: '900px', margin: '40px auto', padding: '20px', textAlign: 'center' }}>
