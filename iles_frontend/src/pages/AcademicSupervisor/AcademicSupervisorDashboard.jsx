@@ -378,14 +378,6 @@ const AcademicSupervisorDashboard = () => {
     { label: "Evaluations recorded", value: stats.evaluationsCompleted },
   ];
 
-  if (loading) {
-    return (
-      <div className="dashboard-wrap">
-        <div className="loading">Loading...</div>
-      </div>
-    );
-  }
-
   if (error) {
     return (
       <div className="dashboard-wrap">
