@@ -295,10 +295,6 @@ export default function WorkplaceSupervisorDashboard() {
     }
   }
 
-  if (loading) {
-    return <div className="workplace-dashboard"><div className="workplace-loading">Loading...</div></div>
-  }
-
   if (error) {
     return <div className="workplace-dashboard"><div className="workplace-error">Error: {error}</div></div>
   }
