@@ -647,9 +647,9 @@ const AcademicSupervisorDashboard = () => {
                                   <div className="placement-progress">
                                     <div className="placement-progress-label">Internship progress</div>
                                     <div className="progress-bar" style={{ flex: 1 }}>
-                                      <div className="progress-bar-inner" style={{ width: `${computePlacementProgress(group.placement, logs)}%` }} />
+                                      <div className="progress-bar-inner" style={{ width: `${computePlacementProgress(group.placement)}%` }} />
                                     </div>
-                                    <div className="progress-percent">{computePlacementProgress(group.placement, logs)}% complete</div>
+                                    <div className="progress-percent">{computePlacementProgress(group.placement)}% complete</div>
                                   </div>
                                 </div>
                               )}
