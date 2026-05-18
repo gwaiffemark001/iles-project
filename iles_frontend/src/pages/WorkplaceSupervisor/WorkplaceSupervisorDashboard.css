@@ -925,6 +925,36 @@
   color: #DC2626;
 }
 
+/* Loading Spinner */
+.loading-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 24px;
+  text-align: center;
+}
+
+.loading-spinner {
+  width: 60px;
+  height: 60px;
+  border: 4px solid rgba(10, 29, 55, 0.1);
+  border-top: 4px solid #0A1D37;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.loading-text {
+  font-size: 15px;
+  color: #64748B;
+  font-weight: 500;
+  margin: 0;
+}
+
 /* Responsive */
 @media (max-width: 768px) {
   .dashboard {
