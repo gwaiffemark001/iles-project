@@ -357,6 +357,17 @@ const StudentDashboard = () => {
     }
   };
 
+  if (loading) {
+    return (
+      <div className="student-dashboard" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh' }}>
+        <div className="loading-container">
+          <div className="loading-spinner"></div>
+          <p className="loading-text">Loading your dashboard...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="student-dashboard">
       <div className="sidebar">
