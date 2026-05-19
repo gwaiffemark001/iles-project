@@ -10,11 +10,53 @@ const getAccessToken = () => localStorage.getItem('access_token');
 const getRefreshToken = () => localStorage.getItem('refresh_token');
 
 let refreshPromise = null;
+const requestCache = new Map();
+
+const clearRequestCache = () => {
+  requestCache.clear();
+};
+
+const cacheKey = (url, params) => `${url}::${JSON.stringify(params ?? null)}`;
+
+const getCachedRequest = (url, { params, ttl = 30000 } = {}) => {
+  const key = cacheKey(url, params);
+  const cached = requestCache.get(key);
+
+  if (cached && cached.expiresAt > Date.now()) {
+    return cached.promise;
+  }
+
+  const promise = api.get(url, { params }).catch((error) => {
+    requestCache.delete(key);
+    throw error;
+  });
+
+  requestCache.set(key, {
+    expiresAt: Date.now() + ttl,
+    promise,
+  });
+
+  return promise;
+};
+
+const invalidateCacheByPrefix = (...prefixes) => {
+  if (prefixes.length === 0) {
+    clearRequestCache();
+    return;
+  }
+
+  Array.from(requestCache.keys()).forEach((key) => {
+    if (prefixes.some((prefix) => key.startsWith(`${prefix}::`))) {
+      requestCache.delete(key);
+    }
+  });
+};
 
 const clearSession = () => {
   localStorage.removeItem('access_token');
   localStorage.removeItem('refresh_token');
   localStorage.removeItem('user');
+  clearRequestCache();
 };
 
 export const getErrorMessage = (error, fallback = 'Something went wrong') => {
@@ -107,48 +149,99 @@ export const authAPI = {
 };
 
 export const logsAPI = {
-  getLogs: () => api.get('/logs/'),
-  createLog: (data) => api.post('/logs/', data),
-  getLog: (id) => api.get(`/logs/${id}/`),
-  updateLog: (id, data) => api.put(`/logs/${id}/`, data),
-  deleteLog: (id) => api.delete(`/logs/${id}/`),
-  reviewLog: (id, data) => api.put(`/logs/${id}/review/`, data),
-  approveLog: (id, data) => api.put(`/logs/${id}/approve/`, data),
-  reviseLog: (id, data) => api.put(`/logs/${id}/revise/`, data),
+  getLogs: () => getCachedRequest('/logs/', { ttl: 15000 }),
+  createLog: (data) => api.post('/logs/', data).then((response) => {
+    invalidateCacheByPrefix('/logs/');
+    return response;
+  }),
+  getLog: (id) => getCachedRequest(`/logs/${id}/`, { ttl: 15000 }),
+  updateLog: (id, data) => api.put(`/logs/${id}/`, data).then((response) => {
+    invalidateCacheByPrefix('/logs/');
+    return response;
+  }),
+  deleteLog: (id) => api.delete(`/logs/${id}/`).then((response) => {
+    invalidateCacheByPrefix('/logs/');
+    return response;
+  }),
+  reviewLog: (id, data) => api.put(`/logs/${id}/review/`, data).then((response) => {
+    invalidateCacheByPrefix('/logs/');
+    return response;
+  }),
+  approveLog: (id, data) => api.put(`/logs/${id}/approve/`, data).then((response) => {
+    invalidateCacheByPrefix('/logs/');
+    return response;
+  }),
+  reviseLog: (id, data) => api.put(`/logs/${id}/revise/`, data).then((response) => {
+    invalidateCacheByPrefix('/logs/');
+    return response;
+  }),
 };
 
 export const placementsAPI = {
-  getPlacements: () => api.get('/placements/'),
-  createPlacement: (data) => api.post('/placements/', data),
-  getPlacement: (id) => api.get(`/placements/${id}/`),
-  updatePlacement: (id, data) => api.put(`/placements/${id}/`, data),
-  deletePlacement: (id) => api.delete(`/placements/${id}/`),
+  getPlacements: () => getCachedRequest('/placements/', { ttl: 30000 }),
+  createPlacement: (data) => api.post('/placements/', data).then((response) => {
+    invalidateCacheByPrefix('/placements/');
+    return response;
+  }),
+  getPlacement: (id) => getCachedRequest(`/placements/${id}/`, { ttl: 30000 }),
+  updatePlacement: (id, data) => api.put(`/placements/${id}/`, data).then((response) => {
+    invalidateCacheByPrefix('/placements/');
+    return response;
+  }),
+  deletePlacement: (id) => api.delete(`/placements/${id}/`).then((response) => {
+    invalidateCacheByPrefix('/placements/');
+    return response;
+  }),
 };
 
 export const evaluationsAPI = {
-  getEvaluations: () => api.get('/evaluations/'),
-  createEvaluation: (data) => api.post('/evaluations/', data),
-  getEvaluation: (id) => api.get(`/evaluations/${id}/`),
-  updateEvaluation: (id, data) => api.put(`/evaluations/${id}/`, data),
-  deleteEvaluation: (id) => api.delete(`/evaluations/${id}/`),
+  getEvaluations: () => getCachedRequest('/evaluations/', { ttl: 30000 }),
+  createEvaluation: (data) => api.post('/evaluations/', data).then((response) => {
+    invalidateCacheByPrefix('/evaluations/');
+    return response;
+  }),
+  getEvaluation: (id) => getCachedRequest(`/evaluations/${id}/`, { ttl: 30000 }),
+  updateEvaluation: (id, data) => api.put(`/evaluations/${id}/`, data).then((response) => {
+    invalidateCacheByPrefix('/evaluations/');
+    return response;
+  }),
+  deleteEvaluation: (id) => api.delete(`/evaluations/${id}/`).then((response) => {
+    invalidateCacheByPrefix('/evaluations/');
+    return response;
+  }),
 };
 
 export const criteriaAPI = {
-  getCriteria: () => api.get('/criteria/'),
-  createCriteria: (data) => api.post('/criteria/', data),
-  updateCriteria: (id, data) => api.put(`/criteria/${id}/`, data),
-  deleteCriteria: (id) => api.delete(`/criteria/${id}/`),
+  getCriteria: () => getCachedRequest('/criteria/', { ttl: 30000 }),
+  createCriteria: (data) => api.post('/criteria/', data).then((response) => {
+    invalidateCacheByPrefix('/criteria/');
+    return response;
+  }),
+  updateCriteria: (id, data) => api.put(`/criteria/${id}/`, data).then((response) => {
+    invalidateCacheByPrefix('/criteria/');
+    return response;
+  }),
+  deleteCriteria: (id) => api.delete(`/criteria/${id}/`).then((response) => {
+    invalidateCacheByPrefix('/criteria/');
+    return response;
+  }),
 };
 
 export const adminAPI = {
-  getStatistics: () => api.get('/admin/statistics/'),
-  getUsers: (params) => api.get('/users/', { params }),
+  getStatistics: () => getCachedRequest('/admin/statistics/', { ttl: 30000 }),
+  getUsers: (params) => getCachedRequest('/users/', { params, ttl: 30000 }),
 };
 
 export const notificationsAPI = {
-  getNotifications: (params) => api.get('/notifications/', { params }),
-  markAsRead: (id) => api.put(`/notifications/${id}/read/`),
-  markAllAsRead: () => api.post('/notifications/mark-all-read/'),
+  getNotifications: (params) => getCachedRequest('/notifications/', { params, ttl: 10000 }),
+  markAsRead: (id) => api.put(`/notifications/${id}/read/`).then((response) => {
+    invalidateCacheByPrefix('/notifications/');
+    return response;
+  }),
+  markAllAsRead: () => api.post('/notifications/mark-all-read/').then((response) => {
+    invalidateCacheByPrefix('/notifications/');
+    return response;
+  }),
 };
 
 export const chatAPI = {
