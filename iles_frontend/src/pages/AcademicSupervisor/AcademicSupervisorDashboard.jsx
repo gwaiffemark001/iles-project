@@ -378,23 +378,6 @@ const AcademicSupervisorDashboard = () => {
     { label: "Evaluations recorded", value: stats.evaluationsCompleted },
   ];
 
-  if (loading) {
-    return (
-      <div className="dashboard-wrap">
-        <div className="sidebar">
-          <div className="sidebar-logo">ILES</div>
-          <div className="sidebar-role">Academic Supervisor</div>
-        </div>
-        <div className="main" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <div className="loading-container">
-            <div className="loading-spinner"></div>
-            <p className="loading-text">Loading dashboard...</p>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
   if (error) {
     return (
       <div className="dashboard-wrap">
@@ -529,7 +512,16 @@ const AcademicSupervisorDashboard = () => {
   };
 
   return (
-    <div className="dashboard-wrap">
+    <div className={`dashboard-wrap ${loading ? 'is-loading' : ''}`}>
+      {loading && (
+        <div className="dashboard-loading-overlay" aria-live="polite" aria-busy="true">
+          <div className="dashboard-loading-card">
+            <div className="loading-spinner" aria-hidden="true" />
+            <div className="dashboard-loading-brand">ILES</div>
+            <p className="dashboard-loading-text">Loading your dashboard...</p>
+          </div>
+        </div>
+      )}
       <div className="sidebar">
         <div className="sidebar-logo">ILES</div>
         <div className="sidebar-role">Academic Supervisor</div>
