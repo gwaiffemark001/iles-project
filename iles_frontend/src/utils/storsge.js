@@ -15,7 +15,12 @@ export function getRole() {
 
 export function saveTokens({ access, refresh }) {
   if (access) localStorage.setItem(ACCESS_KEY, access)
+  if (refresh) localStorage.setItem(REFRESH_KEY, refresh)
 
+}
+
+export function saveRole(role) {
+  if (role) localStorage.setItem(ROLE_KEY, role)
 }
 
 export function clearStoredAuth() {
