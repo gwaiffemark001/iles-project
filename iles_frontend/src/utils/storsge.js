@@ -25,6 +25,8 @@ export function saveRole(role) {
 
 export function clearStoredAuth() {
   localStorage.removeItem(ACCESS_KEY)
+  localStorage.removeItem(REFRESH_KEY)
+  localStorage.removeItem(ROLE_KEY)
   localStorage.removeItem('token')
-
+  localStorage.removeItem('refreshToken')
 }
