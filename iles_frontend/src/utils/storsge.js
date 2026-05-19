@@ -5,7 +5,13 @@ const ROLE_KEY = 'role'
 export function getAccessToken() {
   return localStorage.getItem(ACCESS_KEY)
 }
+ export function getRefreshToken() {
+  return localStorage.getItem(REFRESH_KEY)
+}
 
+export function getRole() {
+  return localStorage.getItem(ROLE_KEY)
+}
 
 export function saveTokens({ access, refresh }) {
   if (access) localStorage.setItem(ACCESS_KEY, access)
