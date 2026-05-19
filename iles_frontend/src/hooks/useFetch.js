@@ -1,5 +1,6 @@
 import { useCallback, useState } from "react";
 
+// useFetch.js - A custom hook to manage API calls with loading and error states
 function useFetch(fetchFn) {
     const [loading, setLoading] = useState(false)
     const [error, setError] = useState(null)
