@@ -1,5 +1,6 @@
 const ACCESS_KEY = 'access_token'
-
+const REFRESH_KEY = 'refresh_token'
+const ROLE_KEY = 'role'
 
 export function getAccessToken() {
   return localStorage.getItem(ACCESS_KEY)
