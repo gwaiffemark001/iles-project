@@ -31,5 +31,5 @@ export function clearStoredAuth() {
   localStorage.removeItem(ROLE_KEY)
   localStorage.removeItem('token')
   localStorage.removeItem('refreshToken')
-  localStorage.removeItem('role')
+
 }
