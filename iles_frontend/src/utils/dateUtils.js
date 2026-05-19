@@ -8,7 +8,7 @@ export function formatDate(value, options = {}) {
     return date.toLocaleDateString(undefined, {
       year: 'numeric',
       month: 'short',
-
+      day: 'numeric',
       ...options,
     })
   } catch {
