@@ -295,23 +295,21 @@ export default function WorkplaceSupervisorDashboard() {
     }
   }
 
-  if (loading) {
-    return (
-      <div className="workplace-dashboard" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', background: '#F4F7F9' }}>
-        <div className="loading-container">
-          <div className="loading-spinner"></div>
-          <p className="loading-text">Loading dashboard...</p>
-        </div>
-      </div>
-    );
-  }
-
   if (error) {
     return <div className="workplace-dashboard"><div className="workplace-error">Error: {error}</div></div>
   }
 
   return (
-    <div className="workplace-dashboard">
+    <div className={`workplace-dashboard ${loading ? 'is-loading' : ''}`}>
+      {loading && (
+        <div className="dashboard-loading-overlay" aria-live="polite" aria-busy="true">
+          <div className="dashboard-loading-card">
+            <div className="loading-spinner" aria-hidden="true" />
+            <div className="dashboard-loading-brand">ILES</div>
+            <p className="dashboard-loading-text">Loading your dashboard...</p>
+          </div>
+        </div>
+      )}
       <aside className="workplace-sidebar">
         <div className="workplace-brand">ILES</div>
         <div className="workplace-role">Workplace Supervisor</div>
