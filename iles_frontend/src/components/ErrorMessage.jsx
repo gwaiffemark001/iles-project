@@ -1,3 +1,4 @@
+//Reusable component to display error messages in the UI
 export default function ErrorMessage({ message }) {
   if (!message) return null
   return (
