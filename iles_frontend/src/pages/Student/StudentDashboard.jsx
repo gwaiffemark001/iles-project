@@ -357,19 +357,17 @@ const StudentDashboard = () => {
     }
   };
 
-  if (loading) {
-    return (
-      <div className="student-dashboard" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh' }}>
-        <div className="loading-container">
-          <div className="loading-spinner"></div>
-          <p className="loading-text">Loading your dashboard...</p>
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <div className="student-dashboard">
+    <div className={`student-dashboard ${loading ? 'is-loading' : ''}`}>
+      {loading && (
+        <div className="dashboard-loading-overlay" aria-live="polite" aria-busy="true">
+          <div className="dashboard-loading-card">
+            <div className="loading-spinner" aria-hidden="true" />
+            <div className="dashboard-loading-brand">ILES</div>
+            <p className="dashboard-loading-text">Loading your dashboard...</p>
+          </div>
+        </div>
+      )}
       <div className="sidebar">
         <div className="sidebar-logo">ILES</div>
         <div className="sidebar-role">Student Intern</div>
