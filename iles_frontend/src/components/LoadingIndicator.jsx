@@ -1,3 +1,4 @@
+//Reusable loading indicator component
 export default function LoadingIndicator({ label = 'Loading...' }) {
   return (
     <div className="iles-loading" role="status" aria-live="polite">
