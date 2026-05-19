@@ -1,5 +1,5 @@
 /* eslint-disable react-hooks/set-state-in-effect */
-import { useEffect, useMemo, useState, useCallback } from 'react'
+import { useEffect, useMemo, useState, useCallback, lazy, Suspense } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'react-toastify'
 import { criteriaAPI, evaluationsAPI, getErrorMessage, logsAPI, placementsAPI, notificationsAPI } from '../../api/api'
@@ -7,12 +7,19 @@ import { buildWeeklyEvaluationSummaries } from '../../utils/evaluationSummary'
 import { useAuth } from '@/auth/useAuth'
 import useInterval from '@/hooks/useInterval'
 import SupervisorEvaluationForm from '../components/SupervisorEvaluationForm'
-import NotificationPane from '../../components/NotificationPane'
-import ChatPane from '../../components/ChatPane'
 import ProfileEditor from '../../components/ProfileEditor'
 import UserGuide from '../../components/UserGuide'
 import UserAvatar from '../../components/UserAvatar'
 import './WorkplaceSupervisorDashboard.css'
+
+const NotificationPane = lazy(() => import('../../components/NotificationPane'))
+const ChatPane = lazy(() => import('../../components/ChatPane'))
+
+const TabLoadingFallback = () => (
+  <div style={{ padding: '24px', textAlign: 'center', color: '#64748B' }}>
+    <p>Loading...</p>
+  </div>
+);
 
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
 
@@ -366,10 +373,12 @@ export default function WorkplaceSupervisorDashboard() {
         </nav>
 
         {activeTab === 'notifications' && (
-          <section className="workplace-notifications-section">
-            <div className="section-title">Notifications</div>
-            <NotificationPane title="Notifications" subtitle="Log and evaluation updates" limit={8} />
-          </section>
+          <Suspense fallback={<TabLoadingFallback />}>
+            <section className="workplace-notifications-section">
+              <div className="section-title">Notifications</div>
+              <NotificationPane title="Notifications" subtitle="Log and evaluation updates" limit={8} />
+            </section>
+          </Suspense>
         )}
 
         {activeTab === 'placements' && (
@@ -669,9 +678,11 @@ export default function WorkplaceSupervisorDashboard() {
            )}
 
            {activeTab === 'chat' && (
-             <section style={{ height: 'calc(100vh - 120px)', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-               <ChatPane currentUserId={user?.id} onUnreadCountChange={setChatUnreadCount} />
-             </section>
+             <Suspense fallback={<TabLoadingFallback />}>
+               <section style={{ height: 'calc(100vh - 120px)', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+                 <ChatPane currentUserId={user?.id} onUnreadCountChange={setChatUnreadCount} />
+               </section>
+             </Suspense>
            )}
       </main>
       <UserGuide userRole="workplace_supervisor" />
