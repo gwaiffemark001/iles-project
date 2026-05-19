@@ -21,7 +21,10 @@ function useFetch(fetchFn) {
         }, 
         [fetchFn],
     )
-    return { execute, loading, error, 
+    return { 
+        execute, 
+        loading, 
+        error, 
         clearError: () => setError(null),
     }
 }
