@@ -8,6 +8,13 @@ function useFetch(fetchFn) {
         async (...args) => {
             setLoading(true)
             seterror(null)
+
+            try{
+                const result = await fetchFn(...args)
+                return result
+            }   catch (err) {
+                
+            }
         }, 
         [fetchFn],
     )
