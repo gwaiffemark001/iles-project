@@ -5,6 +5,7 @@ export default function ErrorMessage({ message }) {
       {message}
     </div>
   )
+  // Alternative  code
   /*
     if (message === null) return null
   return (
