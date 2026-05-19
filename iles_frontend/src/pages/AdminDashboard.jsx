@@ -9,7 +9,7 @@ import ProfileEditor from '../components/ProfileEditor'
 import UserGuide from '../components/UserGuide'
 import UserAvatar from '../components/UserAvatar'
 import './AdminDashboard.css'
-
+// AdminDashboard.jsx - Main dashboard for admin users to manage placements, users, evaluations, and criteria
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
 
 const computePlacementProgress = (placement, today = new Date()) => {
