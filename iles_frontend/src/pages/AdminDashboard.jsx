@@ -1,13 +1,21 @@
-import { useState, useEffect, useCallback, useMemo } from 'react'
+import { useState, useEffect, useCallback, useMemo, lazy, Suspense } from 'react'
 import { useNavigate } from 'react-router-dom'
 import axios from 'axios'
 import { useAuth } from '@/auth/useAuth'
 import { criteriaAPI, evaluationsAPI, placementsAPI } from '../api/api'
 import { buildWeeklyEvaluationSummaries, getGradeWeight } from '../utils/evaluationSummary'
-import ChatPane from '../components/ChatPane'
 import ProfileEditor from '../components/ProfileEditor'
 import UserGuide from '../components/UserGuide'
 import UserAvatar from '../components/UserAvatar'
+import './AdminDashboard.css'
+
+const ChatPane = lazy(() => import('../components/ChatPane'))
+
+const TabLoadingFallback = () => (
+  <div style={{ padding: '24px', textAlign: 'center', color: '#64748B' }}>
+    <p>Loading...</p>
+  </div>
+);
 import './AdminDashboard.css'
 
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
@@ -1207,10 +1215,12 @@ function AdminDashboard() {
           )}
 
           {activeSection === 'chat' && (
-            <div style={{ height: 'calc(100vh - 150px)', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-              <h2 style={{ color: '#2c3e50', marginBottom: '20px', margin: 0 }}>Chat with Users</h2>
-              <ChatPane currentUserId={user?.id} onUnreadCountChange={setChatUnreadCount} />
-            </div>
+            <Suspense fallback={<TabLoadingFallback />}>
+              <div style={{ height: 'calc(100vh - 150px)', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+                <h2 style={{ color: '#2c3e50', marginBottom: '20px', margin: 0 }}>Chat with Users</h2>
+                <ChatPane currentUserId={user?.id} onUnreadCountChange={setChatUnreadCount} />
+              </div>
+            </Suspense>
           )}
         </div>
       </div>
