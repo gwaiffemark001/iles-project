@@ -579,17 +579,6 @@ function AdminDashboard() {
     }).format(new Date(value))
   }
 
-  if (loading) {
-    return (
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', background: '#F4F7F9' }}>
-        <div className="loading-container">
-          <div className="loading-spinner"></div>
-          <p className="loading-text">Loading admin dashboard...</p>
-        </div>
-      </div>
-    );
-  }
-
   if (error) {
     return (
       <div style={{ maxWidth: '900px', margin: '40px auto', padding: '20px', textAlign: 'center' }}>
@@ -606,7 +595,16 @@ function AdminDashboard() {
   }
 
   return (
-    <div style={{ display: 'flex', minHeight: '100vh', backgroundColor: '#f5f5f5' }}>
+    <div className={`admin-dashboard ${loading ? 'is-loading' : ''}`}>
+      {loading && (
+        <div className="dashboard-loading-overlay" aria-live="polite" aria-busy="true">
+          <div className="dashboard-loading-card">
+            <div className="loading-spinner" aria-hidden="true" />
+            <div className="dashboard-loading-brand">ILES</div>
+            <p className="dashboard-loading-text">Loading admin dashboard...</p>
+          </div>
+        </div>
+      )}
       {/* Sidebar */}
       <div style={{ width: '250px', backgroundColor: '#2c3e50', color: 'white', padding: '20px', position: 'sticky', top: '0', height: '100vh', overflowY: 'auto' }}>
         <div style={{ marginBottom: '30px', display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
