@@ -1,17 +1,24 @@
 /* eslint-disable react-hooks/set-state-in-effect */
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, lazy, Suspense } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/auth/useAuth';
 import { logsAPI, placementsAPI, evaluationsAPI, criteriaAPI, notificationsAPI } from '@/api/api';
 import { getErrorMessage } from '@/api/api';
 import { buildWeeklyEvaluationSummaries } from '@/utils/evaluationSummary';
 import useInterval from '@/hooks/useInterval';
-import NotificationPane from '../../components/NotificationPane';
-import ChatPane from '../../components/ChatPane';
 import ProfileEditor from '../../components/ProfileEditor';
 import UserGuide from '../../components/UserGuide';
 import UserAvatar from '../../components/UserAvatar';
 import './StudentDashboard.css';
+
+const NotificationPane = lazy(() => import('../../components/NotificationPane'));
+const ChatPane = lazy(() => import('../../components/ChatPane'));
+
+const TabLoadingFallback = () => (
+  <div style={{ padding: '24px', textAlign: 'center', color: '#64748B' }}>
+    <p>Loading...</p>
+  </div>
+);
 
 const createInitialLogForm = (defaultPlacementId = '') => ({
   placement_id: defaultPlacementId ? String(defaultPlacementId) : '',
@@ -440,10 +447,12 @@ const StudentDashboard = () => {
           {pageError ? <div className="error-message page-alert">{pageError}</div> : null}
 
           {activeTab === 'notifications' && (
-            <div>
-              <div className="section-title">Notifications</div>
-              <NotificationPane title="Notifications" subtitle="Log and evaluation updates" limit={8} />
-            </div>
+            <Suspense fallback={<TabLoadingFallback />}>
+              <div>
+                <div className="section-title">Notifications</div>
+                <NotificationPane title="Notifications" subtitle="Log and evaluation updates" limit={8} />
+              </div>
+            </Suspense>
           )}
 
           {activeTab === 'logs' && (
@@ -765,9 +774,11 @@ const StudentDashboard = () => {
           )}
 
           {activeTab === 'chat' && (
-            <div style={{ height: 'calc(100vh - 120px)', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-              <ChatPane currentUserId={user?.id} onUnreadCountChange={setChatUnreadCount} />
-            </div>
+            <Suspense fallback={<TabLoadingFallback />}>
+              <div style={{ height: 'calc(100vh - 120px)', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+                <ChatPane currentUserId={user?.id} onUnreadCountChange={setChatUnreadCount} />
+              </div>
+            </Suspense>
           )}
         </div>
       </div>
