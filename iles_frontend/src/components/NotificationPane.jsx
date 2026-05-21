@@ -3,6 +3,10 @@ import { getErrorMessage, notificationsAPI } from '../api/api'
 import useInterval from '../hooks/useInterval'
 import './NotificationPane.css'
 
+const NOTIFICATION_FETCH_INTERVAL = 30000
+const NOTIFICATION_BATCH_SIZE = 20
+const NOTIFICATION_DEFAULT_LIMIT = 5
+
 const notificationTypeLabels = {
   log_submitted: 'Log submitted',
   log_reviewed: 'Log reviewed',
@@ -27,7 +31,7 @@ const formatNotificationTime = (value) => {
   return date.toLocaleString()
 }
 
-const NotificationPane = ({ title = 'Notifications', subtitle = 'Recent workflow updates', limit = 5 }) => {
+const NotificationPane = ({ title = 'Notifications', subtitle = 'Recent workflow updates', limit = NOTIFICATION_DEFAULT_LIMIT }) => {
   const [notifications, setNotifications] = useState([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -42,7 +46,7 @@ const NotificationPane = ({ title = 'Notifications', subtitle = 'Recent workflow
     setError('')
 
     try {
-      const response = await notificationsAPI.getNotifications({ limit: 20 })
+      const response = await notificationsAPI.getNotifications({ limit: NOTIFICATION_BATCH_SIZE })
       setNotifications(Array.isArray(response.data) ? response.data : [])
     } catch (requestError) {
       setError(getErrorMessage(requestError, 'Unable to load notifications.'))
@@ -59,7 +63,7 @@ const NotificationPane = ({ title = 'Notifications', subtitle = 'Recent workflow
     return () => clearTimeout(timer)
   }, [])
 
-  useInterval(fetchNotifications, 30000)
+  useInterval(fetchNotifications, NOTIFICATION_FETCH_INTERVAL)
 
   const markNotificationAsRead = async (notificationId) => {
     try {
