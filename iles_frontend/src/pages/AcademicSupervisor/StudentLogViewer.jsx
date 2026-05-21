@@ -10,12 +10,6 @@ const StudentLogViewer = () => {
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState("All");
 
-  const filteredLogs = logs.filter((log) => {
-    const matchSearch = log.summary.toLowerCase().includes(search.toLowerCase());
-    const matchFilter = filter === "All" || log.status === filter;
-    return matchSearch && matchFilter;
-  });
-
   const logs = [
     { id: 1, date: "2026-01-06", summary: "Attended orientation and met the team", hours: 8, status: "Reviewed", comments: "Good start! Keep it up." },
     { id: 2, date: "2026-01-07", summary: "Worked on database design with senior developer", hours: 8, status: "Reviewed", comments: "Great work on the ER diagram." },
@@ -23,6 +17,12 @@ const StudentLogViewer = () => {
     { id: 4, date: "2026-01-09", summary: "Fixed bugs in the frontend codebase", hours: 8, status: "Pending", comments: "" },
     { id: 5, date: "2026-01-10", summary: "Wrote unit tests for the API endpoints", hours: 6, status: "Overdue", comments: "" },
   ];
+
+  const filteredLogs = logs.filter((log) => {
+    const matchSearch = log.summary.toLowerCase().includes(search.toLowerCase());
+    const matchFilter = filter === "All" || log.status === filter;
+    return matchSearch && matchFilter;
+  });
 
   const getStatusClass = (status) => {
     if (status === "Reviewed") return "badge reviewed";
