@@ -274,18 +274,13 @@ function AdminDashboard() {
   }
 
   const fetchPlacementWeeklySummary = (placement) => {
-    // Filter evaluations for this placement - try both placement?.id and placement_id
     const placementEvaluations = evaluations.filter((evaluation) => {
       const evalPlacementId = evaluation.placement?.id ?? evaluation.placement_id
       return evalPlacementId === placement.id
     })
 
-    // placement debug info (hidden)
-
     const weekNumbers = Array.from(new Set(placementEvaluations.map((evaluation) => evaluation.week_number).filter((weekNumber) => weekNumber !== undefined && weekNumber !== null)))
       .sort((left, right) => left - right)
-
-    // week numbers found
 
     const summary = {
       weeks: weekNumbers.map((weekNumber) => {
@@ -505,12 +500,9 @@ function AdminDashboard() {
       setEvaluations(Array.isArray(evaluationsResponse.data) ? evaluationsResponse.data : [])
       setUsers(Array.isArray(usersResponse.data) ? usersResponse.data : [])
       setCriteria(Array.isArray(criteriaResponse.data) ? criteriaResponse.data : [])
-
-      // Dashboard data loaded successfully
     } catch (requestError) {
       const message = requestError?.response?.data?.message || requestError?.message || 'Unable to load admin dashboard data.'
       setError(message)
-      // Dashboard error
     } finally {
       setLoading(false)
     }
