@@ -15,6 +15,9 @@ import UserAvatar from '../../components/UserAvatar';
 import "./AcademicSupervisorDashboard.css";
 
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
+const WEEKS_FACTOR = 7;
+const PROGRESS_PERCENTAGE_MAX = 100;
+const PROGRESS_PERCENTAGE_MIN = 0;
 
 const computePlacementProgress = (placement, today = new Date()) => {
   if (!placement || !placement.start_date || !placement.end_date) return 0;
@@ -25,16 +28,16 @@ const computePlacementProgress = (placement, today = new Date()) => {
 
   // Total weeks for the entire placement duration
   const totalDays = Math.max(0, Math.floor((end.getTime() - start.getTime()) / MS_PER_DAY));
-  const totalWeeks = Math.max(1, Math.ceil(totalDays / 7));
+  const totalWeeks = Math.max(1, Math.ceil(totalDays / WEEKS_FACTOR));
 
   // Elapsed weeks from start to today (or end if placement already ended)
   const effectiveDate = end < today ? end : today;
   const elapsedDays = Math.max(0, Math.floor((effectiveDate.getTime() - start.getTime()) / MS_PER_DAY));
-  const elapsedWeeks = Math.max(1, Math.ceil(elapsedDays / 7));
+  const elapsedWeeks = Math.max(1, Math.ceil(elapsedDays / WEEKS_FACTOR));
 
   // Progress is elapsed weeks / total weeks
-  const percent = Math.round((Math.min(elapsedWeeks, totalWeeks) / totalWeeks) * 100);
-  return Math.min(100, Math.max(0, Number.isNaN(percent) ? 0 : percent));
+  const percent = Math.round((Math.min(elapsedWeeks, totalWeeks) / totalWeeks) * PROGRESS_PERCENTAGE_MAX);
+  return Math.min(PROGRESS_PERCENTAGE_MAX, Math.max(PROGRESS_PERCENTAGE_MIN, Number.isNaN(percent) ? PROGRESS_PERCENTAGE_MIN : percent));
 };
 
 const AcademicSupervisorDashboard = () => {
