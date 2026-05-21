@@ -2,7 +2,6 @@
 export const errorHandler = {
   // Handle API errors consistently
   handleApiError: (error) => {
-    console.error('API Error:', error);
     
     if (!error.response) {
       return {

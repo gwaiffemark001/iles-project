@@ -250,14 +250,12 @@ function AdminDashboard() {
   }
 
   const handleDeleteUser = async (userId) => {
-    // Attempting to delete user
     if (window.confirm('Are you sure you want to delete this user?')) {
       try {
         await axios.delete(`http://127.0.0.1:8000/api/users/${userId}/`, authHeaders)
         setUsers(users.filter(user => user.id !== userId))
         alert('User deleted successfully')
       } catch (error) {
-        // Error deleting user
         alert('Error deleting user: ' + (error.response?.data?.message || error.message))
       }
     }
@@ -270,7 +268,6 @@ function AdminDashboard() {
         setPlacements(placements.filter(p => p.id !== placementId))
         alert('Placement deleted successfully')
       } catch (error) {
-        // Error deleting placement
         alert('Error deleting placement: ' + (error.response?.data?.message || error.message))
       }
     }
