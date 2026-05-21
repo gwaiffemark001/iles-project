@@ -47,8 +47,6 @@ const userRoles = [
   { value: 'admin', label: 'Admin' },
 ]
 
-// use shared helper for weekly summaries and grade weights
-
 function AdminDashboard() {
   const location = useLocation()
   const navigate = useNavigate()
