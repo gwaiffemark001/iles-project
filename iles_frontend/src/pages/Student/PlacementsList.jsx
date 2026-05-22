@@ -79,27 +79,16 @@ export default function PlacementsList() {
           Loading...
         </p> ) : null}
       {error ? (
-        <p className="error-message">
+        <p className="error-message" role='alert'>
           {error}
         </p> 
       ): null}
 
       <div className="iles-grid">
-        {filtered.map((p) => (
-          <Link key={p.id} to={`/app/student/placements/${p.id}`} className="iles-card link-card">
-            <div className="iles-stack">
-              <div className="iles-strong">{p.company_name}</div>
-              <div className="iles-muted">{p.company_address || 'Address not set'}</div>
-              <div className="iles-row">
-                <span className={`iles-badge ${p.status || ''}`}>{p.status === 'pending' ? 'Available' : p.status}</span>
-                <span className="iles-muted">
-                  {p.start_date} → {p.end_date}
-                </span>
-              </div>
-            </div>
-          </Link>
-        ))}
-      </div>
+        {filtered.map((p) => {
+          const companyName = p.company_name || 'Unnamed Company'
+          const companyAddress = p.company_address || 'No address provided'
+        }
 
       {!loading && !error && filtered.length === 0 ? (
         <p className="iles-muted">No available placements found.</p>
