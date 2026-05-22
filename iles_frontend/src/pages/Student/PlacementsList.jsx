@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '@/auth/useAuth'
 
@@ -9,6 +9,10 @@ export default function PlacementsList() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
+  const handleSearchChange = useCallback((e) => {
+    setQuery(e.target.value)
+  }, [])
+  
   useEffect(() => {
     let cancelled = false
     async function run() {
