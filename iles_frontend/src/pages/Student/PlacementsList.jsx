@@ -12,7 +12,7 @@ export default function PlacementsList() {
   const handleSearchChange = useCallback((e) => {
     setQuery(e.target.value)
   }, [])
-  
+
   useEffect(() => {
     let cancelled = false
     async function run() {
@@ -42,6 +42,11 @@ export default function PlacementsList() {
       return name.includes(q) || addr.includes(q)
     })
   }, [placements, query])
+
+  const getStatusClass = useCallback((status) => {
+    if (status === 'pending') return 'Available'
+    return status || 'Unknown'
+  }, [])
 
   return (
     <div className="iles-page">
