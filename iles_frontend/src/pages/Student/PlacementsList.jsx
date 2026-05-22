@@ -88,6 +88,21 @@ export default function PlacementsList() {
         {filtered.map((p) => {
           const companyName = p.company_name || 'Unnamed Company'
           const companyAddress = p.company_address || 'No address provided'
+
+          return (
+            <Link to={`/app/student/placements/${p.id}`} 
+              key={p.id}
+              className="iles-card link-card"
+              >
+                <div className="iles-stack">
+                  <div className="iles-strong">
+                    {companyName}
+                  </div>
+                  <div className="iles-muted">
+                    {companyAddress}
+                  </div>
+
+            </Link>
         }
 
       {!loading && !error && filtered.length === 0 ? (
