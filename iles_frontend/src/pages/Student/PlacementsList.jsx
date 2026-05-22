@@ -61,10 +61,13 @@ export default function PlacementsList() {
 
       <div className="iles-row">
         <input
+          type='text'
           className="iles-input"
           placeholder="Search by company or address..."
           value={query}
-          onChange={(e) => setQuery(e.target.value)}
+          onChange={handleSearchChange}
+          aria-label='Search placements'
+          autoComplete='off'
         />
         <Link className="iles-button secondary" to="/app/student/applications">
           My applications
