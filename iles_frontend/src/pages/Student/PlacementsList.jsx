@@ -48,6 +48,10 @@ export default function PlacementsList() {
     return status || 'Unknown'
   }, [])
 
+  const getStatusBadgeClass = useCallback((status) => {
+    return `iles-badge ${status || 'default'}`
+  }, [])
+
   return (
     <div className="iles-page">
       <header className="iles-header">
