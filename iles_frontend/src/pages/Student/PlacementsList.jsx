@@ -74,8 +74,15 @@ export default function PlacementsList() {
         </Link>
       </div>
 
-      {loading ? <p className="iles-muted">Loading...</p> : null}
-      {error ? <p className="error-message">{error}</p> : null}
+      {loading ? (
+        <p className="iles-muted" role='status'>
+          Loading...
+        </p> ) : null}
+      {error ? (
+        <p className="error-message">
+          {error}
+        </p> 
+      ): null}
 
       <div className="iles-grid">
         {filtered.map((p) => (
