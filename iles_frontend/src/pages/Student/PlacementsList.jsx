@@ -101,14 +101,27 @@ export default function PlacementsList() {
                   <div className="iles-muted">
                     {companyAddress}
                   </div>
+                <div className='iles-row'>
+                  <span className={getStatusBadgeClass(p.status)}>
+                    {getStatusClass(p.status)}
+                  </span>
+
+                  <span className="iles-muted">
+                    {p.start_date || 'N/A'} → {p.end_date || 'N/A'}
+                  </span>
+                </div>
+                </div> 
 
             </Link>
-        }
+          )
+        })}
+      </div>
 
       {!loading && !error && filtered.length === 0 ? (
-        <p className="iles-muted">No available placements found.</p>
+        <p className="iles-muted" >
+          No Available placements found
+        </p>
       ) : null}
     </div>
   )
 }
-
