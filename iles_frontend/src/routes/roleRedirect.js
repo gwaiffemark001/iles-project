@@ -1,15 +1,17 @@
+import { USER_ROLES } from '@/constants/appConstants'
+
 export function roleToHomePath(role) {
   switch (role) {
-    case 'admin':
-    case 'program_admin':
+    case USER_ROLES.ADMIN:
+    case USER_ROLES.PROGRAM_ADMIN:
       return '/app/admin'
-    case 'academic_supervisor':
+    case USER_ROLES.ACADEMIC_SUPERVISOR:
     case 'academic':
       return '/app/academic'
-    case 'workplace_supervisor':
+    case USER_ROLES.WORKPLACE_SUPERVISOR:
     case 'workplace':
       return '/app/workplace'
-    case 'student':
+    case USER_ROLES.STUDENT:
     default:
       return '/app/student'
   }
