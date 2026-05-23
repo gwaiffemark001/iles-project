@@ -5,6 +5,7 @@ import { useAuth } from '@/auth/useAuth';
 import { logsAPI, placementsAPI, evaluationsAPI, criteriaAPI, notificationsAPI } from '@/api/api';
 import { getErrorMessage } from '@/api/api';
 import { buildWeeklyEvaluationSummaries } from '@/utils/evaluationSummary';
+import { formatDate } from '@/utils/dateUtils';
 import { MS_PER_DAY, WEEKS_FACTOR, DEFAULT_WEEK_NUMBER } from '@/constants/appConstants'
 import useInterval from '@/hooks/useInterval';
 import NotificationPane from '../../components/NotificationPane';
@@ -25,11 +26,8 @@ const createInitialLogForm = (defaultPlacementId = '') => ({
 const getPlacementId = (log) => log.placement?.id ?? log.placement_id ?? '';
 
 const formatDisplayDate = (value) => {
-  if (!value) {
-    return 'Not set';
-  }
-
-  return new Date(value).toLocaleDateString();
+  const formatted = formatDate(value)
+  return formatted || 'Not set'
 };
 
 const computeCurrentWeekForPlacement = (placement, today = new Date()) => {
