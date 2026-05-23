@@ -4,6 +4,7 @@ import api, { adminAPI, criteriaAPI, evaluationsAPI, placementsAPI } from '../ap
 import { useAuth } from '@/auth/useAuth'
 import { buildWeeklyEvaluationSummaries, getGradeWeight } from '../utils/evaluationSummary'
 import { confirmAction, getApiErrorMessage } from '../utils/helpers'
+import { MS_PER_DAY, WEEKS_FACTOR, PROGRESS_PERCENTAGE_MAX, PROGRESS_PERCENTAGE_MIN, ROLE_OPTIONS } from '@/constants/appConstants'
 import ProfileEditor from '../components/ProfileEditor'
 import UserGuide from '../components/UserGuide'
 import UserAvatar from '../components/UserAvatar'
@@ -17,8 +18,6 @@ const TabLoadingFallback = () => (
   </div>
 );
 
-const MS_PER_DAY = 24 * 60 * 60 * 1000;
-
 const computePlacementProgress = (placement, today = new Date()) => {
   if (!placement || !placement.start_date || !placement.end_date) return 0;
 
@@ -28,24 +27,19 @@ const computePlacementProgress = (placement, today = new Date()) => {
 
   // Total weeks for the entire placement duration
   const totalDays = Math.max(0, Math.floor((end.getTime() - start.getTime()) / MS_PER_DAY));
-  const totalWeeks = Math.max(1, Math.ceil(totalDays / 7));
+  const totalWeeks = Math.max(1, Math.ceil(totalDays / WEEKS_FACTOR));
 
   // Elapsed weeks from start to today (or end if placement already ended)
   const effectiveDate = end < today ? end : today;
   const elapsedDays = Math.max(0, Math.floor((effectiveDate.getTime() - start.getTime()) / MS_PER_DAY));
-  const elapsedWeeks = Math.max(1, Math.ceil(elapsedDays / 7));
+  const elapsedWeeks = Math.max(1, Math.ceil(elapsedDays / WEEKS_FACTOR));
 
   // Progress is elapsed weeks / total weeks
-  const percent = Math.round((Math.min(elapsedWeeks, totalWeeks) / totalWeeks) * 100);
-  return Math.min(100, Math.max(0, Number.isNaN(percent) ? 0 : percent));
+  const percent = Math.round((Math.min(elapsedWeeks, totalWeeks) / totalWeeks) * PROGRESS_PERCENTAGE_MAX);
+  return Math.min(PROGRESS_PERCENTAGE_MAX, Math.max(PROGRESS_PERCENTAGE_MIN, Number.isNaN(percent) ? PROGRESS_PERCENTAGE_MIN : percent));
 };
 
-const userRoles = [
-  { value: 'student', label: 'Student' },
-  { value: 'workplace_supervisor', label: 'Workplace Supervisor' },
-  { value: 'academic_supervisor', label: 'Academic Supervisor' },
-  { value: 'admin', label: 'Admin' },
-]
+const userRoles = ROLE_OPTIONS
 
 function AdminDashboard() {
   const location = useLocation()
