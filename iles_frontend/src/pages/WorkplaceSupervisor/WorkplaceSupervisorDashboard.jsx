@@ -5,6 +5,7 @@ import { toast } from 'react-toastify'
 import { criteriaAPI, evaluationsAPI, getErrorMessage, logsAPI, placementsAPI, notificationsAPI } from '../../api/api'
 import { buildWeeklyEvaluationSummaries } from '../../utils/evaluationSummary'
 import { useAuth } from '@/auth/useAuth'
+import { MS_PER_DAY, WEEKS_FACTOR, PROGRESS_PERCENTAGE_MAX, PROGRESS_PERCENTAGE_MIN } from '@/constants/appConstants'
 import useInterval from '@/hooks/useInterval'
 import SupervisorEvaluationForm from '../components/SupervisorEvaluationForm'
 import NotificationPane from '../../components/NotificationPane'
@@ -13,11 +14,6 @@ import ProfileEditor from '../../components/ProfileEditor'
 import UserGuide from '../../components/UserGuide'
 import UserAvatar from '../../components/UserAvatar'
 import './WorkplaceSupervisorDashboard.css'
-
-const MS_PER_DAY = 24 * 60 * 60 * 1000
-const WEEKS_FACTOR = 7
-const PROGRESS_PERCENTAGE_MAX = 100
-const PROGRESS_PERCENTAGE_MIN = 0
 
 const computePlacementProgress = (placement, today = new Date()) => {
   if (!placement || !placement.start_date || !placement.end_date) return 0;
