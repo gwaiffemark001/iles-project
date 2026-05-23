@@ -5,8 +5,9 @@ import AdminDashboard from './pages/AdminDashboard'
 import StudentDashboard from './pages/Student/StudentDashboard'
 import AcademicSupervisorDashboard from './pages/AcademicSupervisor/AcademicSupervisorDashboard'
 import WorkplaceSupervisorDashboard from './pages/WorkplaceSupervisor/WorkplaceSupervisorDashboard'
+import { API_SERVER_URL } from '@/constants/appConstants'
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000'
+const API_BASE_URL = API_SERVER_URL
 const FORM_LOGIN = 'login'
 const FORM_REGISTER = 'register'
 const FORM_FORGOT = 'forgot'
