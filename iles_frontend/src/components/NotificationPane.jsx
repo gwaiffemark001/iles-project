@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { getErrorMessage, notificationsAPI } from '../api/api'
+import { formatDate } from '@/utils/dateUtils'
 import useInterval from '../hooks/useInterval'
 import './NotificationPane.css'
 
@@ -23,12 +24,8 @@ const formatNotificationTime = (value) => {
     return 'Just now'
   }
 
-  const date = new Date(value)
-  if (Number.isNaN(date.getTime())) {
-    return 'Just now'
-  }
-
-  return date.toLocaleString()
+  const formatted = formatDate(value, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })
+  return formatted || 'Just now'
 }
 
 const NotificationPane = ({ title = 'Notifications', subtitle = 'Recent workflow updates', limit = NOTIFICATION_DEFAULT_LIMIT }) => {
