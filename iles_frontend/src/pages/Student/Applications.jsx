@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState, useMemo } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '@/auth/useAuth'
+import { formatDate } from '@/utils/dateUtils'
 
 function badgeClass(status) {
   const s = (status || '').toLowerCase()
@@ -17,15 +18,6 @@ function statusLabel(status) {
   if (s === 'rejected') return 'Rejected'
   if (s === 'withdrawn') return 'Withdrawn'
   return status || 'Pending'
-}
-
-function formatDate(value) {
-  if (!value) return ''
-  try {
-    return new Date(value).toLocaleDateString()
-  } catch {
-    return ''
-  }
 }
 
 function placementLabel(app) {
