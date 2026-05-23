@@ -5,6 +5,7 @@ import { useAuth } from '@/auth/useAuth';
 import { logsAPI, placementsAPI, evaluationsAPI, criteriaAPI, notificationsAPI } from '@/api/api';
 import { getErrorMessage } from '@/api/api';
 import { buildWeeklyEvaluationSummaries } from '@/utils/evaluationSummary';
+import { MS_PER_DAY, WEEKS_FACTOR, DEFAULT_WEEK_NUMBER } from '@/constants/appConstants'
 import useInterval from '@/hooks/useInterval';
 import NotificationPane from '../../components/NotificationPane';
 import ChatPane from '../../components/ChatPane';
@@ -30,10 +31,6 @@ const formatDisplayDate = (value) => {
 
   return new Date(value).toLocaleDateString();
 };
-
-const MS_PER_DAY = 24 * 60 * 60 * 1000
-const WEEKS_FACTOR = 7
-const DEFAULT_WEEK_NUMBER = 1
 
 const computeCurrentWeekForPlacement = (placement, today = new Date()) => {
   if (!placement || !placement.start_date) return DEFAULT_WEEK_NUMBER
