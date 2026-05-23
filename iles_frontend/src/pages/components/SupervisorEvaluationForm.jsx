@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { MAX_SCORE } from '@/constants/appConstants';
 
 /* eslint-disable react-hooks/set-state-in-effect */
 import { criteriaAPI, evaluationsAPI, getErrorMessage } from '../../api/api';
@@ -418,7 +419,7 @@ export default function SupervisorEvaluationForm({
           if (!c) return null;
 
           const itemScore = items.find((it) => it.criteria_id === c.id)?.score || '';
-          const maxScore = 100;
+          const maxScore = MAX_SCORE;
           const roleShare = determinedEvaluationType === 'academic'
             ? Number(c.academic_share || 0)
             : Number(c.supervisor_share || 0);
