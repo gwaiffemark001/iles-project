@@ -1,6 +1,7 @@
 import { useEffect, useState , useCallback, useMemo} from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '@/auth/useAuth'
+import { formatDate } from '@/utils/dateUtils'
 
 export default function LogbookList() {
   const { api } = useAuth()
@@ -8,13 +9,9 @@ export default function LogbookList() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
-  const formatDate = useCallback((value) => {
+  const formatDateValue = useCallback((value) => {
     if (!value) return 'Not set'
-    try {
-      return new Date(value).toLocaleDateString()
-      } catch {
-        return 'Not set'
-      }
+    return formatDate(value)
   }, [])
 
   useEffect(() => {
@@ -55,7 +52,7 @@ export default function LogbookList() {
             </span>
           </div>
           <div className="iles-muted">
-            Deadline: {formatDate(l.deadline)}
+            Deadline: {formatDateValue(l.deadline)}
           </div>
 
           {l.supervisor_comment ? (
@@ -69,7 +66,7 @@ export default function LogbookList() {
           )}
           {l.submitted_at ? (
             <div className="iles-muted">
-              Submitted: {formatDate(l.submitted_at)}
+              Submitted: {formatDateValue(l.submitted_at)}
             </div>
           ) : (
             <div className="iles-muted">
