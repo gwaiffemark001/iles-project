@@ -2,6 +2,7 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
 
 import { chatAPI } from '../api/api';
+import { formatDate, formatTime } from '@/utils/dateUtils'
 import useInterval from '../hooks/useInterval'
 import './ChatPane.css';
 
@@ -127,7 +128,7 @@ export default function ChatPane({ currentUserId, onUnreadCountChange }) {
                     <div className="contact-role">{contact.role}</div>
                     {contact.last_message_time && (
                       <div className="contact-time">
-                        {new Date(contact.last_message_time).toLocaleDateString([], {
+                        {formatDate(contact.last_message_time, {
                           month: 'short',
                           day: 'numeric',
                           hour: '2-digit',
@@ -165,10 +166,7 @@ export default function ChatPane({ currentUserId, onUnreadCountChange }) {
                     >
                       <div className="message-content">{msg.message}</div>
                       <div className="message-time">
-                        {new Date(msg.created_at).toLocaleTimeString([], {
-                          hour: '2-digit',
-                          minute: '2-digit',
-                        })}
+                        {formatTime(msg.created_at)}
                       </div>
                     </div>
                   ))
