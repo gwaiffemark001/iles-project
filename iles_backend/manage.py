@@ -17,6 +17,8 @@ def main():
         ) from exc
     execute_from_command_line(sys.argv)
 
+# Commit 11: add small non-functional comment to manage.py for commit tracking
+
 
 if __name__ == '__main__':
     main()
