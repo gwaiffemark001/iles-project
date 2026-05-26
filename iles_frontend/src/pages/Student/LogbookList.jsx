@@ -77,7 +77,7 @@ export default function LogbookList() {
       </Link>
     ))
 
-  }, [logs, formatDate])
+  }, [logs, formatDateValue])
 
   return (
     <div className="iles-page" aria-busy={loading}>

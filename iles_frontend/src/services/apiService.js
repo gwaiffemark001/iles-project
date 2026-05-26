@@ -4,50 +4,34 @@ export const apiService = {
   // Profile endpoints
   profile: {
     get: async () => {
-      try {
-        const response = await api.get('/profile/');
-        return response.data;
-      } catch (error) {
-        throw error;
-      }
+      const response = await api.get('/profile/')
+      return response.data
     },
-    
+
     update: async (formData) => {
-      try {
-        const response = await api.put('/profile/', formData);
-        return response.data;
-      } catch (error) {
-        throw error;
-      }
+      const response = await api.put('/profile/', formData)
+      return response.data
     }
   },
 
   // Authentication endpoints
   auth: {
     login: async (credentials) => {
-      try {
-        const response = await api.post('/auth/login/', credentials);
-        return response.data;
-      } catch (error) {
-        throw error;
-      }
+      const response = await api.post('/auth/login/', credentials)
+      return response.data
     },
-    
+
     logout: async () => {
-      try {
-        await api.post('/auth/logout/');
-        return { success: true };
-      } catch (error) {
-        throw error;
-      }
+      await api.post('/auth/logout/')
+      return { success: true }
     },
     
     refreshToken: async () => {
       try {
-        const response = await api.post('/auth/refresh/');
-        return response.data;
+        const response = await api.post('/auth/refresh/')
+        return response.data
       } catch (error) {
-        throw new Error(`Failed to refresh token: ${error.message || 'Unknown error'}`);
+        throw new Error(`Failed to refresh token: ${error.message || 'Unknown error'}`)
       }
     }
   },
@@ -55,12 +39,8 @@ export const apiService = {
   // Student endpoints
   students: {
     getLogs: async (studentId) => {
-      try {
-        const response = await api.get(`/students/${studentId}/logs/`);
-        return response.data;
-      } catch (error) {
-        throw error;
-      }
+      const response = await api.get(`/students/${studentId}/logs/`)
+      return response.data
     },
     
     createLog: async (studentId, logData) => {
