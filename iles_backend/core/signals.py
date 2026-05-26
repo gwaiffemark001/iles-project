@@ -25,3 +25,4 @@ def weekly_log_notification_handler(sender, instance, created, **kwargs):
 def placement_notification_handler(sender, instance, created, **kwargs):
     placement_workflow_notification(sender, instance, created, **kwargs)
 
+# split commit: feat(signals): add user profile creation signal handler
