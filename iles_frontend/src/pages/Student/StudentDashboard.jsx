@@ -5,6 +5,8 @@ import { useAuth } from '@/auth/useAuth';
 import { logsAPI, placementsAPI, evaluationsAPI, criteriaAPI, notificationsAPI } from '@/api/api';
 import { getErrorMessage } from '@/api/api';
 import { buildWeeklyEvaluationSummaries } from '@/utils/evaluationSummary';
+import { formatDate } from '@/utils/dateUtils';
+import { MS_PER_DAY, WEEKS_FACTOR, DEFAULT_WEEK_NUMBER } from '@/constants/appConstants'
 import useInterval from '@/hooks/useInterval';
 import ProfileEditor from '../../components/ProfileEditor';
 import UserGuide from '../../components/UserGuide';
@@ -31,28 +33,23 @@ const createInitialLogForm = (defaultPlacementId = '') => ({
 const getPlacementId = (log) => log.placement?.id ?? log.placement_id ?? '';
 
 const formatDisplayDate = (value) => {
-  if (!value) {
-    return 'Not set';
-  }
-
-  return new Date(value).toLocaleDateString();
+  const formatted = formatDate(value)
+  return formatted || 'Not set'
 };
 
-const MS_PER_DAY = 24 * 60 * 60 * 1000
-
 const computeCurrentWeekForPlacement = (placement, today = new Date()) => {
-  if (!placement || !placement.start_date) return 1
+  if (!placement || !placement.start_date) return DEFAULT_WEEK_NUMBER
   const start = new Date(placement.start_date)
-  if (Number.isNaN(start.getTime())) return 1
+  if (Number.isNaN(start.getTime())) return DEFAULT_WEEK_NUMBER
 
   const end = placement.end_date ? new Date(placement.end_date) : null
   const effectiveDate = end && end < today ? end : today
   const elapsedDays = Math.max(0, Math.floor((effectiveDate.getTime() - start.getTime()) / MS_PER_DAY))
-  return Math.max(1, Math.floor(elapsedDays / 7) + 1)
+  return Math.max(DEFAULT_WEEK_NUMBER, Math.floor(elapsedDays / WEEKS_FACTOR) + 1)
 }
 
 const computeNextWeekNumberForPlacement = (placementId, logs = []) => {
-  if (!placementId) return 1
+  if (!placementId) return DEFAULT_WEEK_NUMBER
 
   const placementWeeks = logs
     .filter((log) => String(log.placement?.id ?? log.placement_id) === String(placementId))
@@ -60,7 +57,7 @@ const computeNextWeekNumberForPlacement = (placementId, logs = []) => {
     .filter((weekNumber) => !Number.isNaN(weekNumber) && weekNumber > 0)
 
   if (!placementWeeks.length) {
-    return 1
+    return DEFAULT_WEEK_NUMBER
   }
 
   return Math.max(...placementWeeks) + 1
@@ -75,12 +72,12 @@ const computePlacementProgress = (placement, today = new Date()) => {
 
   // Total weeks for the entire placement duration
   const totalDays = Math.max(0, Math.floor((end.getTime() - start.getTime()) / MS_PER_DAY));
-  const totalWeeks = Math.max(1, Math.ceil(totalDays / 7));
+  const totalWeeks = Math.max(DEFAULT_WEEK_NUMBER, Math.ceil(totalDays / WEEKS_FACTOR));
 
   // Elapsed weeks from start to today (or end if placement already ended)
   const effectiveDate = end < today ? end : today;
   const elapsedDays = Math.max(0, Math.floor((effectiveDate.getTime() - start.getTime()) / MS_PER_DAY));
-  const elapsedWeeks = Math.max(1, Math.ceil(elapsedDays / 7));
+  const elapsedWeeks = Math.max(DEFAULT_WEEK_NUMBER, Math.ceil(elapsedDays / WEEKS_FACTOR));
 
   // Progress is elapsed weeks / total weeks
   const percent = Math.round((Math.min(elapsedWeeks, totalWeeks) / totalWeeks) * 100);

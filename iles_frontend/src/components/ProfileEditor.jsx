@@ -150,7 +150,6 @@ const ProfileEditor = () => {
         setTimeout(() => setMessage(''), 3000);
       }
     } catch (err) {
-    console.error('Profile update error:', err);
       const errorMessage = err.response?.data?.detail || 
                         err.response?.data?.message || 
                         err.message || 

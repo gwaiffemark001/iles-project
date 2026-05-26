@@ -2,9 +2,8 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useState } from 'react';
 import { useAuth } from '@/auth/useAuth';
 import './Login.css';
-import '../../ILES.css'; 
 
-function Login() {
+const ROLE_DASHBOARD_PATHS = {\n  admin: '/app/admin/dashboard',\n  academic_supervisor: '/app/academic/dashboard',\n  workplace_supervisor: '/app/workplace/dashboard',\n};\n\nconst getDefaultDashboardPath = (role) => ROLE_DASHBOARD_PATHS[role] || '/app/student/dashboard';\n\nfunction Login() {
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
     const [errorMessage, setErrorMessage] = useState('');

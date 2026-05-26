@@ -1,6 +1,6 @@
 
-import axios from 'axios';
-const API_BASE_URL = 'http://localhost:8000/api'; // Adjust for your backend URL
+import axios from 'axios'
+import { API_BASE_URL } from '@/constants/appConstants'
 
 const api = axios.create({
   baseURL: API_BASE_URL,

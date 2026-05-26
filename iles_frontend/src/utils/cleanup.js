@@ -1,15 +1,12 @@
-// Cleanup utilities for removing console.log statements in production
+// Cleanup utilities - production builds should disable console output via Vite configuration
+// Use tree-shaking and minification to remove unused code in production
 
-export const removeConsoleLogs = () => {
-  // Remove all console.log statements in production
+/**
+ * Enable production-safe logging
+ * Console output should be handled by the build configuration
+ */
+export const setupProductionMode = () => {
   if (import.meta.env.MODE === 'production') {
-    console.log = () => {};
-    console.warn = () => {};
-    console.error = () => {};
+    globalThis.DEBUG = false;
   }
-};
-
-export const cleanupUnusedCode = () => {
-  // Placeholder for future cleanup operations
-  return true;
 };

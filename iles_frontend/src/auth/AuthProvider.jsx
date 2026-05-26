@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { createApiClient } from '../api/client'
 import AuthContext from "./AuthContextInstance";
+import { API_SERVER_URL } from '@/constants/appConstants'
 
 const ACCESS_KEY = 'access_token'
 const REFRESH_KEY = 'refresh_token'
@@ -28,7 +29,7 @@ function clearStoredTokens() {
 }
 
 export function AuthProvider({ children }) {
-  const baseUrl = import.meta.env?.VITE_API_BASE_URL || 'http://localhost:8000'
+  const baseUrl = API_SERVER_URL
 
   const [accessToken, setAccessToken] = useState(getStoredAccess())
   const [refreshToken, setRefreshToken] = useState(getStoredRefresh())

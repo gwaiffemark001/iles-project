@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '@/auth/useAuth'
 
@@ -8,6 +8,10 @@ export default function PlacementsList() {
   const [query, setQuery] = useState('')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+
+  const handleSearchChange = useCallback((e) => {
+    setQuery(e.target.value)
+  }, [])
 
   useEffect(() => {
     let cancelled = false
@@ -39,6 +43,15 @@ export default function PlacementsList() {
     })
   }, [placements, query])
 
+  const getStatusClass = useCallback((status) => {
+    if (status === 'pending') return 'Available'
+    return status || 'Unknown'
+  }, [])
+
+  const getStatusBadgeClass = useCallback((status) => {
+    return `iles-badge ${status || 'default'}`
+  }, [])
+
   return (
     <div className="iles-page">
       <header className="iles-header">
@@ -48,40 +61,67 @@ export default function PlacementsList() {
 
       <div className="iles-row">
         <input
+          type='text'
           className="iles-input"
           placeholder="Search by company or address..."
           value={query}
-          onChange={(e) => setQuery(e.target.value)}
+          onChange={handleSearchChange}
+          aria-label='Search placements'
+          autoComplete='off'
         />
         <Link className="iles-button secondary" to="/app/student/applications">
           My applications
         </Link>
       </div>
 
-      {loading ? <p className="iles-muted">Loading...</p> : null}
-      {error ? <p className="error-message">{error}</p> : null}
+      {loading ? (
+        <p className="iles-muted" role='status'>
+          Loading...
+        </p> ) : null}
+      {error ? (
+        <p className="error-message" role='alert'>
+          {error}
+        </p> 
+      ): null}
 
       <div className="iles-grid">
-        {filtered.map((p) => (
-          <Link key={p.id} to={`/app/student/placements/${p.id}`} className="iles-card link-card">
-            <div className="iles-stack">
-              <div className="iles-strong">{p.company_name}</div>
-              <div className="iles-muted">{p.company_address || 'Address not set'}</div>
-              <div className="iles-row">
-                <span className={`iles-badge ${p.status || ''}`}>{p.status === 'pending' ? 'Available' : p.status}</span>
-                <span className="iles-muted">
-                  {p.start_date} → {p.end_date}
-                </span>
-              </div>
-            </div>
-          </Link>
-        ))}
+        {filtered.map((p) => {
+          const companyName = p.company_name || 'Unnamed Company'
+          const companyAddress = p.company_address || 'No address provided'
+
+          return (
+            <Link to={`/app/student/placements/${p.id}`} 
+              key={p.id}
+              className="iles-card link-card"
+              >
+                <div className="iles-stack">
+                  <div className="iles-strong">
+                    {companyName}
+                  </div>
+                  <div className="iles-muted">
+                    {companyAddress}
+                  </div>
+                <div className='iles-row'>
+                  <span className={getStatusBadgeClass(p.status)}>
+                    {getStatusClass(p.status)}
+                  </span>
+
+                  <span className="iles-muted">
+                    {p.start_date || 'N/A'} → {p.end_date || 'N/A'}
+                  </span>
+                </div>
+                </div> 
+
+            </Link>
+          )
+        })}
       </div>
 
       {!loading && !error && filtered.length === 0 ? (
-        <p className="iles-muted">No available placements found.</p>
+        <p className="iles-muted" >
+          No Available placements found
+        </p>
       ) : null}
     </div>
   )
 }
-

@@ -1,31 +1,15 @@
 import { useCallback, useEffect, useState, useMemo } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '@/auth/useAuth'
+import { formatDate } from '@/utils/dateUtils'
+import { STATUS_BADGE_CLASSES, APPLICATION_STATUS_LABELS } from '@/constants/appConstants'
 
 function badgeClass(status) {
-  const s = (status || '').toLowerCase()
-  if (s === 'approved') return 'approved'
-  if (s === 'rejected') return 'rejected'
-  if (s === 'withdrawn') return 'withdrawn'
-  return 'pending'
+  return STATUS_BADGE_CLASSES[(status || '').toLowerCase()] || 'pending'
 }
 
 function statusLabel(status) {
-  const s = (status || '').toLowerCase()
-  if (s === 'pending') return 'Pending review'
-  if (s === 'approved') return 'Approved'
-  if (s === 'rejected') return 'Rejected'
-  if (s === 'withdrawn') return 'Withdrawn'
-  return status || 'Pending'
-}
-
-function formatDate(value) {
-  if (!value) return ''
-  try {
-    return new Date(value).toLocaleDateString()
-  } catch {
-    return ''
-  }
+  return APPLICATION_STATUS_LABELS[(status || '').toLowerCase()] || status || 'Pending'
 }
 
 function placementLabel(app) {

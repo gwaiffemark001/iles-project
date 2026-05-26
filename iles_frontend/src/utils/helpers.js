@@ -1,4 +1,10 @@
 // Date formatting utilities
+const DEFAULT_LOCALE = 'en-US'
+
+// Validation patterns
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+const PHONE_REGEX = /^\+?[\d\s-]{7,15}$/
+
 export const formatDate = (date) => {
   if (!date) return '';
   
@@ -7,7 +13,7 @@ export const formatDate = (date) => {
     month: 'long' 
   };
   
-  return new Date(date).toLocaleDateString('en-US', options);
+  return new Date(date).toLocaleDateString(DEFAULT_LOCALE, options);
 };
 
 export const formatDateTime = (dateTime) => {
@@ -21,7 +27,7 @@ export const formatDateTime = (dateTime) => {
     minute: '2-digit' 
   };
   
-  return new Date(dateTime).toLocaleString('en-US', options);
+  return new Date(dateTime).toLocaleString(DEFAULT_LOCALE, options);
 };
 
 // String utilities
@@ -46,13 +52,11 @@ export const generateInitials = (firstName, lastName) => {
 
 // Validation utilities
 export const isValidEmail = (email) => {
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  return emailRegex.test(email);
+  return EMAIL_REGEX.test(email);
 };
 
 export const isValidPhone = (phone) => {
-  const phoneRegex = /^\+?[\d\s-]{7,15}$/;
-  return phoneRegex.test(phone);
+  return PHONE_REGEX.test(phone);
 };
 
 export const isValidRequired = (value) => {

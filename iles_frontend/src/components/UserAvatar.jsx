@@ -1,4 +1,5 @@
 import './UserAvatar.css';
+import { API_SERVER_URL } from '@/constants/appConstants'
 
 const UserAvatar = ({ user, size = 'medium', className = '', onClick = null }) => {
   // Extract initials from user name
@@ -19,12 +20,7 @@ const UserAvatar = ({ user, size = 'medium', className = '', onClick = null }) =
     if (url.startsWith('http')) return url;
     // If it's relative, prepend the backend server URL
     if (url.startsWith('/')) {
-      try {
-        const backendUrl = import.meta.env?.VITE_API_BASE_URL || 'http://localhost:8000';
-        return `${backendUrl}${url}`;
-      } catch {
-        return url;
-      }
+      return `${API_SERVER_URL}${url}`
     }
     return url;
   };

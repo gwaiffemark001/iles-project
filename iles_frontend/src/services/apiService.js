@@ -8,7 +8,6 @@ export const apiService = {
         const response = await api.get('/profile/');
         return response.data;
       } catch (error) {
-        console.error('Error fetching profile:', error);
         throw error;
       }
     },
@@ -18,7 +17,6 @@ export const apiService = {
         const response = await api.put('/profile/', formData);
         return response.data;
       } catch (error) {
-        console.error('Error updating profile:', error);
         throw error;
       }
     }
@@ -31,7 +29,6 @@ export const apiService = {
         const response = await api.post('/auth/login/', credentials);
         return response.data;
       } catch (error) {
-        console.error('Error logging in:', error);
         throw error;
       }
     },
@@ -41,7 +38,6 @@ export const apiService = {
         await api.post('/auth/logout/');
         return { success: true };
       } catch (error) {
-        console.error('Error logging out:', error);
         throw error;
       }
     },
@@ -51,7 +47,6 @@ export const apiService = {
         const response = await api.post('/auth/refresh/');
         return response.data;
       } catch (error) {
-        console.error('Error refreshing token:', error);
         throw new Error(`Failed to refresh token: ${error.message || 'Unknown error'}`);
       }
     }
@@ -64,7 +59,6 @@ export const apiService = {
         const response = await api.get(`/students/${studentId}/logs/`);
         return response.data;
       } catch (error) {
-        console.error('Error fetching student logs:', error);
         throw error;
       }
     },

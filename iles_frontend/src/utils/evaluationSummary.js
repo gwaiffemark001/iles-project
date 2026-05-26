@@ -1,3 +1,5 @@
+import { MS_PER_DAY, WEEKS_FACTOR } from '@/constants/appConstants'
+
 export const getGradeWeight = (score) => {
   const numericScore = Number(score)
 
@@ -19,8 +21,6 @@ export const getGradeWeight = (score) => {
   return 0
 }
 
-const MS_PER_DAY = 24 * 60 * 60 * 1000
-
 const parseDate = (value) => {
   if (!value) {
     return null
@@ -39,7 +39,7 @@ const getPlacementTotalWeeks = (placement) => {
   }
 
   const totalDays = Math.max(1, Math.floor((endDate.getTime() - startDate.getTime()) / MS_PER_DAY) + 1)
-  return Math.max(1, Math.ceil(totalDays / 7))
+  return Math.max(1, Math.ceil(totalDays / WEEKS_FACTOR))
 }
 
 const getOverdueWeeks = (placement, today = new Date()) => {

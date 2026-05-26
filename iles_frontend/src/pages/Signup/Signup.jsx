@@ -2,12 +2,13 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useState } from 'react';
 import { useAuth } from '@/auth/useAuth';
 import { roleToHomePath } from '../../routes/roleRedirect';
+import { ROLE_OPTIONS, USER_ROLES } from '@/constants/appConstants';
 import '../Login/Login.css';
 
 function Signup() {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
-    const [role, setRole] = useState('student');
+    const [role, setRole] = useState(USER_ROLES.STUDENT);
     const [errorMessage, setErrorMessage] = useState('');
     const [successMessage, setSuccessMessage] = useState('');
     const [firstName, setFirstName] = useState('');
@@ -93,9 +94,11 @@ function Signup() {
                         onChange={(e) => setRole(e.target.value)}
                         required
                     >
-                        <option value="student">Student</option>
-                        <option value="workplace_supervisor">Workplace Supervisor</option>
-                        <option value="academic_supervisor">Academic Supervisor</option>
+                    {ROLE_OPTIONS.map((option) => (
+                        <option key={option.value} value={option.value}>
+                          {option.label}
+                        </option>
+                    ))}
                     </select>
                     <input
                         type="email"
