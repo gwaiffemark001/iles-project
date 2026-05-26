@@ -79,6 +79,8 @@ WSGI_APPLICATION = 'iles_backend.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/6.0/ref/settings/#databases
 
+# Commit 10: settings comment for commit tracking
+
 from dotenv import load_dotenv
 
 load_dotenv()
