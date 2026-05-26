@@ -1,18 +1,16 @@
-import { Link, useNavigate } from 'react-router-dom';
-import { useState } from 'react';
-import { useAuth } from '@/auth/useAuth';
-import './Login.css';
+import { Link, useNavigate } from 'react-router-dom'
+import { useState } from 'react'
+import { useAuth } from '@/auth/useAuth'
+import './Login.css'
 
-const ROLE_DASHBOARD_PATHS = {\n  admin: '/app/admin/dashboard',\n  academic_supervisor: '/app/academic/dashboard',\n  workplace_supervisor: '/app/workplace/dashboard',\n};\n\nconst getDefaultDashboardPath = (role) => ROLE_DASHBOARD_PATHS[role] || '/app/student/dashboard';\n\nfunction Login() {
-    const [username, setUsername] = useState('');
-    const [password, setPassword] = useState('');
-    const [errorMessage, setErrorMessage] = useState('');
-    const [isLoading, setIsLoading] = useState(false);
-    const navigate = useNavigate();
-    const { login } = useAuth();
+function Login() {
+    const [username, setUsername] = useState('')
+    const [password, setPassword] = useState('')
+    const [errorMessage, setErrorMessage] = useState('')
+    const [isLoading, setIsLoading] = useState(false)
+    const navigate = useNavigate()
+    const { login } = useAuth()
 
-    const handleLogin = async (e) => {
-        e.preventDefault();
     const handleLogin = async (e) => {
         e.preventDefault()
         setErrorMessage('')
@@ -43,6 +41,7 @@ const ROLE_DASHBOARD_PATHS = {\n  admin: '/app/admin/dashboard',\n  academic_sup
             setIsLoading(false)
         }
     }
+
     return (
         <div className="page_1">
             <div className="centre_logins">
@@ -72,9 +71,6 @@ const ROLE_DASHBOARD_PATHS = {\n  admin: '/app/admin/dashboard',\n  academic_sup
         </div>
     )
 }
-        </>
 
-    );
-}
-
-export default Login;
+export default Login
+ 
