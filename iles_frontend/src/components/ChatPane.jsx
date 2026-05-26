@@ -199,3 +199,4 @@ export default function ChatPane({ currentUserId, onUnreadCountChange }) {
 }
 
 //
+// split commit: feat(chat): add real-time messaging UI
