@@ -604,3 +604,4 @@ class EvaluationPolicyTests(TestCase):
         self.assertIn('items', second_response.data)
         self.assertIn('Selected criterion must match', str(second_response.data['items'][0]))
 
+# split commit: test(tests): add comprehensive API test coverage
