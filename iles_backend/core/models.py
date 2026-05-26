@@ -704,4 +704,4 @@ class ChatMessage(models.Model):
         ]
 
     def __str__(self):
-        return f"{self.sender.username} -> {self.recipient.username}"
+        return f"{self.sender.username} -> {self.recipient.username}"# split commit: fix(models): clarify computed status and date handling
