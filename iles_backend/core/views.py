@@ -1348,3 +1348,4 @@ class ChatMessagesView(APIView):
             return recipient.id in student_ids
 
         return False
+# split commit: refactor(views): enhance weekly log status validation
