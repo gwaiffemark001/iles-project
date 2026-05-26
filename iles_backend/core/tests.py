@@ -198,6 +198,9 @@ class NotificationWorkflowTests(TestCase):
             'academic_supervisor_id': self.academic_supervisor.id,
             'company_name': 'Makerere Innovation Hub',
             'company_address': 'Kampala',
+        })
+
+# Commit 9: appended small test file comment for commit tracking
             'start_date': '2026-05-01',
             'end_date': '2026-07-31',
             'status': 'pending',
