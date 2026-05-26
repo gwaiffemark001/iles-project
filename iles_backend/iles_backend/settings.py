@@ -170,4 +170,4 @@ REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': [
         'rest_framework.permissions.IsAuthenticated',
     ],
-}
+}# split commit: chore(settings): update django and app configuration
