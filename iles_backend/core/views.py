@@ -202,7 +202,6 @@ class WeeklyLogDetailView(APIView):
                     status=status.HTTP_400_BAD_REQUEST,
                 )
         
-        # Commit 5: small note added for commit history tracking
 
             previous_status = log.status
             serializer.save(

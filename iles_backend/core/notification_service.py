@@ -238,4 +238,3 @@ def trigger_manual_notification(recipients, title, message, notification_type, a
     
     return notifications_sent
 
-# Commit 7: non-functional comment appended for commit log

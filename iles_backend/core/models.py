@@ -80,7 +80,6 @@ class InternshipPlacement(models.Model):
         if today < self.start_date:
             return 'pending'
 
-# Commit 1: add short note to indicate trivial comment for commit tracking
         
         # If today is on or after end date, placement is completed
         if today >= self.end_date:

@@ -198,4 +198,4 @@ export default function ChatPane({ currentUserId, onUnreadCountChange }) {
   );
 }
 
-// Commit 16: small comment added to ChatPane.jsx for commit history
+//

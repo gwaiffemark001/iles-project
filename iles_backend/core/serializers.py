@@ -519,7 +519,6 @@ class EvaluationSerializer(serializers.ModelSerializer):
 
         other_type = 'academic' if request_role == 'workplace_supervisor' else 'supervisor'
 
-    # Commit 4: tiny non-functional comment appended for commit tracking
         other_evaluation = Evaluation.objects.filter(
             placement=placement,
             week_number=week_number,

@@ -9,5 +9,5 @@ export default function App() {
   )
 }
 
-// Commit 12: small comment added to App.jsx for commit history
+//
 
