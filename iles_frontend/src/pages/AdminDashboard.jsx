@@ -18,6 +18,8 @@ const TabLoadingFallback = () => (
   </div>
 );
 
+const MS_PER_DAY = 24 * 60 * 60 * 1000;
+
 const computePlacementProgress = (placement, today = new Date()) => {
   if (!placement || !placement.start_date || !placement.end_date) return 0;
 
@@ -27,19 +29,26 @@ const computePlacementProgress = (placement, today = new Date()) => {
 
   // Total weeks for the entire placement duration
   const totalDays = Math.max(0, Math.floor((end.getTime() - start.getTime()) / MS_PER_DAY));
-  const totalWeeks = Math.max(1, Math.ceil(totalDays / WEEKS_FACTOR));
+  const totalWeeks = Math.max(1, Math.ceil(totalDays / 7));
 
   // Elapsed weeks from start to today (or end if placement already ended)
   const effectiveDate = end < today ? end : today;
   const elapsedDays = Math.max(0, Math.floor((effectiveDate.getTime() - start.getTime()) / MS_PER_DAY));
-  const elapsedWeeks = Math.max(1, Math.ceil(elapsedDays / WEEKS_FACTOR));
+  const elapsedWeeks = Math.max(1, Math.ceil(elapsedDays / 7));
 
   // Progress is elapsed weeks / total weeks
-  const percent = Math.round((Math.min(elapsedWeeks, totalWeeks) / totalWeeks) * PROGRESS_PERCENTAGE_MAX);
-  return Math.min(PROGRESS_PERCENTAGE_MAX, Math.max(PROGRESS_PERCENTAGE_MIN, Number.isNaN(percent) ? PROGRESS_PERCENTAGE_MIN : percent));
+  const percent = Math.round((Math.min(elapsedWeeks, totalWeeks) / totalWeeks) * 100);
+  return Math.min(100, Math.max(0, Number.isNaN(percent) ? 0 : percent));
 };
 
-const userRoles = ROLE_OPTIONS
+const userRoles = [
+  { value: 'student', label: 'Student' },
+  { value: 'workplace_supervisor', label: 'Workplace Supervisor' },
+  { value: 'academic_supervisor', label: 'Academic Supervisor' },
+  { value: 'admin', label: 'Admin' },
+]
+
+// use shared helper for weekly summaries and grade weights
 
 function AdminDashboard() {
   const location = useLocation()
@@ -243,6 +252,7 @@ function AdminDashboard() {
   }
 
   const handleDeleteUser = async (userId) => {
+<<<<<<< HEAD
     if (!confirmAction('Are you sure you want to delete this user?')) {
       return
     }
@@ -253,10 +263,24 @@ function AdminDashboard() {
       setStatus('User deleted successfully.')
     } catch (error) {
       setError(getApiErrorMessage(error))
+=======
+    // Attempting to delete user
+    if (window.confirm('Are you sure you want to delete this user?')) {
+      try {
+        await axios.delete(`http://127.0.0.1:8000/api/users/${userId}/`, authHeaders)
+        setUsers(users.filter(user => user.id !== userId))
+        alert('User deleted successfully')
+      } catch (error) {
+        // Error deleting user
+        alert('Error deleting user: ' + (error.response?.data?.message || error.message))
+      }
+>>>>>>> 16edc36 (chore(frontend): remove duplicate AdminDashboard CSS import
+)
     }
   }
 
   const handleDeletePlacement = async (placementId) => {
+<<<<<<< HEAD
     if (!confirmAction('Are you sure you want to delete this placement?')) {
       return
     }
@@ -267,6 +291,18 @@ function AdminDashboard() {
       setStatus('Placement deleted successfully.')
     } catch (error) {
       setError(getApiErrorMessage(error))
+=======
+    if (window.confirm('Are you sure you want to delete this placement?')) {
+      try {
+        await axios.delete(`http://127.0.0.1:8000/api/placements/${placementId}/`, authHeaders)
+        setPlacements(placements.filter(p => p.id !== placementId))
+        alert('Placement deleted successfully')
+      } catch (error) {
+        // Error deleting placement
+        alert('Error deleting placement: ' + (error.response?.data?.message || error.message))
+      }
+>>>>>>> 16edc36 (chore(frontend): remove duplicate AdminDashboard CSS import
+)
     }
   }
 
@@ -512,7 +548,13 @@ function AdminDashboard() {
 
       // Dashboard data loaded successfully
     } catch (requestError) {
+<<<<<<< HEAD
       setError(getApiErrorMessage(requestError) || 'Unable to load admin dashboard data.')
+=======
+      const message = requestError?.response?.data?.message || requestError?.message || 'Unable to load admin dashboard data.'
+      setError(message)
+>>>>>>> 16edc36 (chore(frontend): remove duplicate AdminDashboard CSS import
+)
       // Dashboard error
     } finally {
       setLoading(false)
