@@ -22,3 +22,4 @@ def main():
 
 if __name__ == '__main__':
     main()
+# split commit: chore(manage): django management entry point
