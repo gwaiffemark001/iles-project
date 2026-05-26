@@ -11,3 +11,4 @@ export default function App() {
 
 //
 
+// split commit: refactor(app): restructure main entry component
