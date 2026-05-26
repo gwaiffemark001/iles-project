@@ -160,3 +160,5 @@ def notify_evaluation_status_changed(evaluation, actor=None, created=False, week
             "evaluation_type": evaluation.evaluation_type,
         },
     )
+
+# Commit 2: added tiny comment to mark change for commit history
