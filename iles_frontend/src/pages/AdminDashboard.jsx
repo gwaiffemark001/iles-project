@@ -16,7 +16,6 @@ const TabLoadingFallback = () => (
     <p>Loading...</p>
   </div>
 );
-import './AdminDashboard.css'
 
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
 
