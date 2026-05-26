@@ -230,6 +230,14 @@ export const criteriaAPI = {
 export const adminAPI = {
   getStatistics: () => getCachedRequest('/admin/statistics/', { ttl: 30000 }),
   getUsers: (params) => getCachedRequest('/users/', { params, ttl: 30000 }),
+  deleteUser: (id) => api.delete(`/users/${id}/`).then((response) => {
+    invalidateCacheByPrefix('/users/');
+    return response;
+  }),
+  deletePlacement: (id) => api.delete(`/placements/${id}/`).then((response) => {
+    invalidateCacheByPrefix('/placements/');
+    return response;
+  }),
 };
 
 export const notificationsAPI = {
