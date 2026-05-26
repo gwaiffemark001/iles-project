@@ -5,9 +5,8 @@ import AdminDashboard from './pages/AdminDashboard'
 import StudentDashboard from './pages/Student/StudentDashboard'
 import AcademicSupervisorDashboard from './pages/AcademicSupervisor/AcademicSupervisorDashboard'
 import WorkplaceSupervisorDashboard from './pages/WorkplaceSupervisor/WorkplaceSupervisorDashboard'
-import { API_SERVER_URL } from '@/constants/appConstants'
+import { API_BASE_URL } from '@/constants/appConstants'
 
-const API_BASE_URL = API_SERVER_URL
 const FORM_LOGIN = 'login'
 const FORM_REGISTER = 'register'
 const FORM_FORGOT = 'forgot'
@@ -85,7 +84,7 @@ export function ILES() {
     setLoading(true)
     try {
       const payload = await api.post(
-        '/api/token/',
+        '/token/',
         { username: loginUsername, password: loginPassword },
         { auth: false },
       )
@@ -113,7 +112,7 @@ export function ILES() {
     setLoading(true)
     try {
       await api.post(
-        '/api/register/',
+        '/register/',
         {
           username: registerData.username,
           email: registerData.email,
@@ -131,7 +130,7 @@ export function ILES() {
         { auth: false },
       )
       const loginPayload = await api.post(
-        '/api/token/',
+        '/token/',
         { username: registerData.username, password: registerData.password },
         { auth: false },
       )
@@ -160,7 +159,7 @@ export function ILES() {
     setLoading(true)
     try {
       await api.post(
-        '/api/forgot-password/',
+        '/forgot-password/',
         {
           identifier: forgotData.identifier,
           email: forgotData.email,
@@ -193,7 +192,7 @@ export function ILES() {
     setError('')
     try {
       const payload = await api.get(
-        '/api/profile/',
+        '/profile/',
         accessTokenOverride
           ? { headers: { Authorization: `Bearer ${accessTokenOverride}` } }
           : undefined,

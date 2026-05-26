@@ -1,9 +1,9 @@
 import { useState, useEffect, useCallback, useMemo, lazy, Suspense } from 'react'
 import { useNavigate } from 'react-router-dom'
-import axios from 'axios'
+import api, { adminAPI, criteriaAPI, evaluationsAPI, placementsAPI } from '../api/api'
 import { useAuth } from '@/auth/useAuth'
-import { criteriaAPI, evaluationsAPI, placementsAPI } from '../api/api'
 import { buildWeeklyEvaluationSummaries, getGradeWeight } from '../utils/evaluationSummary'
+import { confirmAction, getApiErrorMessage } from '../utils/helpers'
 import ProfileEditor from '../components/ProfileEditor'
 import UserGuide from '../components/UserGuide'
 import UserAvatar from '../components/UserAvatar'
@@ -52,10 +52,10 @@ const userRoles = [
 function AdminDashboard() {
   const navigate = useNavigate()
   const { user, logout } = useAuth()
-  const token = localStorage.getItem('access_token')
   const [stats, setStats] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [status, setStatus] = useState('')
   const [activeSection, setActiveSection] = useState('overview')
   const [placements, setPlacements] = useState([])
   const [users, setUsers] = useState([])
@@ -94,7 +94,6 @@ function AdminDashboard() {
     }, {}))
   }, [allWeeklySummaries])
 
-  const authHeaders = useMemo(() => ({ headers: { Authorization: `Bearer ${token}` } }), [token])
   const closeEditModal = () => {
     if (editSaving) {
       return
@@ -207,10 +206,9 @@ function AdminDashboard() {
           payload.password = editFormData.password.trim()
         }
 
-        const response = await axios.put(
-          `http://127.0.0.1:8000/api/users/${editingItem.id}/`,
+        const response = await api.put(
+          `/users/${editingItem.id}/`,
           payload,
-          authHeaders,
         )
 
         setUsers((currentUsers) => currentUsers.map((existingUser) => (
@@ -234,12 +232,7 @@ function AdminDashboard() {
           const response = await placementsAPI.createPlacement(payload)
           setPlacements((currentPlacements) => [...currentPlacements, response.data])
         } else {
-          const response = await axios.put(
-            `http://127.0.0.1:8000/api/placements/${editingItem.id}/`,
-            payload,
-            authHeaders,
-          )
-
+          const response = await placementsAPI.updatePlacement(editingItem.id, payload)
           setPlacements((currentPlacements) => currentPlacements.map((existingPlacement) => (
             existingPlacement.id === editingItem.id ? response.data : existingPlacement
           )))
@@ -247,7 +240,7 @@ function AdminDashboard() {
       }
 
       closeEditModal()
-      alert('Changes saved successfully')
+      setStatus('Changes saved successfully.')
     } catch (requestError) {
       const message = requestError?.response?.data?.error || requestError?.response?.data?.message || requestError?.message || 'Unable to save changes.'
       setEditError(message)
@@ -257,29 +250,30 @@ function AdminDashboard() {
   }
 
   const handleDeleteUser = async (userId) => {
-    // Attempting to delete user
-    if (window.confirm('Are you sure you want to delete this user?')) {
-      try {
-        await axios.delete(`http://127.0.0.1:8000/api/users/${userId}/`, authHeaders)
-        setUsers(users.filter(user => user.id !== userId))
-        alert('User deleted successfully')
-      } catch (error) {
-        // Error deleting user
-        alert('Error deleting user: ' + (error.response?.data?.message || error.message))
-      }
+    if (!confirmAction('Are you sure you want to delete this user?')) {
+      return
+    }
+
+    try {
+      await adminAPI.deleteUser(userId)
+      setUsers(users.filter(user => user.id !== userId))
+      setStatus('User deleted successfully.')
+    } catch (error) {
+      setError(getApiErrorMessage(error))
     }
   }
 
   const handleDeletePlacement = async (placementId) => {
-    if (window.confirm('Are you sure you want to delete this placement?')) {
-      try {
-        await axios.delete(`http://127.0.0.1:8000/api/placements/${placementId}/`, authHeaders)
-        setPlacements(placements.filter(p => p.id !== placementId))
-        alert('Placement deleted successfully')
-      } catch (error) {
-        // Error deleting placement
-        alert('Error deleting placement: ' + (error.response?.data?.message || error.message))
-      }
+    if (!confirmAction('Are you sure you want to delete this placement?')) {
+      return
+    }
+
+    try {
+      await adminAPI.deletePlacement(placementId)
+      setPlacements(placements.filter(p => p.id !== placementId))
+      setStatus('Placement deleted successfully.')
+    } catch (error) {
+      setError(getApiErrorMessage(error))
     }
   }
 
@@ -466,25 +460,31 @@ function AdminDashboard() {
   }
 
   const handleDeleteCriteria = async (critId) => {
-    if (window.confirm('Are you sure you want to delete this criteria?')) {
-      try {
-        await criteriaAPI.deleteCriteria(critId)
-        setCriteria(prev => prev.filter(c => c.id !== critId))
-      } catch (err) {
-        alert('Error deleting criteria: ' + (err.response?.data?.message || err.message))
-      }
+    if (!confirmAction('Are you sure you want to delete this criteria?')) {
+      return
+    }
+
+    try {
+      await criteriaAPI.deleteCriteria(critId)
+      setCriteria(prev => prev.filter(c => c.id !== critId))
+      setStatus('Criteria deleted successfully.')
+    } catch (err) {
+      setCriteriaError(getApiErrorMessage(err))
     }
   }
 
   const handleDeleteEvaluation = async (evalId) => {
-    if (window.confirm('Are you sure you want to delete this evaluation?')) {
-      try {
-        await evaluationsAPI.deleteEvaluation(evalId)
-        setEvaluations(prev => prev.filter(e => e.id !== evalId))
-        setSelectedEvaluation(null)
-      } catch (err) {
-        alert('Error deleting evaluation: ' + (err.response?.data?.message || err.message))
-      }
+    if (!confirmAction('Are you sure you want to delete this evaluation?')) {
+      return
+    }
+
+    try {
+      await evaluationsAPI.deleteEvaluation(evalId)
+      setEvaluations(prev => prev.filter(e => e.id !== evalId))
+      setSelectedEvaluation(null)
+      setStatus('Evaluation deleted successfully.')
+    } catch (err) {
+      setError(getApiErrorMessage(err))
     }
   }
 
@@ -500,13 +500,14 @@ function AdminDashboard() {
     try {
       setLoading(true)
       setError(null)
+      setStatus('')
 
       const [statsResponse, placementsResponse, evaluationsResponse, usersResponse, criteriaResponse] =
         await Promise.all([
-          axios.get('http://127.0.0.1:8000/api/admin/statistics/', authHeaders),
-          axios.get('http://127.0.0.1:8000/api/placements/', authHeaders),
-          axios.get('http://127.0.0.1:8000/api/evaluations/', authHeaders),
-          axios.get('http://127.0.0.1:8000/api/users/', authHeaders),
+          adminAPI.getStatistics(),
+          placementsAPI.getPlacements(),
+          evaluationsAPI.getEvaluations(),
+          adminAPI.getUsers(),
           criteriaAPI.getCriteria(),
         ])
 
@@ -518,13 +519,12 @@ function AdminDashboard() {
 
       // Dashboard data loaded successfully
     } catch (requestError) {
-      const message = requestError?.response?.data?.message || requestError?.message || 'Unable to load admin dashboard data.'
-      setError(message)
+      setError(getApiErrorMessage(requestError) || 'Unable to load admin dashboard data.')
       // Dashboard error
     } finally {
       setLoading(false)
     }
-  }, [authHeaders])
+  }, [])
 
   const activePlacementsCount = useMemo(() => {
     return Array.isArray(placements) ? placements.filter((p) => (p.status || '').toLowerCase() === 'active').length : 0
@@ -610,6 +610,11 @@ function AdminDashboard() {
             <div className="dashboard-loading-brand">ILES</div>
             <p className="dashboard-loading-text">Loading admin dashboard...</p>
           </div>
+        </div>
+      )}
+      {status && (
+        <div className="dashboard-status-message" style={{ padding: '12px', backgroundColor: '#ecfdf5', border: '1px solid #10b981', color: '#065f46', margin: '16px', borderRadius: '8px' }}>
+          {status}
         </div>
       )}
       {/* Sidebar */}
