@@ -54,3 +54,5 @@ class EvaluationCriteriaAdmin(admin.ModelAdmin):
 admin.site.register(EvaluationCriteria, EvaluationCriteriaAdmin)
 admin.site.register(Evaluation)
 admin.site.register(Notification, NotificationAdmin)
+
+# Commit 8: added trivial comment to admin.py for commit history
