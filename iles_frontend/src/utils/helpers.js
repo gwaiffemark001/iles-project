@@ -125,3 +125,18 @@ export const getStatusLabel = (status) => {
   
   return statusLabels[status] || status;
 };
+
+export const confirmAction = (message) => window.confirm(message);
+
+export const getApiErrorMessage = (error) => {
+  if (!error) return 'An unexpected error occurred.';
+  if (error.response) {
+    const data = error.response.data;
+    if (typeof data === 'string') return data;
+    if (data?.detail) return data.detail;
+    if (data?.message) return data.message;
+    const firstValue = Object.values(data)[0];
+    if (Array.isArray(firstValue)) return firstValue[0];
+  }
+  return error.message || 'An unexpected error occurred.';
+};
