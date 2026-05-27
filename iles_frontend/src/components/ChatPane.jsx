@@ -6,6 +6,15 @@ import { formatDate, formatTime } from '@/utils/dateUtils'
 import useInterval from '../hooks/useInterval'
 import './ChatPane.css';
 
+const [contacts, setContacts] = useState([]);
+  const [selectedContact, setSelectedContact] = useState(null);
+  const [messages, setMessages] = useState([]);
+  const [messageText, setMessageText] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const messagesEndRef = useRef(null);
+  const previousMessagesRef = useRef([]);
+
 export default function ChatPane({ currentUserId, onUnreadCountChange }) {
   const [contacts, setContacts] = useState([]);
   const [selectedContact, setSelectedContact] = useState(null);
