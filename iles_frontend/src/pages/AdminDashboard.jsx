@@ -1,3 +1,4 @@
+import PasswordField from '@/components/PasswordField';
 import { useState, useEffect, useCallback, useMemo, lazy, Suspense } from 'react'
 import { useNavigate } from 'react-router-dom'
 import api, { adminAPI, criteriaAPI, evaluationsAPI, placementsAPI } from '../api/api'
@@ -1360,13 +1361,13 @@ function AdminDashboard() {
 
                   <label style={{ display: 'grid', gap: '8px' }}>
                     <span style={{ color: '#475569', fontSize: '14px' }}>Reset Password</span>
-                    <input
-                      name="password"
-                      type="password"
+                    <PasswordField
+                      id="admin-reset-password"
                       value={editFormData.password || ''}
                       onChange={handleEditFieldChange}
                       placeholder="Leave blank to keep the current password"
                       disabled={editSaving}
+                      autoComplete="new-password"
                       style={editInputStyle}
                     />
                   </label>
