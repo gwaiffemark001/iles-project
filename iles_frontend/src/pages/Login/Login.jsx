@@ -1,6 +1,7 @@
 import { Link, useNavigate } from 'react-router-dom'
 import { useState } from 'react'
 import { useAuth } from '@/auth/useAuth'
+import PasswordField from '@/components/PasswordField'
 import './Login.css'
 
 function Login() {
@@ -53,7 +54,14 @@ function Login() {
                 <div>
                     <form className="logins" onSubmit={handleLogin}>
                         <input type="text" placeholder="Username/Email" value={username} onChange={(e) => setUsername(e.target.value)} required />
-                        <input type="password" placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} required />
+                        <PasswordField
+                            id="login-password"
+                            placeholder="Password"
+                            value={password}
+                            onChange={(e) => setPassword(e.target.value)}
+                            required
+                            autoComplete="current-password"
+                        />
                         <button className="login-btn" type="submit" disabled={isLoading}>
                             {isLoading ? 'Logging in...' : 'Login'}
                         </button>
