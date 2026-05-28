@@ -18,27 +18,10 @@ const TabLoadingFallback = () => (
   </div>
 );
 
-const MS_PER_DAY = 24 * 60 * 60 * 1000;
-
-const computePlacementProgress = (placement, today = new Date()) => {
-  if (!placement || !placement.start_date || !placement.end_date) return 0;
-
-  const start = new Date(placement.start_date);
-  const end = new Date(placement.end_date);
-  if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) return 0;
-
-  // Total weeks for the entire placement duration
-  const totalDays = Math.max(0, Math.floor((end.getTime() - start.getTime()) / MS_PER_DAY));
-  const totalWeeks = Math.max(1, Math.ceil(totalDays / 7));
-
-  // Elapsed weeks from start to today (or end if placement already ended)
-  const effectiveDate = end < today ? end : today;
-  const elapsedDays = Math.max(0, Math.floor((effectiveDate.getTime() - start.getTime()) / MS_PER_DAY));
-  const elapsedWeeks = Math.max(1, Math.ceil(elapsedDays / 7));
-
-  // Progress is elapsed weeks / total weeks
-  const percent = Math.round((Math.min(elapsedWeeks, totalWeeks) / totalWeeks) * 100);
-  return Math.min(100, Math.max(0, Number.isNaN(percent) ? 0 : percent));
+const computePlacementProgress = (placement) => {
+  if (placement?.progress == null) return 0;
+  const progress = Number(placement.progress)
+  return Number.isNaN(progress) ? 0 : Math.min(100, Math.max(0, progress))
 };
 
 const userRoles = [
@@ -94,6 +77,13 @@ function AdminDashboard() {
       return acc
     }, {}))
   }, [allWeeklySummaries])
+
+  useEffect(() => {
+    if (!status) return undefined
+
+    const timeoutId = setTimeout(() => setStatus(''), 3000)
+    return () => clearTimeout(timeoutId)
+  }, [status])
 
   const closeEditModal = () => {
     if (editSaving) {
@@ -490,11 +480,8 @@ function AdminDashboard() {
   }
 
   const filteredUsers = users.filter(user => {
-    const matchesSearch = user.username?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         user.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         getFullName(user).toLowerCase().includes(searchTerm.toLowerCase())
     const matchesRole = filterRole === 'all' || user.role === filterRole
-    return matchesSearch && matchesRole
+    return matchesRole
   })
 
   const fetchDashboardData = useCallback(async () => {
@@ -611,11 +598,6 @@ function AdminDashboard() {
             <div className="dashboard-loading-brand">ILES</div>
             <p className="dashboard-loading-text">Loading admin dashboard...</p>
           </div>
-        </div>
-      )}
-      {status && (
-        <div className="dashboard-status-message" style={{ padding: '12px', backgroundColor: '#ecfdf5', border: '1px solid #10b981', color: '#065f46', margin: '16px', borderRadius: '8px' }}>
-          {status}
         </div>
       )}
       {/* Sidebar */}
@@ -769,6 +751,24 @@ function AdminDashboard() {
       {/* Main Content */}
       <div style={{ flex: 1, padding: '20px' }}>
         <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
+          {status && (
+            <div
+              className="dashboard-status-message"
+              style={{
+                padding: '12px 14px',
+                backgroundColor: '#ecfdf5',
+                border: '1px solid #10b981',
+                color: '#065f46',
+                marginBottom: '16px',
+                borderRadius: '8px',
+                alignSelf: 'flex-start',
+                width: '100%',
+                boxSizing: 'border-box',
+              }}
+            >
+              {status}
+            </div>
+          )}
           <h1 style={{ color: '#2c3e50', marginBottom: '10px' }}>Admin Dashboard</h1>
           <p style={{ color: '#7f8c8d', marginBottom: '30px' }}>Manage your ILES system from one central location</p>
 
@@ -919,17 +919,10 @@ function AdminDashboard() {
             <div>
               <h2 style={{ color: '#2c3e50', marginBottom: '20px' }}>User Management</h2>
               <div style={{ marginBottom: '20px', display: 'flex', gap: '15px', alignItems: 'center' }}>
-                <input
-                  type="text"
-                  placeholder="Search users..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  style={{ padding: '8px', border: '1px solid #ddd', borderRadius: '4px', flex: 1 }}
-                />
                 <select
                   value={filterRole}
                   onChange={(e) => setFilterRole(e.target.value)}
-                  style={{ padding: '8px', border: '1px solid #ddd', borderRadius: '4px' }}
+                  style={{ padding: '8px', border: '1px solid #ddd', borderRadius: '4px', minWidth: '240px' }}
                 >
                   <option value="all">All Roles</option>
                   <option value="student">Students</option>
@@ -1363,6 +1356,7 @@ function AdminDashboard() {
                     <span style={{ color: '#475569', fontSize: '14px' }}>Reset Password</span>
                     <PasswordField
                       id="admin-reset-password"
+                      name="password"
                       value={editFormData.password || ''}
                       onChange={handleEditFieldChange}
                       placeholder="Leave blank to keep the current password"
