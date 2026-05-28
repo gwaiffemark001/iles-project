@@ -2,6 +2,7 @@ import { useState } from 'react'
 
 function PasswordField({
   id,
+  name,
   value,
   onChange,
   placeholder = 'Password',
@@ -17,6 +18,7 @@ function PasswordField({
     <div style={{ position: 'relative', width: '100%' }}>
       <input
         id={id}
+        name={name}
         type={isVisible ? 'text' : 'password'}
         value={value}
         onChange={onChange}
