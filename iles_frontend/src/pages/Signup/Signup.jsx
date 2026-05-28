@@ -1,6 +1,7 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { useState } from 'react';
 import { useAuth } from '@/auth/useAuth';
+import PasswordField from '@/components/PasswordField';
 import { roleToHomePath } from '../../routes/roleRedirect';
 import { ROLE_OPTIONS, USER_ROLES } from '@/constants/appConstants';
 import '../Login/Login.css';
@@ -107,12 +108,13 @@ function Signup() {
                         onChange={(e) => setEmail(e.target.value)}
                         required
                     />
-                    <input
-                        type="password"
+                    <PasswordField
+                        id="signup-password"
                         placeholder="Password"
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
                         required
+                        autoComplete="new-password"
                     />
                     <input
                         type="text"
