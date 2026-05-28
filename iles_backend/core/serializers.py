@@ -158,6 +158,7 @@ class InternshipPlacementSerializer(serializers.ModelSerializer):
     status = serializers.SerializerMethodField(read_only=True)
     average_score = serializers.SerializerMethodField(read_only=True)
     average_weight = serializers.SerializerMethodField(read_only=True)
+    progress = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
         model = InternshipPlacement
@@ -180,6 +181,7 @@ class InternshipPlacementSerializer(serializers.ModelSerializer):
             "created_at",
             "average_score",
             "average_weight",
+            "progress",
         ]
 
     def get_status(self, obj):
@@ -208,6 +210,25 @@ class InternshipPlacementSerializer(serializers.ModelSerializer):
             return float(round((sum(weights) / len(weights)), 2))
         except Exception:
             return None
+
+    def get_progress(self, obj):
+        """Return internship progress based on elapsed placement days."""
+        try:
+            if obj.get_computed_status() == 'completed':
+                return 100
+
+            if not obj.start_date or not obj.end_date:
+                return 0
+
+            today = timezone.now().date()
+            effective_date = obj.end_date if obj.end_date < today else today
+            total_days = max(1, (obj.end_date - obj.start_date).days + 1)
+            elapsed_days = max(0, (effective_date - obj.start_date).days + 1)
+
+            progress = round((min(elapsed_days, total_days) / total_days) * 100)
+            return max(0, min(100, progress))
+        except Exception:
+            return 0
 
     def validate(self, attrs):
         placement = getattr(self, "instance", None)
