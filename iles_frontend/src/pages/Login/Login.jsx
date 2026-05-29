@@ -1,33 +1,3 @@
-    const handleLogin = async (e) => {
-        e.preventDefault()
-        setErrorMessage('')
-        setIsLoading(true)
-        try {
-            const result = await login({ usernameOrEmail: username, password })
-            if (!result?.success) {
-                setErrorMessage(result?.error || 'Login failed')
-                return
-            }
-            const role = result.user?.role
-            switch (role) {
-                case 'admin':
-                    navigate('/app/admin/dashboard')
-                    break
-                case 'academic_supervisor':
-                    navigate('/app/academic/dashboard')
-                    break
-                case 'workplace_supervisor':
-                    navigate('/app/workplace/dashboard')
-                    break
-                default:
-                    navigate('/app/student/dashboard')
-            }
-        } catch (err) {
-            setErrorMessage(err?.message || 'Login failed')
-        } finally {
-            setIsLoading(false)
-        }
-    }
 import { Link, useNavigate } from 'react-router-dom'
 import { useState } from 'react'
 import { useAuth } from '@/auth/useAuth'
