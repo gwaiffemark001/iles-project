@@ -14,28 +14,3 @@ from django.core.asgi import get_asgi_application
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'iles_backend.settings')
 
 application = get_asgi_application()
-
-"""
-a
-b
-c
-d
-e
-f
-g
-h
-i
-globalj
-k
-t
-f
-e
-y
-j
-u
-kg
-r
-t
-h
-h
-"""        
