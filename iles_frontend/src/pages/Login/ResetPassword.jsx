@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useNavigate, useSearchParams, Link } from 'react-router-dom'
 import './Login.css'
 import { useAuth } from '@/auth/useAuth'
+import PasswordField from '@/components/PasswordField'
 
 export default function ResetPassword() {
   const { api } = useAuth()
@@ -56,19 +57,21 @@ export default function ResetPassword() {
         </header>
 
         <form className="logins" onSubmit={handleSubmit}>
-          <input
-            type="password"
+          <PasswordField
+            id="reset-new-password"
             placeholder="New password"
             value={newPassword}
             onChange={(e) => setNewPassword(e.target.value)}
             required
+            autoComplete="new-password"
           />
-          <input
-            type="password"
+          <PasswordField
+            id="reset-confirm-password"
             placeholder="Confirm new password"
             value={confirmPassword}
             onChange={(e) => setConfirmPassword(e.target.value)}
             required
+            autoComplete="new-password"
           />
           <button type="submit" className="login-btn" disabled={loading}>
             {loading ? 'Saving...' : 'Set Password'}

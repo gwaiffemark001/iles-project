@@ -1,3 +1,4 @@
+import PasswordField from '@/components/PasswordField'
 import { useMemo, useState } from 'react'
 import './pages/Login/Login.css'
 import { createApiClient } from './api/client'
@@ -313,12 +314,12 @@ export function ILES() {
                 required
               />
               <label htmlFor="login-password">Password</label>
-              <input
+              <PasswordField
                 id="login-password"
-                type="password"
                 value={loginPassword}
                 onChange={(e) => setLoginPassword(e.target.value)}
                 required
+                autoComplete="current-password"
               />
               <button type="submit" disabled={loading}>
                 {loading ? 'Signing in…' : 'Log in'}
@@ -423,22 +424,22 @@ export function ILES() {
                 </>
               )}
               <label htmlFor="reg-password">Password</label>
-              <input
+              <PasswordField
                 id="reg-password"
-                type="password"
                 value={registerData.password}
                 onChange={(e) => setRegisterData((p) => ({ ...p, password: e.target.value }))}
                 required
+                autoComplete="new-password"
               />
               <label htmlFor="reg-confirm-password">Confirm password</label>
-              <input
+              <PasswordField
                 id="reg-confirm-password"
-                type="password"
                 value={registerData.confirmPassword}
                 onChange={(e) =>
                   setRegisterData((p) => ({ ...p, confirmPassword: e.target.value }))
                 }
                 required
+                autoComplete="new-password"
               />
               <button type="submit" disabled={loading}>
                 {loading ? 'Creating…' : 'Create account'}
@@ -464,22 +465,22 @@ export function ILES() {
                 onChange={(e) => setForgotData((p) => ({ ...p, email: e.target.value }))}
               />
               <label htmlFor="fp-new-password">New password</label>
-              <input
+              <PasswordField
                 id="fp-new-password"
-                type="password"
                 value={forgotData.newPassword}
                 onChange={(e) => setForgotData((p) => ({ ...p, newPassword: e.target.value }))}
                 required
+                autoComplete="new-password"
               />
               <label htmlFor="fp-confirm-password">Confirm new password</label>
-              <input
+              <PasswordField
                 id="fp-confirm-password"
-                type="password"
                 value={forgotData.confirmPassword}
                 onChange={(e) =>
                   setForgotData((p) => ({ ...p, confirmPassword: e.target.value }))
                 }
                 required
+                autoComplete="new-password"
               />
               <button type="submit" disabled={loading}>
                 {loading ? 'Updating…' : 'Reset password'}

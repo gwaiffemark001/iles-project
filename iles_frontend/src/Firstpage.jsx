@@ -2,6 +2,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useState } from 'react'
 import './Firstpage.css';
 import { useAuth } from '@/auth/useAuth'
+import PasswordField from '@/components/PasswordField'
 import { roleToHomePath } from './routes/roleRedirect'
 
 function Firstpage() {
@@ -47,8 +48,8 @@ function Firstpage() {
                                 autoComplete="username"
                                 required
                             />
-                            <input
-                                type="password"
+                            <PasswordField
+                                id="firstpage-password"
                                 placeholder="Password"
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
