@@ -6,3 +6,21 @@ class CoreConfig(AppConfig):
 
     def ready(self):
         from . import signals  # noqa: F401
+
+"""
+/*
+// alternative code
+export default function ProtectedRoute() {
+  const { isAuthenticated, loading } = useAuth()
+  const location = useLocation()
+
+  if (loading) return null
+
+  if (isAuthenticated === false) {
+    return <Navigate to="/" replace state={{ from: location }} />
+  }
+
+  return <Outlet />
+}
+*/
+"""
