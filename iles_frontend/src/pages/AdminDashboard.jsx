@@ -1718,3 +1718,260 @@ const editInputStyle = {
 }
 
 export default AdminDashboard// split commit: feat(admin): implement comprehensive dashboard
+
+
+
+      {selectedEvaluation && (
+        <div
+          role="presentation"
+          onClick={() => setSelectedEvaluation(null)}
+          style={{
+            position: 'fixed',
+            inset: 0,
+            backgroundColor: 'rgba(15, 23, 42, 0.6)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '24px',
+            zIndex: 1000,
+          }}
+        >
+          <div
+            role="dialog"
+            aria-modal="true"
+            onClick={(event) => event.stopPropagation()}
+            style={{
+              width: 'min(600px, 100%)',
+              maxHeight: '90vh',
+              overflowY: 'auto',
+              backgroundColor: '#ffffff',
+              borderRadius: '16px',
+              boxShadow: '0 24px 80px rgba(15, 23, 42, 0.28)',
+              padding: '24px',
+            }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', gap: '16px', alignItems: 'flex-start', marginBottom: '20px' }}>
+              <div>
+                <h2 style={{ margin: '0 0 8px 0', color: '#0f172a' }}>Evaluation Details</h2>
+                <p style={{ margin: 0, color: '#64748b' }}>View evaluation breakdown by criteria</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setSelectedEvaluation(null)}
+                style={{
+                  border: 'none',
+                  backgroundColor: '#e2e8f0',
+                  color: '#0f172a',
+                  borderRadius: '999px',
+                  width: '36px',
+                  height: '36px',
+                  cursor: 'pointer',
+                }}
+              >
+                ×
+              </button>
+            </div>
+
+            <div style={{ display: 'grid', gap: '16px' }}>
+              <div>
+                <h3 style={{ margin: '0 0 8px 0', color: '#0f172a' }}>Student</h3>
+                <p style={{ margin: 0, color: '#475569' }}>{selectedEvaluation.placement?.student?.full_name || 'Unknown'}</p>
+              </div>
+              <div>
+                <h3 style={{ margin: '0 0 8px 0', color: '#0f172a' }}>Placement</h3>
+                <p style={{ margin: 0, color: '#475569' }}>{selectedEvaluation.placement?.company_name || 'Unknown'}</p>
+              </div>
+              <div>
+                <h3 style={{ margin: '0 0 8px 0', color: '#0f172a' }}>Evaluator</h3>
+                <p style={{ margin: 0, color: '#475569' }}>{selectedEvaluation.evaluator_name || 'Unknown'}</p>
+              </div>
+              <div>
+                <h3 style={{ margin: '0 0 8px 0', color: '#0f172a' }}>Type</h3>
+                <p style={{ margin: 0, color: '#475569', textTransform: 'capitalize' }}>{selectedEvaluation.evaluation_type}</p>
+              </div>
+              <div>
+                <h3 style={{ margin: '0 0 8px 0', color: '#0f172a' }}>Overall Score</h3>
+                <p style={{ margin: 0, fontSize: '24px', fontWeight: 'bold', color: '#27AE60' }}>{selectedEvaluation.score}</p>
+              </div>
+
+              {selectedEvaluation.items && selectedEvaluation.items.length > 0 && (
+                <div>
+                  <h3 style={{ margin: '0 0 12px 0', color: '#0f172a' }}>Criteria Breakdown</h3>
+                  <div style={{ display: 'grid', gap: '8px' }}>
+                    {selectedEvaluation.items.map((item, idx) => (
+                      <div key={idx} style={{ padding: '12px', backgroundColor: '#f5f5f5', borderRadius: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <div>
+                          <p style={{ margin: '0 0 4px 0', fontWeight: 'bold', color: '#0f172a' }}>{item.criteria?.name || 'Unknown Criteria'}</p>
+                          <p style={{ margin: 0, fontSize: '12px', color: '#64748b' }}>Max: {item.criteria?.max_score}</p>
+                        </div>
+                        <p style={{ margin: 0, fontSize: '18px', fontWeight: 'bold', color: '#2563eb' }}>{item.score}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '20px' }}>
+                <button
+                  type="button"
+                  onClick={() => handleDeleteEvaluation(selectedEvaluation.id)}
+                  style={{
+                    padding: '12px 18px',
+                    borderRadius: '10px',
+                    border: 'none',
+                    backgroundColor: '#E74C3C',
+                    color: '#fff',
+                    cursor: 'pointer',
+                  }}
+                >
+                  Delete Evaluation
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSelectedEvaluation(null)}
+                  style={{
+                    padding: '12px 18px',
+                    borderRadius: '10px',
+                    border: '1px solid #cbd5e1',
+                    backgroundColor: '#fff',
+                    color: '#0f172a',
+                    cursor: 'pointer',
+                  }}
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+      {showWeeklyModal && weeklySummary && (
+        <div
+          role="presentation"
+          onClick={() => setShowWeeklyModal(false)}
+          style={{
+            position: 'fixed',
+            inset: 0,
+            backgroundColor: 'rgba(15, 23, 42, 0.6)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '24px',
+            zIndex: 1000,
+          }}
+        >
+          <div
+            role="dialog"
+            aria-modal="true"
+            onClick={(event) => event.stopPropagation()}
+            style={{
+              width: 'min(760px, 100%)',
+              maxHeight: '90vh',
+              overflowY: 'auto',
+              backgroundColor: '#ffffff',
+              borderRadius: '16px',
+              boxShadow: '0 24px 80px rgba(15, 23, 42, 0.28)',
+              padding: '24px',
+            }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+              <h2 style={{ margin: 0 }}>Weekly Evaluation Summary</h2>
+              <button onClick={() => setShowWeeklyModal(false)} style={{ border: 'none', background: '#eee', borderRadius: '8px', padding: '6px 10px' }}>Close</button>
+            </div>
+
+            <div style={{ marginBottom: '12px' }}>
+              <strong>Placement:</strong> {selectedPlacementForWeekly?.company_name}
+              <div><strong>Student:</strong> {selectedPlacementForWeekly?.student?.full_name || selectedPlacementForWeekly?.student?.username}</div>
+            </div>
+
+            {weeklySummary.weeks.length === 0 ? (
+              <p>No weekly evaluations found.</p>
+            ) : (
+              <div style={{ display: 'grid', gap: '16px' }}>
+                {weeklySummary.weeks.map((w) => (
+                  <div key={w.week_number} style={{ padding: '16px', background: '#f7f9fc', borderRadius: '8px' }}>
+                    <div style={{ marginBottom: '16px' }}>
+                      <div style={{ fontWeight: 700, fontSize: '16px', marginBottom: '8px' }}>Week {w.week_number}</div>
+                      <div style={{ fontSize: '13px', color: '#64748b', marginBottom: '8px' }}>
+                        Workplace Score: <strong>{w.supervisor_score ?? 'N/A'}</strong> | Academic Score: <strong>{w.academic_score ?? 'N/A'}</strong>
+                      </div>
+                      <div style={{ display: 'flex', gap: '24px' }}>
+                        <div>
+                          <div style={{ fontSize: '12px', color: '#64748b' }}>Total Week Score</div>
+                          <div style={{ fontSize: '18px', fontWeight: 'bold', color: '#2563eb' }}>{w.combined_score}</div>
+                        </div>
+                        <div>
+                          <div style={{ fontSize: '12px', color: '#64748b' }}>Grade GPA</div>
+                          <div style={{ fontSize: '18px', fontWeight: 'bold', color: '#059669' }}>{getGradeWeight(w.combined_score) ?? 'N/A'}</div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Per-criterion breakdown - only show criteria with scores */}
+                    {w.criteria_breakdown && w.criteria_breakdown.length > 0 && (() => {
+                      const usedCriteria = w.criteria_breakdown.filter(cb => 
+                        (cb.supervisor_score !== null && cb.supervisor_score !== undefined) || 
+                        (cb.academic_score !== null && cb.academic_score !== undefined)
+                      );
+                      return usedCriteria.length > 0 ? (
+                        <div style={{ borderTop: '1px solid #e2e8f0', paddingTop: '12px', display: 'grid', gap: '8px' }}>
+                          {usedCriteria.map((cb) => (
+                            <div key={cb.criteria_id} style={{ padding: '10px', background: '#fff', borderRadius: '8px', border: '1px solid #eef2f7' }}>
+                              <div style={{ marginBottom: '8px' }}>
+                                <div style={{ fontWeight: 600, color: '#0f172a' }}>Criteria: {cb.criteria_name}</div>
+                                <div style={{ fontSize: '12px', color: '#64748b' }}>Max: {cb.max_score}</div>
+                              </div>
+                              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px' }}>
+                                <div style={{ textAlign: 'left' }}>
+                                  <div style={{ fontSize: '12px', color: '#475569' }}>Workplace Score</div>
+                                  <div style={{ fontWeight: 600, color: '#2563eb' }}>{cb.supervisor_score ?? '—'}</div>
+                                  <div style={{ fontSize: '11px', color: '#64748b' }}>Contrib: {cb.supervisor_contribution}</div>
+                                </div>
+                                <div style={{ textAlign: 'left' }}>
+                                  <div style={{ fontSize: '12px', color: '#475569' }}>Academic Score</div>
+                                  <div style={{ fontWeight: 600, color: '#16a34a' }}>{cb.academic_score ?? '—'}</div>
+                                  <div style={{ fontSize: '11px', color: '#64748b' }}>Contrib: {cb.academic_contribution}</div>
+                                </div>
+                                <div style={{ textAlign: 'left' }}>
+                                  <div style={{ fontSize: '12px', color: '#475569' }}>Total</div>
+                                  <div style={{ fontWeight: 700, color: '#0f172a' }}>{cb.total_contribution}</div>
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      ) : null;
+                    })()}
+                  </div>
+                ))}
+              </div>
+            )}
+
+            <div style={{ marginTop: '20px', borderTop: '1px solid #e2e8f0', paddingTop: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div style={{ color: '#475569' }}>
+                <div>
+                  <span style={{ fontSize: '14px' }}>Average Score: </span>
+                  <strong style={{ fontSize: '20px', color: '#2563eb', marginRight: '24px' }}>{weeklySummary.average ?? 'N/A'}</strong>
+                </div>
+              </div>
+              <div style={{ color: '#475569' }}>
+                <span style={{ fontSize: '14px' }}>Average GPA: </span>
+                <strong style={{ fontSize: '20px', color: '#059669' }}>{getGradeWeight(weeklySummary.average) ?? 'N/A'}</strong>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+      <UserGuide userRole="admin" />
+    </div>
+  )
+}
+
+const editInputStyle = {
+  padding: '10px 12px',
+  borderRadius: '10px',
+  border: '1px solid #cbd5e1',
+  backgroundColor: '#fff',
+  color: '#0f172a',
+  fontSize: '14px',
+}
