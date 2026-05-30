@@ -43,6 +43,7 @@ export default function PlacementsList() {
         const message = err?.message || 'Failed to load placements.'
         if (!cancelled) 
           setError(message)
+        //Store error message in local variable 
       } finally {
         if (!cancelled) setLoading(false)
       }
