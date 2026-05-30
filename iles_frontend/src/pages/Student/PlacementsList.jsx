@@ -127,8 +127,9 @@ export default function PlacementsList() {
 
       <div className="iles-grid">
         {/*  Use descriptive map variable */}
-        {filtered.map((p) => {
-          const companyName = p.company_name || 'Unnamed Company'
+        {filtered.map((placement) => {
+          //  Extract company name fallback
+          const companyName = placement.company_name || 'Unnamed Company'
           const companyAddress = p.company_address || 'No address provided'
 
           return (
