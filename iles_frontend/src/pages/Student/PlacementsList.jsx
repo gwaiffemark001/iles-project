@@ -33,6 +33,7 @@ export default function PlacementsList() {
       //Reset error state before each fetch
       setError('')
       try {
+        //Extract endpoint into constant
         const data = await api.get('api/placements/available/')
         if (!cancelled) setPlacements(Array.isArray(data) ? data : [])
       } catch (e) {
