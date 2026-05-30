@@ -123,6 +123,7 @@ export default function PlacementsList() {
           {error}
         </p> 
       ): null}
+      {/*  Keep placement cards grouped */}
 
       <div className="iles-grid">
         {filtered.map((p) => {
