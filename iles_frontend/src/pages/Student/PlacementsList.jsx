@@ -65,7 +65,7 @@ export default function PlacementsList() {
       
       const companyNameame = (placement.company_name || '').toLowerCase()
       const companyAddress = (placement.company_address || '').toLowerCase()
-      return companyNameame.includes(normalizedQuery) || companyAddress.includes(normalizedQuery)
+      const matchesAddress = companyAddress.includes(normalizedQuery)
     })
   }, [placements, query])
 
