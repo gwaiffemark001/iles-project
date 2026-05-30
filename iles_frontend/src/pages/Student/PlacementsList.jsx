@@ -13,6 +13,7 @@ export default function PlacementsList() {
   const [placements, setPlacements] = useState([])
   // Keep query state near search-related logic
   const [query, setQuery] = useState('')
+  // Group loading state with async data states
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
