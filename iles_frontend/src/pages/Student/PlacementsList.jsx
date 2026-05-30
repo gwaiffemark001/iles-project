@@ -137,8 +137,8 @@ export default function PlacementsList() {
           const endDate = placement.end_date || 'N/A'
 
           return (
-            <Link to={`/app/student/placements/${p.id}`} 
-              key={p.id}
+            <Link to={`/app/student/placements/${placement.id}`} 
+              key={placement.id}
               className="iles-card link-card"
               >
                 <div className="iles-stack">
