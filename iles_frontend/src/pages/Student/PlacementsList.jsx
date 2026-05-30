@@ -15,6 +15,7 @@ export default function PlacementsList() {
   const [query, setQuery] = useState('')
   // Group loading state with async data states
   const [loading, setLoading] = useState(true)
+  // Group error state with async data states
   const [error, setError] = useState('')
 
   const handleSearchChange = useCallback((e) => {
