@@ -51,6 +51,7 @@ export default function PlacementsList() {
     }
     fetchPlacements()
     return () => {
+      //Use renamed cancellation flag
       cancelled = true
     }
   }, [api])
