@@ -151,6 +151,7 @@ export default function PlacementsList() {
                     {companyAddress}
                   </div>
                 <div className='iles-row'>
+                  {/*  Use extracted status helpers */}
                   <span className={getStatusBadgeClass(p.status)}>
                     {getStatusClass(p.status)}
                   </span>
