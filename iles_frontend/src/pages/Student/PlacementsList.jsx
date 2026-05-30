@@ -72,6 +72,7 @@ export default function PlacementsList() {
   }, [placements, query])
 
   const getStatusClass = useCallback((status) => {
+    //Explicit status comparison
     if (status === 'pending') return 'Available'
     return status || 'Unknown'
   }, [])
