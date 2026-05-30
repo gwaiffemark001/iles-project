@@ -146,6 +146,7 @@ export default function PlacementsList() {
                   <div className="iles-strong">
                     {companyName}
                   </div>
+                  {/*  Separate address block */}
                   <div className="iles-muted">
                     {companyAddress}
                   </div>
