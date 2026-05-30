@@ -86,6 +86,7 @@ export default function PlacementsList() {
 
   return (
     <div className="iles-page">
+      {/*  Group page heading content */}
       <header className="iles-header">
         <h1 className="iles-title">Browse placements</h1>
         <p className="iles-subtitle">Find available internship placements and apply.</p>
