@@ -117,6 +117,7 @@ export default function PlacementsList() {
         <p className="iles-muted" role='status'>
           Loading...
         </p> ) : null}
+        {/*  Explicit error rendering */}
       {error ? (
         <p className="error-message" role='alert'>
           {error}
