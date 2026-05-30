@@ -28,6 +28,7 @@ export default function PlacementsList() {
     let cancelled = false
     // Rename run() to fetchPlacements()
     async function run() {
+      // Ensure loading state is always set before request
       setLoading(true)
       setError('')
       try {
