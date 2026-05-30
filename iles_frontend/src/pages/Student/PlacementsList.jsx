@@ -1,5 +1,6 @@
 // Reorder React imports alphabetically 
 import { useCallback, useEffect, useMemo, useState } from 'react'
+// Reorder external imports before internal imports
 import { Link } from 'react-router-dom'
 import { useAuth } from '@/auth/useAuth'
 
