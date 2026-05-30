@@ -2,6 +2,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 // Reorder external imports before internal imports
 import { Link } from 'react-router-dom'
+// Keep custom hook imports grouped together
 import { useAuth } from '@/auth/useAuth'
 
 export default function PlacementsList() {
