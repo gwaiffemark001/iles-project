@@ -46,6 +46,7 @@ export default function PlacementsList() {
         //Store error message in local variable 
       } finally {
         if (!cancelled) setLoading(false)
+          //Protect state update after unmount
       }
     }
     fetchPlacements()
