@@ -166,8 +166,10 @@ export default function PlacementsList() {
           )
         })}
       </div>
+      {/*  Use extracted date variables */}
 
       {!loading && !error && filtered.length === 0 ? (
+        
         <p className="iles-muted" >
           No Available placements found
         </p>
