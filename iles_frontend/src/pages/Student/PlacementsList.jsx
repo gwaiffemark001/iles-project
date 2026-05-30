@@ -11,6 +11,7 @@ export default function PlacementsList() {
   const { api } = useAuth()
   // Group state declarations together
   const [placements, setPlacements] = useState([])
+  // Keep query state near search-related logic
   const [query, setQuery] = useState('')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
