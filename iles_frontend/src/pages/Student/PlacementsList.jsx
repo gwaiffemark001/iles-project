@@ -36,7 +36,8 @@ export default function PlacementsList() {
         //Extract endpoint into constant
         const endpoint = 'api/placements/available/'
         const data = await api.get(endpoint)
-        if (!cancelled) setPlacements(Array.isArray(data) ? data : [])
+        const normalizedPlacements = Array.isArray(data) ? data : []
+        if (!cancelled) setPlacements(normalizedPlacements)
       } catch (e) {
         if (!cancelled) setError(e?.message || 'Failed to load placements.')
       } finally {
