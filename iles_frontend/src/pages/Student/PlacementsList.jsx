@@ -7,8 +7,9 @@ import { useAuth } from '@/auth/useAuth'
 
 
 export default function PlacementsList() {
-// Destructure api immediately after hook invocation  
+  // Destructure api immediately after hook invocation  
   const { api } = useAuth()
+  // Group state declarations together
   const [placements, setPlacements] = useState([])
   const [query, setQuery] = useState('')
   const [loading, setLoading] = useState(true)
