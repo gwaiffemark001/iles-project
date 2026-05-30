@@ -82,6 +82,8 @@ export default function PlacementsList() {
     return `iles-badge ${status || 'default'}`
   }, [])
 
+  const placementCount = filtered.length
+
   return (
     <div className="iles-page">
       <header className="iles-header">
