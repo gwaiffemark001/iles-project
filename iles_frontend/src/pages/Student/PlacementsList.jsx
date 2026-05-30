@@ -96,6 +96,7 @@ export default function PlacementsList() {
       {/*  Keep search controls grouped */}
 
       <div className="iles-row">
+         {/*  Consistent prop formatting */}
         <input
           type='text'
           className="iles-input"
