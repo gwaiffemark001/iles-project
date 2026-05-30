@@ -142,6 +142,7 @@ export default function PlacementsList() {
               className="iles-card link-card"
               >
                 <div className="iles-stack">
+                  {/*  Separate company info block */}
                   <div className="iles-strong">
                     {companyName}
                   </div>
