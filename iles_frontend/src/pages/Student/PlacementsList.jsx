@@ -24,6 +24,7 @@ export default function PlacementsList() {
   }, [])
 
   useEffect(() => {
+    //  Rename cancellation flag for readability
     let cancelled = false
     async function run() {
       setLoading(true)
