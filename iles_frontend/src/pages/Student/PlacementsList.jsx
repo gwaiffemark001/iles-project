@@ -30,6 +30,7 @@ export default function PlacementsList() {
     async function run() {
       // Ensure loading state is always set before request
       setLoading(true)
+      //Reset error state before each fetch
       setError('')
       try {
         const data = await api.get('api/placements/available/')
