@@ -48,7 +48,7 @@ export default function PlacementsList() {
         if (!cancelled) setLoading(false)
       }
     }
-    run()
+    fetchPlacements()
     return () => {
       cancelled = true
     }
