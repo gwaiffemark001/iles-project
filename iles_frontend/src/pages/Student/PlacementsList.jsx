@@ -61,10 +61,11 @@ export default function PlacementsList() {
     const q = query.trim().toLowerCase()
     if (!normalizedQuery) return placements
 
-    return placements.filter((pl) => {
-      const name = (p.company_name || '').toLowerCase()
-      const addr = (p.company_address || '').toLowerCase()
-      return name.includes(q) || addr.includes(q)
+    return placements.filter((placement) => {
+      
+      const companyNameame = (placement.company_name || '').toLowerCase()
+      const companyAddress = (placement.company_address || '').toLowerCase()
+      return companyNameame.includes(normalizedQuery) || companyAddress.includes(normalizedQuery)
     })
   }, [placements, query])
 
