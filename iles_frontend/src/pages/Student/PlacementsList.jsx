@@ -126,6 +126,7 @@ export default function PlacementsList() {
       {/*  Keep placement cards grouped */}
 
       <div className="iles-grid">
+        {/*  Use descriptive map variable */}
         {filtered.map((p) => {
           const companyName = p.company_name || 'Unnamed Company'
           const companyAddress = p.company_address || 'No address provided'
