@@ -93,6 +93,8 @@ export default function PlacementsList() {
         <p className="iles-subtitle">Find available internship placements and apply.</p>
       </header>
 
+      {/*  Keep search controls grouped */}
+
       <div className="iles-row">
         <input
           type='text'
