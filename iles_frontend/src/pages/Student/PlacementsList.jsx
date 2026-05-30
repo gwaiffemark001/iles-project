@@ -89,6 +89,7 @@ export default function PlacementsList() {
       {/*  Group page heading content */}
       <header className="iles-header">
         <h1 className="iles-title">Browse placements</h1>
+         {/*  Format subtitle on separate lines */}
         <p className="iles-subtitle">Find available internship placements and apply.</p>
       </header>
 
