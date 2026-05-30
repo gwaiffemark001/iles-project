@@ -130,6 +130,7 @@ export default function PlacementsList() {
         {filtered.map((placement) => {
           //  Extract company name fallback
           const companyName = placement.company_name || 'Unnamed Company'
+          // Extract company address fallback
           const companyAddress = p.company_address || 'No address provided'
 
           return (
