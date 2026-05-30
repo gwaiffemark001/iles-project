@@ -78,6 +78,7 @@ export default function PlacementsList() {
   }, [])
 
   const getStatusBadgeClass = useCallback((status) => {
+    //Extract badge class generation
     return `iles-badge ${status || 'default'}`
   }, [])
 
