@@ -133,6 +133,8 @@ export default function PlacementsList() {
           // Extract company address fallback
           const companyAddress = p.company_address || 'No address provided'
 
+          const startDate = placement.start_date || 'N/A'
+
           return (
             <Link to={`/app/student/placements/${p.id}`} 
               key={p.id}
