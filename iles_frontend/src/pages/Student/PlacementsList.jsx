@@ -5,7 +5,9 @@ import { Link } from 'react-router-dom'
 // Keep custom hook imports grouped together
 import { useAuth } from '@/auth/useAuth'
 
+
 export default function PlacementsList() {
+// Destructure api immediately after hook invocation  
   const { api } = useAuth()
   const [placements, setPlacements] = useState([])
   const [query, setQuery] = useState('')
