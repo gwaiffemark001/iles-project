@@ -106,6 +106,7 @@ export default function PlacementsList() {
           aria-label='Search placements'
           autoComplete='off'
         />
+        {/*  Place navigation action beside search */}
         <Link className="iles-button secondary" to="/app/student/applications">
           My applications
         </Link>
