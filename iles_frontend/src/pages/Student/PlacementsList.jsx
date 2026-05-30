@@ -39,8 +39,10 @@ export default function PlacementsList() {
         const normalizedPlacements = Array.isArray(data) ? data : []
         if (!cancelled) setPlacements(normalizedPlacements)
           //Use early normalization before state update
-      } catch (e) {
-        if (!cancelled) setError(e?.message || 'Failed to load placements.')
+      } catch (err) {
+        const message = err?.message || 'Failed to load placements.'
+        if (!cancelled) 
+          setError(message)
       } finally {
         if (!cancelled) setLoading(false)
       }
