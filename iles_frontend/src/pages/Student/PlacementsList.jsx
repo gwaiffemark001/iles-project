@@ -57,6 +57,7 @@ export default function PlacementsList() {
   }, [api])
 
   const filtered = useMemo(() => {
+    const normalizedQuery = query.trim().toLowerCase()
     const q = query.trim().toLowerCase()
     if (!q) return placements
     return placements.filter((p) => {
