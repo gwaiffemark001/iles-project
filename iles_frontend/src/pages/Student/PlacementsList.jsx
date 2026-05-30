@@ -111,6 +111,7 @@ export default function PlacementsList() {
           My applications
         </Link>
       </div>
+       {/*  Explicit loading rendering */}
 
       {loading ? (
         <p className="iles-muted" role='status'>
