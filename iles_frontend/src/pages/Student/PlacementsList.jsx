@@ -134,6 +134,7 @@ export default function PlacementsList() {
           const companyAddress = p.company_address || 'No address provided'
 
           const startDate = placement.start_date || 'N/A'
+          const endDate = placement.end_date || 'N/A'
 
           return (
             <Link to={`/app/student/placements/${p.id}`} 
