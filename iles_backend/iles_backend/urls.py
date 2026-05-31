@@ -93,7 +93,11 @@ urlpatterns = [
     #User Summary 
     path('api/users/<int:pk>/summary/', UserSummaryView.as_view()),
 
+    # Chat
+    path('api/chat/contacts/', ChatContactsView.as_view(), name='chat-contacts'),
+    path('api/chat/messages/<int:recipient_id>/', ChatMessagesView.as_view(), name='chat-messages'),
 ]
 
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+
