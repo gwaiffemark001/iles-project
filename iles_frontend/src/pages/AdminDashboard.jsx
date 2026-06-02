@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo, lazy, Suspense } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 import api, { adminAPI, criteriaAPI, evaluationsAPI, placementsAPI } from '../api/api'
 import { useAuth } from '@/auth/useAuth'
 import { buildWeeklyEvaluationSummaries, getGradeWeight } from '../utils/evaluationSummary'
@@ -50,13 +50,14 @@ const userRoles = [
 // use shared helper for weekly summaries and grade weights
 
 function AdminDashboard() {
+  const location = useLocation()
   const navigate = useNavigate()
   const { user, logout } = useAuth()
   const [stats, setStats] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [status, setStatus] = useState('')
-  const [activeSection, setActiveSection] = useState('overview')
+  const [activeSection, setActiveSection] = useState(location.state?.activeSection || 'overview')
   const [placements, setPlacements] = useState([])
   const [users, setUsers] = useState([])
   const [evaluations, setEvaluations] = useState([])
