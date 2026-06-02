@@ -1,6 +1,6 @@
 /* eslint-disable react-hooks/set-state-in-effect */
 import { useState, useEffect, useMemo, lazy, Suspense } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/auth/useAuth';
 import { logsAPI, placementsAPI, evaluationsAPI, criteriaAPI, notificationsAPI } from '@/api/api';
 import { getErrorMessage } from '@/api/api';
@@ -72,13 +72,14 @@ const computePlacementProgress = (placement) => {
 // getUserInitials helper removed (unused)
 
 const StudentDashboard = () => {
+  const location = useLocation();
   const navigate = useNavigate();
   const { user, logout } = useAuth();
   const [logs, setLogs] = useState([]);
   const [placements, setPlacements] = useState([]);
   const [evaluations, setEvaluations] = useState([]);
   const [criteria, setCriteria] = useState([]);
-  const [activeTab, setActiveTab] = useState('logs');
+  const [activeTab, setActiveTab] = useState(location.state?.activeTab || 'logs');
   const [formData, setFormData] = useState(createInitialLogForm());
   const [editingLogId, setEditingLogId] = useState(null);
   const [formError, setFormError] = useState('');
