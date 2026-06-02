@@ -1,6 +1,6 @@
 /* eslint-disable react-hooks/set-state-in-effect */
 import { useEffect, useState, useCallback, useMemo, lazy, Suspense } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import { useAuth } from "@/auth/useAuth";
 import { criteriaAPI, evaluationsAPI, getErrorMessage, logsAPI, placementsAPI, notificationsAPI } from "../../api/api";
@@ -45,6 +45,7 @@ const computePlacementProgress = (placement, today = new Date()) => {
 };
 
 const AcademicSupervisorDashboard = () => {
+  const location = useLocation();
   const navigate = useNavigate();
   const { user } = useAuth();
   const [placements, setPlacements] = useState([]);
@@ -54,7 +55,7 @@ const AcademicSupervisorDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [actionError, setActionError] = useState("");
-  const [activeSection, setActiveSection] = useState("overview");
+  const [activeSection, setActiveSection] = useState(location.state?.activeSection || "overview");
   const [selectedStudentId, setSelectedStudentId] = useState(null);
   const [actionLoadingId, setActionLoadingId] = useState(null);
   const [showEvalEditor, setShowEvalEditor] = useState(false);
