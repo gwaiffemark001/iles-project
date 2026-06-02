@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '../auth/useAuth';
 import api from '../api/api';
 import './ProfileEditor.css';
+import AvatarModal from './AvatarModal'
 
 const ProfileEditor = () => {
   const { user, updateUser } = useAuth();
@@ -29,6 +30,7 @@ const ProfileEditor = () => {
   const [errorDetails, setErrorDetails] = useState({});
   const [avatarFile, setAvatarFile] = useState(null);
   const [avatarPreview, setAvatarPreview] = useState(null);
+  const [modalSrc, setModalSrc] = useState(null);
 
   useEffect(() => {
     if (user) {
@@ -363,11 +365,13 @@ const ProfileEditor = () => {
               <span>Avatar</span>
               <div className="avatar-upload">
                 {avatarPreview && (
-                  <img 
-                    src={avatarPreview} 
-                    alt="Profile Avatar" 
-                    className="avatar-preview"
-                  />
+                  <div className="avatar-preview-shell" onClick={() => setModalSrc(avatarPreview)}>
+                    <img 
+                      src={avatarPreview} 
+                      alt="Profile Avatar" 
+                      className="avatar-preview"
+                    />
+                  </div>
                 )}
                 <input
                   type="file"
@@ -414,6 +418,7 @@ const ProfileEditor = () => {
           </div>
         </div>
       </form>
+      <AvatarModal src={modalSrc} alt={`${user?.full_name || user?.username}'s avatar`} onClose={() => setModalSrc(null)} />
     </div>
   );
 };
