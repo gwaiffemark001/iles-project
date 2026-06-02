@@ -1242,16 +1242,12 @@ class ChatContactsView(APIView):
                     is_read=False
                 ).count()
                 
-                contact_data = {
-                    'id': contact_user.id,
-                    'username': contact_user.username,
-                    'email': contact_user.email,
-                    'full_name': contact_user.get_full_name() or contact_user.username,
-                    'role': contact_user.role,
-                    'unread_count': unread_count,
-                    'last_message_time': most_recent.created_at if most_recent else None,
-                }
-                contacts_data.append(contact_data)
+                # Use serializer to include profile data (avatar fields)
+                serialized = CustomUserSerializer(contact_user, context={'request': request}).data
+                # Add messaging metadata
+                serialized['unread_count'] = unread_count
+                serialized['last_message_time'] = most_recent.created_at if most_recent else None
+                contacts_data.append(serialized)
             except CustomUser.DoesNotExist:
                 # Skip if user doesn't exist
                 continue
