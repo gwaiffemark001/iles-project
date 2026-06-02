@@ -1,6 +1,6 @@
 /* eslint-disable react-hooks/set-state-in-effect */
 import { useEffect, useMemo, useState, useCallback, lazy, Suspense } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { toast } from 'react-toastify'
 import { criteriaAPI, evaluationsAPI, getErrorMessage, logsAPI, placementsAPI, notificationsAPI } from '../../api/api'
 import { buildWeeklyEvaluationSummaries } from '../../utils/evaluationSummary'
@@ -57,6 +57,7 @@ function normalizePlacement(placement, logs, evaluations) {
 }
 
 export default function WorkplaceSupervisorDashboard() {
+  const location = useLocation()
   const navigate = useNavigate()
   const { user, logout } = useAuth()
   const [placements, setPlacements] = useState([])
@@ -64,7 +65,7 @@ export default function WorkplaceSupervisorDashboard() {
   const [evaluations, setEvaluations] = useState([])
   const [criteria, setCriteria] = useState([])
   const [selectedPlacement, setSelectedPlacement] = useState(null)
-  const [activeTab, setActiveTab] = useState('placements')
+  const [activeTab, setActiveTab] = useState(location.state?.activeTab || 'placements')
   const [filterStatus, setFilterStatus] = useState('all')
   const [comment, setComment] = useState('')
   const [loading, setLoading] = useState(true)
