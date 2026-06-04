@@ -48,8 +48,15 @@ from .services import (
 
 class WeeklyLogListView(APIView):
     """
-    GET /api/logs/ - list logs for logged in user (role-based)
-    POST /api/logs/ - Create a new weekly log
+    API endpoint for managing weekly logs.
+    
+    GET /api/logs/ - Retrieve logs filtered by user role and optional status/week parameters
+    POST /api/logs/ - Create a new weekly log (students only)
+    
+    Role-based access:
+    - Admin: Can view all logs
+    - Workplace/Academic Supervisors: Can view their supervised placements' logs
+    - Students: Can view their own placement logs
     """
     permission_classes =[IsAuthenticated]   
 
@@ -230,8 +237,15 @@ class WeeklyLogDetailView(APIView):
 
 class InternshipPlacementListView(APIView):
     """
-    GET /api/placements/ - List placements (filtered by role)
-    POST /api/logs/<pk>/ - DELETE a draft log
+    API endpoint for internship placements management.
+    
+    GET /api/placements/ - List placements filtered by user role and supervisory relationships
+    POST /api/placements/ - Create new placement (admin only)
+    
+    Role-based filtering:
+    - Admin: Can view all placements
+    - Workplace/Academic Supervisors: Can view their assigned placements
+    - Students: Can view their own placement
     """
     permission_classes = [IsAuthenticated]
 
@@ -284,7 +298,13 @@ class InternshipPlacementListView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 class AvailablePlacementListView(APIView):
-    permission_classes = [IsAuthenticated]
+    """
+    API endpoint for browsing available internship placements.
+    
+    GET /api/available-placements/ - Retrieve unassigned placements (students only)
+    
+    Returns placements with no assigned student (student=null) and pending status.
+    """
 
     def get(self, request):
         if request.user.role != 'student':
@@ -297,7 +317,12 @@ class AvailablePlacementListView(APIView):
         return Response(serializer.data)
 
 class PlacementApplicationListCreateView(APIView):
-    permission_classes = [IsAuthenticated]
+    """
+    API endpoint for managing placement applications.
+    
+    GET /api/placement-applications/ - List applications (admin: all, students: their own)
+    POST /api/placement-applications/ - Submit new application (students only)
+    """
 
     def get(self, request):
         if request.user.role == 'admin':
