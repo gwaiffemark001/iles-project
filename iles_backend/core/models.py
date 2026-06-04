@@ -213,6 +213,7 @@ class WeeklyLog(models.Model):
     Tracks weekly progress through activities, challenges, and learning experiences.
     Manages approval workflow with automatic deadline calculation based on placement dates.
     """
+    STATUS_CHOICES = [
         ('draft', 'Draft'),
         ('submitted', 'Submitted'),
         ('reviewed', 'Reviewed'),
