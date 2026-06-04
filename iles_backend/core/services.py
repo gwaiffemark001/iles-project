@@ -1,10 +1,18 @@
+"""
+Notification service module for managing system notifications.
+
+Provides functions to create and send notifications to users for various
+system events (placements, evaluations, log submissions, etc.).
+"""
 from .models import CustomUser, Notification
 
 def _get_user_display_name(user):
+    """Get user's display name (full name or username)."""
     full_name = f"{user.first_name} {user.last_name}".strip()
     return full_name or user.username
 
 def _dedupe_users(users):
+    """Remove duplicate users from a list, preserving order."""
     unique_users = []
     seen_ids = set()
 
@@ -18,6 +26,20 @@ def _dedupe_users(users):
 
 
 def create_notification(recipient, title, message, notification_type, actor=None, data=None):
+    """
+    Create and save a single notification.
+    
+    Args:
+        recipient: User receiving the notification
+        title: Notification title
+        message: Notification message
+        notification_type: Type of notification (placement_created, log_submitted, etc.)
+        actor: User who triggered the notification
+        data: Optional metadata dict with additional notification data
+    
+    Returns:
+        Notification instance or None if recipient is None
+    """
     if not recipient:
         return None
 
@@ -31,6 +53,22 @@ def create_notification(recipient, title, message, notification_type, actor=None
     )
 
 def create_notifications(recipients, title, message, notification_type, actor=None, data=None):
+    """
+    Create and save notifications for multiple recipients.
+    
+    Uses bulk_create for efficiency. Automatically deduplicates recipients.
+    
+    Args:
+        recipients: List of User instances
+        title: Notification title
+        message: Notification message
+        notification_type: Type of notification
+        actor: User who triggered the notification
+        data: Optional metadata dict with additional notification data
+    
+    Returns:
+        List of Notification instances created
+    """
     unique_recipients = _dedupe_users(recipients)
     notifications = [
         Notification(
@@ -51,6 +89,11 @@ def create_notifications(recipients, title, message, notification_type, actor=No
 
 
 def notify_placement_created(placement, actor=None):
+    """
+    Create notifications when a new internship placement is created.
+    
+    Notifies student, workplace supervisor, and academic supervisor.
+    """
     student_name = _get_user_display_name(placement.student)
     placement_data = {
         "placement_id": placement.id,
@@ -87,6 +130,11 @@ def notify_placement_created(placement, actor=None):
 
 
 def notify_placement_status_updated(placement, previous_status, actor=None):
+    """
+    Notify all stakeholders when placement status changes.
+    
+    Sent to student, workplace supervisor, and academic supervisor.
+    """
     student_name = _get_user_display_name(placement.student)
     message = (
         f"The internship placement for {student_name} at {placement.company_name} changed from "
@@ -108,6 +156,11 @@ def notify_placement_status_updated(placement, previous_status, actor=None):
 
 
 def notify_log_submitted(log, actor=None):
+    """
+    Notify supervisors and admins when a weekly log is submitted for review.
+    
+    Sent to workplace supervisor, academic supervisor, and all admins.
+    """
     student_name = _get_user_display_name(log.placement.student)
     admin_users = CustomUser.objects.filter(role="admin")
 
@@ -129,6 +182,12 @@ def notify_log_submitted(log, actor=None):
 
 
 def notify_evaluation_status_changed(evaluation, actor=None, created=False, week_number=None):
+    """
+    Notify stakeholders when an evaluation is submitted or updated.
+    
+    Excludes the actor (person who made the change) from recipients.
+    Sent to student, workplace supervisor, and academic supervisor.
+    """
     placement = evaluation.placement
     student = placement.student
     workplace_supervisor = placement.workplace_supervisor
