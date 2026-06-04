@@ -77,6 +77,7 @@ class InternshipPlacement(models.Model):
     date ranges, and assigned supervisors (workplace and academic).
     Supports both assigned placements (with student) and available postings (without student).
     """
+    STATUS_CHOICES = [
         ('pending', 'Pending'),
         ('active' ,'Active'),
         ('completed', 'Completed'),       
