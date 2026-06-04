@@ -1,3 +1,13 @@
+/**
+ * API client module with request caching, token refresh, and error handling.
+ * 
+ * Features:
+ * - Automatic Bearer token injection from localStorage
+ * - JWT token refresh on 401 responses
+ * - Request-level caching with TTL
+ * - Cache invalidation by URL prefix
+ * - Centralized error message extraction
+ */
 
 import axios from 'axios'
 import { API_BASE_URL } from '@/constants/appConstants'
@@ -6,18 +16,34 @@ const api = axios.create({
   baseURL: API_BASE_URL,
 });
 
+/** @returns {string|null} Access token from localStorage */
 const getAccessToken = () => localStorage.getItem('access_token');
+
+/** @returns {string|null} Refresh token from localStorage */
 const getRefreshToken = () => localStorage.getItem('refresh_token');
 
 let refreshPromise = null;
 const requestCache = new Map();
 
+/** Clear all cached requests */
 const clearRequestCache = () => {
   requestCache.clear();
 };
 
+/**
+ * Generate cache key from URL and parameters
+ * @param {string} url - Request URL
+ * @param {object} params - Query parameters
+ * @returns {string} Cache key
+ */
 const cacheKey = (url, params) => `${url}::${JSON.stringify(params ?? null)}`;
 
+/**
+ * Get cached request response if available and not expired
+ * @param {string} url - Request URL
+ * @param {object} options - Options with params and ttl (time-to-live in ms)
+ * @returns {Promise} Axios promise
+ */
 const getCachedRequest = (url, { params, ttl = 30000 } = {}) => {
   const key = cacheKey(url, params);
   const cached = requestCache.get(key);
@@ -39,6 +65,10 @@ const getCachedRequest = (url, { params, ttl = 30000 } = {}) => {
   return promise;
 };
 
+/**
+ * Invalidate cached requests matching one or more URL prefixes
+ * @param {...string} prefixes - URL prefixes to invalidate (e.g., '/logs/', '/placements/')
+ */
 const invalidateCacheByPrefix = (...prefixes) => {
   if (prefixes.length === 0) {
     clearRequestCache();
@@ -52,6 +82,9 @@ const invalidateCacheByPrefix = (...prefixes) => {
   });
 };
 
+/**
+ * Clear session data (tokens and cache) and log user out
+ */
 const clearSession = () => {
   localStorage.removeItem('access_token');
   localStorage.removeItem('refresh_token');
@@ -59,6 +92,12 @@ const clearSession = () => {
   clearRequestCache();
 };
 
+/**
+ * Extract error message from axios error response
+ * @param {AxiosError} error - Axios error object
+ * @param {string} fallback - Fallback message if extraction fails
+ * @returns {string} User-friendly error message
+ */
 export const getErrorMessage = (error, fallback = 'Something went wrong') => {
   const data = error?.response?.data;
 
@@ -139,6 +178,9 @@ api.interceptors.response.use(
   }
 );
 
+/**
+ * Authentication API endpoints
+ */
 export const authAPI = {
   login: (credentials) => api.post('/token/', credentials),
   refreshToken: (refresh) => api.post('/token/refresh/', { refresh }),
@@ -148,6 +190,9 @@ export const authAPI = {
   changePassword: (data) => api.post('/change-password/', data),
 };
 
+/**
+ * Weekly logs API endpoints with caching
+ */
 export const logsAPI = {
   getLogs: () => getCachedRequest('/logs/', { ttl: 15000 }),
   createLog: (data) => api.post('/logs/', data).then((response) => {
@@ -177,6 +222,9 @@ export const logsAPI = {
   }),
 };
 
+/**
+ * Internship placements API endpoints with caching
+ */
 export const placementsAPI = {
   getPlacements: () => getCachedRequest('/placements/', { ttl: 30000 }),
   createPlacement: (data) => api.post('/placements/', data).then((response) => {
@@ -194,6 +242,9 @@ export const placementsAPI = {
   }),
 };
 
+/**
+ * Evaluation assessments API endpoints with caching
+ */
 export const evaluationsAPI = {
   getEvaluations: () => getCachedRequest('/evaluations/', { ttl: 30000 }),
   createEvaluation: (data) => api.post('/evaluations/', data).then((response) => {
@@ -211,6 +262,9 @@ export const evaluationsAPI = {
   }),
 };
 
+/**
+ * Evaluation criteria API endpoints with caching
+ */
 export const criteriaAPI = {
   getCriteria: () => getCachedRequest('/criteria/', { ttl: 30000 }),
   createCriteria: (data) => api.post('/criteria/', data).then((response) => {
@@ -227,6 +281,9 @@ export const criteriaAPI = {
   }),
 };
 
+/**
+ * Admin panel API endpoints with caching
+ */
 export const adminAPI = {
   getStatistics: () => getCachedRequest('/admin/statistics/', { ttl: 30000 }),
   getUsers: (params) => getCachedRequest('/users/', { params, ttl: 30000 }),
@@ -240,6 +297,9 @@ export const adminAPI = {
   }),
 };
 
+/**
+ * Notifications API endpoints with caching
+ */
 export const notificationsAPI = {
   getNotifications: (params) => getCachedRequest('/notifications/', { params, ttl: 10000 }),
   markAsRead: (id) => api.put(`/notifications/${id}/read/`).then((response) => {
@@ -252,6 +312,9 @@ export const notificationsAPI = {
   }),
 };
 
+/**
+ * Real-time chat API endpoints
+ */
 export const chatAPI = {
   getContacts: () => api.get('/chat/contacts/'),
   getMessages: (recipientId) => api.get(`/chat/messages/${recipientId}/`),
