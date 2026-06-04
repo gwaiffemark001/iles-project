@@ -355,6 +355,7 @@ class Evaluation(models.Model):
     Stores evaluation scores and types from multiple evaluators.
     Calculates weighted scores based on evaluation criteria weights.
     """
+    EVALUATION_TYPES = [
         ('supervisor', 'Supervisor Assessment'),
         ('academic', 'Academic Assessment'),
     ]
