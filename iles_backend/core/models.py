@@ -1,3 +1,4 @@
+from typing import Optional, List, Tuple
 from django.core.exceptions import ValidationError
 from django.db import models
 from decimal import Decimal
@@ -7,6 +8,10 @@ from django.utils.dateparse import parse_date
 from django.db.models import Q
 
 class CustomUser(AbstractUser):
+    """
+    Extended user model with role-based access control and user profiles.
+    Supports multiple user roles: student, workplace_supervisor, academic_supervisor, admin.
+    """
     ROLE_CHOICES =[
         ('student', 'Student Intern'),
         ('workplace_supervisor', 'Workplace Supervisor'),
@@ -29,9 +34,30 @@ class CustomUser(AbstractUser):
 
     def __str__(self):
         return (f"{self.username},({self.role})")
+    
+    def is_active_user(self) -> bool:
+        """Check if user account is active."""
+        return self.account_status == 'active' and self.is_active
+    
+    def is_supervisor(self) -> bool:
+        """Check if user has supervisor role (workplace or academic)."""
+        return self.role in ['workplace_supervisor', 'academic_supervisor']
+    
+    def is_admin(self) -> bool:
+        """Check if user is administrator."""
+        return self.role == 'admin'
+    
+    def can_manage_users(self) -> bool:
+        """Check if user has permission to manage other users."""
+        return self.is_admin_user() and self.is_active_user()
 
 class UserProfile(models.Model):
-    user = models.OneToOneField(CustomUser, on_delete=models.CASCADE, related_name='profile')
+    """
+    User profile model storing extended user information.
+    
+    Stores personal details like bio, avatar, location, and date of birth.
+    Maintains audit timestamps for profile creation and updates.
+    """
     bio = models.TextField(blank=True, null=True)
     avatar_url = models.URLField(blank=True, null=True)
     avatar_image = models.ImageField(upload_to='avatars/', blank=True, null=True)
@@ -44,7 +70,13 @@ class UserProfile(models.Model):
         return f"{self.user.username}'s profile"
 
 class InternshipPlacement(models.Model):
-    STATUS_CHOICES = [
+    """
+    Internship placement model representing student-to-company assignments.
+    
+    Tracks placement status (pending/active/completed), company information,
+    date ranges, and assigned supervisors (workplace and academic).
+    Supports both assigned placements (with student) and available postings (without student).
+    """
         ('pending', 'Pending'),
         ('active' ,'Active'),
         ('completed', 'Completed'),       
@@ -174,7 +206,12 @@ class PlacementApplication(models.Model):
         return f"{self.student.username} -> {self.placement.company_name} ({self.status})"
 
 class WeeklyLog(models.Model):
-    STATUS_CHOICES =[
+    """
+    Weekly activity log submitted by interns during their placement.
+    
+    Tracks weekly progress through activities, challenges, and learning experiences.
+    Manages approval workflow with automatic deadline calculation based on placement dates.
+    """
         ('draft', 'Draft'),
         ('submitted', 'Submitted'),
         ('reviewed', 'Reviewed'),
@@ -310,7 +347,12 @@ class EvaluationCriteria(models.Model):
         return f"{self.name} - {self.weight_percent}% weight"
     
 class Evaluation(models.Model):
-    EVALUATION_TYPES = [
+    """
+    Intern evaluation model for supervisor and academic assessments.
+    
+    Stores evaluation scores and types from multiple evaluators.
+    Calculates weighted scores based on evaluation criteria weights.
+    """
         ('supervisor', 'Supervisor Assessment'),
         ('academic', 'Academic Assessment'),
     ]
