@@ -58,6 +58,7 @@ class UserProfile(models.Model):
     Stores personal details like bio, avatar, location, and date of birth.
     Maintains audit timestamps for profile creation and updates.
     """
+    user = models.OneToOneField(CustomUser,on_delete=models.CASCADE,related_name='profile')
     bio = models.TextField(blank=True, null=True)
     avatar_url = models.URLField(blank=True, null=True)
     avatar_image = models.ImageField(upload_to='avatars/', blank=True, null=True)
