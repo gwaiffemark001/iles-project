@@ -47,7 +47,26 @@ class ErrorBoundary extends React.Component {
     })
   }
 
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div
+          style={{
+            padding: '20px',
+            margin: '20px',
+            border: '1px solid #f5222d',
+            borderRadius: '4px',
+            backgroundColor: '#fff2f0',
+            color: '#000000',
+          }}
+        >
+          
+        </div>
+      )
+    }
 
+    return this.props.children
+  }
 }
 
 export default ErrorBoundary
