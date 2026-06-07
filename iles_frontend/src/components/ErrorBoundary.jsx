@@ -60,7 +60,40 @@ class ErrorBoundary extends React.Component {
             color: '#000000',
           }}
         >
-          
+          <h2 style={{ color: '#f5222d', marginTop: 0 }}>Something went wrong</h2>
+          <details
+            style={{
+              whiteSpace: 'pre-wrap',
+              marginBottom: '15px',
+              padding: '10px',
+              backgroundColor: '#fff7e6',
+              borderRadius: '4px',
+              maxHeight: '200px',
+              overflow: 'auto',
+            }}
+          >
+            <summary style={{ cursor: 'pointer', color: '#fa541c' }}>Error Details</summary>
+            <p style={{ marginTop: '10px', fontSize: '12px' }}>
+              {this.state.error && this.state.error.toString()}
+            </p>
+            {this.state.errorInfo && (
+              <p style={{ fontSize: '12px', color: '#595959' }}>{this.state.errorInfo.componentStack}</p>
+            )}
+          </details>
+          <button
+            onClick={this.handleReset}
+            style={{
+              padding: '8px 16px',
+              backgroundColor: '#1890ff',
+              color: 'white',
+              border: 'none',
+              borderRadius: '4px',
+              cursor: 'pointer',
+              fontSize: '14px',
+            }}
+          >
+            Try Again
+          </button>
         </div>
       )
     }
