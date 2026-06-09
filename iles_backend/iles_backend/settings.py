@@ -16,15 +16,9 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # SECURITY
 # ─────────────────────────────────────────────
 
-# Loaded from environment variable — never hardcoded
 SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-fallback-key-change-in-production')
-
-# False in production — never expose error details
 DEBUG = os.getenv('DEBUG', 'False') == 'True'
-
-# List your Railway domain here via environment variable
 ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
-
 AUTH_USER_MODEL = 'core.CustomUser'
 
 # ─────────────────────────────────────────────
@@ -42,24 +36,23 @@ INSTALLED_APPS = [
     'rest_framework_simplejwt',
     'core',
     'corsheaders',
-    ]
+]
 
 # ─────────────────────────────────────────────
 # MIDDLEWARE
 # ─────────────────────────────────────────────
 
 MIDDLEWARE = [
-    'corsheaders.middleware.CorsMiddleware',
-    'whitenoise.middleware.WhiteNoiseMiddleware',
-    'django.middleware.security.SecurityMiddleware',
-    'whitenoise.middleware.WhiteNoiseMiddleware',      # serves static files
+    'corsheaders.middleware.CorsMiddleware',          # ← must be first
+    'django.middleware.security.SecurityMiddleware',   # ← second
+    'whitenoise.middleware.WhiteNoiseMiddleware',      # ← third (after security)
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    ]
+]
 
 ROOT_URLCONF = 'iles_backend.urls'
 
@@ -84,14 +77,10 @@ WSGI_APPLICATION = 'iles_backend.wsgi.application'
 # DATABASE
 # ─────────────────────────────────────────────
 
-# Railway provides DATABASE_URL automatically when you add PostgreSQL
-# dj_database_url reads it and configures Django automatically
-# Falls back to PostgreSQL env vars, then SQLite for local development
-
 DATABASE_URL = os.getenv('DATABASE_URL')
 
 if DATABASE_URL:
-    # Railway production — uses DATABASE_URL
+    # Railway production — uses DATABASE_URL from PostgreSQL service
     DATABASES = {
         'default': dj_database_url.config(
             default=DATABASE_URL,
@@ -151,20 +140,19 @@ MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
 # ─────────────────────────────────────────────
-# CORS — Cross Origin Resource Sharing
+# CORS & CSRF
 # ─────────────────────────────────────────────
 
-# In production — only allow your Vercel frontend
-# In development — allow localhost
-CSRF_TRUSTED_ORIGINS = os.getenv(
-    'CSRF_TRUSTED_ORIGINS',
-    'http://localhost:5173'
-).split(',')
 CORS_ALLOW_ALL_ORIGINS = DEBUG  # True in dev, False in production
 
 CORS_ALLOWED_ORIGINS = os.getenv(
     'CORS_ALLOWED_ORIGINS',
     'http://localhost:5173,http://localhost:3000'
+).split(',')
+
+CSRF_TRUSTED_ORIGINS = os.getenv(
+    'CSRF_TRUSTED_ORIGINS',
+    'http://localhost:5173'
 ).split(',')
 
 # ─────────────────────────────────────────────
@@ -191,8 +179,6 @@ EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER', '')
 EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD', '')
 DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL', EMAIL_HOST_USER or 'ILES System <noreply@iles.edu>')
 
-# Use console backend in development (prints emails to terminal)
-# Use SMTP backend in production
 if DEBUG and not EMAIL_HOST_USER:
     EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 else:
