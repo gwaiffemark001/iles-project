@@ -144,7 +144,7 @@ MEDIA_ROOT = BASE_DIR / 'media'
 # CORS & CSRF
 # ─────────────────────────────────────────────
 
-CORS_ALLOW_ALL_ORIGINS = TRUE  # True in dev, False in production
+CORS_ALLOW_ALL_ORIGINS = True # True in dev, False in production
 
 CORS_ALLOWED_ORIGINS = os.getenv(
     'CORS_ALLOWED_ORIGINS',
