@@ -1,4 +1,5 @@
-export const API_SERVER_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
+export const API_SERVER_URL = 'https://iles-project-iles-backend.up.railway.app'
+#export const API_SERVER_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
 export const API_BASE_URL = `${API_SERVER_URL}/api`
 export const DEFAULT_DATE_LOCALE = 'en-US'
 export const DATE_FORMAT_OPTIONS = {
