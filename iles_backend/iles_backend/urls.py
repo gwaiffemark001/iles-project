@@ -2,6 +2,7 @@ from django.contrib import admin
 from django.urls import path
 from django.conf import settings
 from django.conf.urls.static import static
+from django.views.decorators.csrf import csrf_exempt
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from core.views import (
     WeeklyLogListView,
@@ -22,9 +23,9 @@ from core.views import (
     AvailablePlacementListView,
     PlacementApplicationListCreateView,
     PlacementApplicationDecisionView,
-    EvaluationCriteriaListView, 
+    EvaluationCriteriaListView,
     EvaluationCriteriaDetailView,
-    LogRevisionView, 
+    LogRevisionView,
     WeeklyLogSubmitView,
     AdminStatisticsView,
     UserSummaryView,
@@ -37,12 +38,12 @@ from core.views import (
 urlpatterns = [
     path('admin/', admin.site.urls),
 
-    # Authentication
-    path('api/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
-    path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
-    path('api/register/', UserRegistrationView.as_view(), name='register'),
-    path('api/forgot-password/', PasswordResetRequestView.as_view(), name='forgot-password'),
-    path('api/forgot-password-confirm/', PasswordResetConfirmView.as_view(), name='forgot-password-confirm'),
+    # Authentication — csrf_exempt for JWT API (no session auth needed)
+    path('api/token/', csrf_exempt(TokenObtainPairView.as_view()), name='token_obtain_pair'),
+    path('api/token/refresh/', csrf_exempt(TokenRefreshView.as_view()), name='token_refresh'),
+    path('api/register/', csrf_exempt(UserRegistrationView.as_view()), name='register'),
+    path('api/forgot-password/', csrf_exempt(PasswordResetRequestView.as_view()), name='forgot-password'),
+    path('api/forgot-password-confirm/', csrf_exempt(PasswordResetConfirmView.as_view()), name='forgot-password-confirm'),
     path('api/profile/', UserProfileView.as_view(), name='profile'),
     path('api/users/', UserListView.as_view(), name='user-list'),
     path('api/users/<int:pk>/', UserListView.as_view(), name='user-detail'),
@@ -57,7 +58,6 @@ urlpatterns = [
     # Placements
     path('api/placements/', InternshipPlacementListView.as_view(), name='placement-list'),
     path('api/placements/<int:pk>/', InternshipPlacementDetailView.as_view(), name='placement-detail'),
-
     path('api/placements/available/', AvailablePlacementListView.as_view(), name='placement-available-list'),
 
     # Applications
@@ -66,6 +66,7 @@ urlpatterns = [
 
     # Evaluations
     path('api/evaluations/', EvaluationListView.as_view(), name='evaluation-list'),
+    path('api/evaluations/<int:pk>/', EvaluationDetailView.as_view(), name='evaluation-detail'),
 
     # Supervisor workflow
     path('api/logs/<int:pk>/review/', SupervisorReviewView.as_view(), name='log-review'),
@@ -74,14 +75,11 @@ urlpatterns = [
     # Password
     path('api/change-password/', ChangePasswordView.as_view(), name='change-password'),
 
-    # EvaluationDetailView
-    path('api/evaluations/<int:pk>/', EvaluationDetailView.as_view(), name='evaluation-detail'),
-
     # EvaluationCriteria
     path('api/criteria/', EvaluationCriteriaListView.as_view(), name='criteria-list'),
     path('api/criteria/<int:pk>/', EvaluationCriteriaDetailView.as_view(), name='criteria-detail'),
 
-    # Log Revison
+    # Log Revision
     path('api/logs/<int:pk>/revise/', LogRevisionView.as_view(), name='log-revise'),
 
     # Weekly Log Submission
@@ -90,7 +88,7 @@ urlpatterns = [
     # Admin Statistics
     path('api/admin/statistics/', AdminStatisticsView.as_view(), name='admin-statistics'),
 
-    #User Summary 
+    # User Summary
     path('api/users/<int:pk>/summary/', UserSummaryView.as_view()),
 
     # Chat
@@ -100,4 +98,3 @@ urlpatterns = [
 
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
-
