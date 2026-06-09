@@ -156,6 +156,10 @@ MEDIA_ROOT = BASE_DIR / 'media'
 
 # In production — only allow your Vercel frontend
 # In development — allow localhost
+CSRF_TRUSTED_ORIGINS = os.getenv(
+    'CSRF_TRUSTED_ORIGINS',
+    'http://localhost:5173'
+).split(',')
 CORS_ALLOW_ALL_ORIGINS = DEBUG  # True in dev, False in production
 
 CORS_ALLOWED_ORIGINS = os.getenv(
