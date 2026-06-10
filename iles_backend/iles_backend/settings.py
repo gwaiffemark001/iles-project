@@ -133,12 +133,12 @@ WSGI_APPLICATION = 'iles_backend.wsgi.application'
 DATABASE_URL = os.getenv('DATABASE_URL')
 
 if DATABASE_URL:
-    # Railway production — uses DATABASE_URL from PostgreSQL service
+    # Railway production OR local PostgreSQL
     DATABASES = {
         'default': dj_database_url.config(
             default=DATABASE_URL,
             conn_max_age=600,
-            ssl_require=True,
+            ssl_require=not DEBUG,  # Require SSL only in production
         )
     }
 elif os.getenv('DB_NAME') and os.getenv('DB_USER'):
