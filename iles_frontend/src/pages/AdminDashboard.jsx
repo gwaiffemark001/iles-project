@@ -1146,7 +1146,7 @@ function AdminDashboard() {
                       />
                     </label>
                     <label>
-                      Max Score by Each Workplace
+                      Max Score by Each Supervisor
                       <input
                         type="number"
                         step="0.5"
@@ -1208,7 +1208,7 @@ function AdminDashboard() {
                       <h3 style={{ margin: '0 0 8px 0', color: '#2c3e50' }}>{crit.name}</h3>
                       <p style={{ margin: '4px 0', color: '#7f8c8d', fontSize: '14px' }}>{crit.description}</p>
                       <p style={{ margin: '8px 0', color: '#2c3e50' }}>
-                        Max Score by Each Workplace: <strong>{crit.max_score}</strong>
+                        Max Score by Each Supervisor: <strong>{crit.max_score}</strong>
                         <br />Workplace Share: <strong>{crit.supervisor_share}%</strong> | Academic Share: <strong>{crit.academic_share}%</strong>
                       </p>
                       <div style={{ display: 'flex', gap: '8px', marginTop: '12px' }}>

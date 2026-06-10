@@ -1200,6 +1200,9 @@ class AdminStatisticsView(APIView):
                 {'error': 'Admin only'},
                 status=status.HTTP_403_FORBIDDEN
             )
+        # Count unique logs that have been evaluated (per log, not per evaluator)
+        logs_with_evaluations = WeeklyLog.objects.filter(evaluation__isnull=False).distinct().count()
+        
         stats = {
             'total_students': CustomUser.objects.filter(role='student').count(),
             'total_supervisors': CustomUser.objects.filter(role='workplace_supervisor').count(),
@@ -1208,8 +1211,9 @@ class AdminStatisticsView(APIView):
             'total_logs': WeeklyLog.objects.count(),
             'pending_logs': WeeklyLog.objects.filter(status='submitted').count(),
             'approved_logs': WeeklyLog.objects.filter(status='approved').count(),
+            'reviewed_logs': WeeklyLog.objects.filter(status='reviewed').count(),
             'draft_logs': WeeklyLog.objects.filter(status='draft').count(),
-            'total_evaluations': Evaluation.objects.count(),
+            'total_evaluations': logs_with_evaluations,
             'logs_by_status': list(
                 WeeklyLog.objects.values('status').annotate(count=Count('id'))
             ),
