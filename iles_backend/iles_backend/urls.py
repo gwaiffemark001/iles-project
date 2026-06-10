@@ -96,7 +96,7 @@ urlpatterns = [
     path('api/chat/messages/<int:recipient_id>/', ChatMessagesView.as_view(), name='chat-messages'),
 ]
 
-# Serve media files in development
-# In production, WhiteNoise middleware (already configured in settings) efficiently serves media
-if settings.DEBUG:
-    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+# Serve media files (both development and production)
+# Critical for avatar/profile images to load properly
+# WhiteNoise middleware efficiently caches and compresses in production
+urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
