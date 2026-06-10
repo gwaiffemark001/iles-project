@@ -66,29 +66,50 @@ const normalizeAvatarUrl = (url) => {
 
 ## Production Deployment Notes
 
-### For Railway/Cloud Deployment:
+### Free Production Solution: WhiteNoise (Recommended)
 
-1. **Option A: Use Reverse Proxy (Recommended)**
-   - Configure nginx to serve `/media/` from `MEDIA_ROOT`
-   - Add to nginx config:
-   ```nginx
-   location /media/ {
-       alias /app/media/;
-   }
-   ```
+Profile images are served via **WhiteNoise middleware** - completely free and already configured:
 
-2. **Option B: Use Cloud Storage (Scalable)**
-   - Use AWS S3, Azure Blob Storage, or similar
-   - Install `django-storages` package
-   - Configure `DEFAULT_FILE_STORAGE` in settings.py
-   - Update `CORS_ALLOWED_ORIGINS` to include storage URLs
+- ✅ Zero cost
+- ✅ Already in requirements.txt and settings.py
+- ✅ Automatically compresses and caches files
+- ✅ Works seamlessly on Railway
 
-### Environment Variables Required:
-```env
-DEBUG=False
-ALLOWED_HOSTS=your-domain.com
-CORS_ALLOWED_ORIGINS=https://your-frontend-domain.com
+**For detailed setup and configuration**, see [FREE_PRODUCTION_MEDIA_STORAGE.md](FREE_PRODUCTION_MEDIA_STORAGE.md)
+
+### How It Works
+
+1. User uploads avatar → stored in `/media/avatars/`
+2. WhiteNoise compresses and prepares files for serving
+3. Railway serves files with optimized caching headers
+4. Browser receives fast, cached responses
+
+### Railway Deployment
+
+Set this **Start Command** in Railway dashboard:
+```bash
+python manage.py migrate --noinput && python manage.py collectstatic --noinput && gunicorn iles_backend.wsgi
 ```
+
+This ensures:
+- Database migrations run
+- Static/media files collected
+- WhiteNoise compresses them
+- Django starts successfully
+
+### Storage Considerations
+
+**Current (Free, Ephemeral)**
+- Files stored on Railway filesystem
+- ✅ Costs $0
+- ⚠️ Files lost on app restart
+
+**Optional: Add Persistent Volume (Free)**
+- Create volume in Railway dashboard
+- Maps `/app/media` to persistent storage
+- Still completely free
+
+See [FREE_PRODUCTION_MEDIA_STORAGE.md](FREE_PRODUCTION_MEDIA_STORAGE.md#persistent-solution-if-needed-later) for upgrade path if needed
 
 ## Linting Verification
 
