@@ -1,5 +1,7 @@
 import { useState, useEffect, useCallback, useMemo, lazy, Suspense } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
+import { toast, ToastContainer } from 'react-toastify'
+import 'react-toastify/dist/ReactToastify.css'
 import api, { adminAPI, criteriaAPI, evaluationsAPI, placementsAPI } from '../api/api'
 import { useAuth } from '@/auth/useAuth'
 import { buildWeeklyEvaluationSummaries, getGradeWeight } from '../utils/evaluationSummary'
@@ -57,12 +59,10 @@ function AdminDashboard() {
   const [stats, setStats] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
-  const [status, setStatus] = useState('')
   const [activeSection, setActiveSection] = useState(location.state?.activeSection || 'overview')
   const [placements, setPlacements] = useState([])
   const [users, setUsers] = useState([])
   const [evaluations, setEvaluations] = useState([])
-  const [searchTerm, setSearchTerm] = useState('')
   const [filterRole, setFilterRole] = useState('all')
   const [editingEntity, setEditingEntity] = useState(null)
   const [editingItem, setEditingItem] = useState(null)
@@ -242,7 +242,7 @@ function AdminDashboard() {
       }
 
       closeEditModal()
-      setStatus('Changes saved successfully.')
+      toast.success('Changes saved successfully.')
     } catch (requestError) {
       const message = requestError?.response?.data?.error || requestError?.response?.data?.message || requestError?.message || 'Unable to save changes.'
       setEditError(message)
@@ -260,7 +260,7 @@ function AdminDashboard() {
     try {
       await adminAPI.deleteUser(userId)
       setUsers(users.filter(user => user.id !== userId))
-      setStatus('User deleted successfully.')
+      toast.success('User deleted successfully.')
     } catch (error) {
       setError(getApiErrorMessage(error))
 =======
@@ -288,7 +288,7 @@ function AdminDashboard() {
     try {
       await adminAPI.deletePlacement(placementId)
       setPlacements(placements.filter(p => p.id !== placementId))
-      setStatus('Placement deleted successfully.')
+      toast.success('Placement deleted successfully.')
     } catch (error) {
       setError(getApiErrorMessage(error))
 =======
@@ -496,7 +496,7 @@ function AdminDashboard() {
     try {
       await criteriaAPI.deleteCriteria(critId)
       setCriteria(prev => prev.filter(c => c.id !== critId))
-      setStatus('Criteria deleted successfully.')
+      toast.success('Criteria deleted successfully.')
     } catch (err) {
       setCriteriaError(getApiErrorMessage(err))
     }
@@ -511,25 +511,21 @@ function AdminDashboard() {
       await evaluationsAPI.deleteEvaluation(evalId)
       setEvaluations(prev => prev.filter(e => e.id !== evalId))
       setSelectedEvaluation(null)
-      setStatus('Evaluation deleted successfully.')
+      toast.success('Evaluation deleted successfully.')
     } catch (err) {
       setError(getApiErrorMessage(err))
     }
   }
 
   const filteredUsers = users.filter(user => {
-    const matchesSearch = user.username?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         user.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         getFullName(user).toLowerCase().includes(searchTerm.toLowerCase())
     const matchesRole = filterRole === 'all' || user.role === filterRole
-    return matchesSearch && matchesRole
+    return matchesRole
   })
 
   const fetchDashboardData = useCallback(async () => {
     try {
       setLoading(true)
       setError(null)
-      setStatus('')
 
       const [statsResponse, placementsResponse, evaluationsResponse, usersResponse, criteriaResponse] =
         await Promise.all([
@@ -647,11 +643,18 @@ function AdminDashboard() {
           </div>
         </div>
       )}
-      {status && (
-        <div className="dashboard-status-message" style={{ padding: '12px', backgroundColor: '#ecfdf5', border: '1px solid #10b981', color: '#065f46', margin: '16px', borderRadius: '8px' }}>
-          {status}
-        </div>
-      )}
+      <ToastContainer
+        position="top-right"
+        autoClose={3000}
+        hideProgressBar={false}
+        newestOnTop={true}
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+        theme="colored"
+      />
       {/* Sidebar */}
       <div style={{ width: '250px', backgroundColor: '#2c3e50', color: 'white', padding: '20px', position: 'sticky', top: '0', height: '100vh', overflowY: 'auto' }}>
         <div style={{ marginBottom: '30px', display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
@@ -953,13 +956,6 @@ function AdminDashboard() {
             <div>
               <h2 style={{ color: '#2c3e50', marginBottom: '20px' }}>User Management</h2>
               <div style={{ marginBottom: '20px', display: 'flex', gap: '15px', alignItems: 'center' }}>
-                <input
-                  type="text"
-                  placeholder="Search users..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  style={{ padding: '8px', border: '1px solid #ddd', borderRadius: '4px', flex: 1 }}
-                />
                 <select
                   value={filterRole}
                   onChange={(e) => setFilterRole(e.target.value)}
