@@ -169,7 +169,7 @@ SECRET_KEY=your-secret-key
 DEBUG=False
 
 # Frontend
-VITE_API_URL=http://your-backend.com/api
+VITE_API_BASE_URL=http://your-backend.com
 VITE_ENV=production
 ```
 
