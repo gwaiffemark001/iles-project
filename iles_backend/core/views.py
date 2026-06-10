@@ -1209,7 +1209,7 @@ class AdminStatisticsView(APIView):
             'pending_logs': WeeklyLog.objects.filter(status='submitted').count(),
             'approved_logs': WeeklyLog.objects.filter(status='approved').count(),
             'draft_logs': WeeklyLog.objects.filter(status='draft').count(),
-            'total_evaluations': WeeklyLog.objects.filter(evaluations__id__isnull=False).distinct().count(),
+            'total_evaluations': Evaluation.objects.count(),
             'logs_by_status': list(
                 WeeklyLog.objects.values('status').annotate(count=Count('id'))
             ),
