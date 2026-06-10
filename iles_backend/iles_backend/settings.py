@@ -19,9 +19,20 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-fallback-key-change-in-production')
 DEBUG = os.getenv('DEBUG', 'False') == 'True'
-#ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
-#ALLOWED_HOSTS = [host.strip() for host in ALLOWED_HOSTS]  # Strip whitespace from each host
-ALLOWED_HOSTS = ['*']
+
+# Allow Railway domains and localhost
+ALLOWED_HOSTS = [
+    'localhost',
+    '127.0.0.1',
+    'iles-project-iles-backend.up.railway.app',
+    '*.up.railway.app',  # Allow all Railway subdomains
+]
+
+# Add custom hosts from environment if provided
+if os.getenv('ALLOWED_HOSTS'):
+    custom_hosts = [host.strip() for host in os.getenv('ALLOWED_HOSTS').split(',')]
+    ALLOWED_HOSTS.extend(custom_hosts)
+
 AUTH_USER_MODEL = 'core.CustomUser'
 
 # ─────────────────────────────────────────────
@@ -33,6 +44,10 @@ if not DEBUG:
     SECURE_SSL_REDIRECT = True
     SESSION_COOKIE_SECURE = True
     CSRF_COOKIE_SECURE = True
+    
+    # Trust X-Forwarded-Proto header from Railway's reverse proxy
+    # Railway terminates SSL, so requests arrive as HTTP but were originally HTTPS
+    SECURE_PROXY_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
     
     # Security Headers
     SECURE_BROWSER_XSS_FILTER = True
