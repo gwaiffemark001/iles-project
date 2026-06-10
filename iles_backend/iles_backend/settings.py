@@ -18,9 +18,8 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-fallback-key-change-in-production')
 DEBUG = os.getenv('DEBUG', 'False') == 'True'
-#ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
-#ALLOWED_HOSTS = [host.strip() for host in os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')]
-ALLOWED_HOSTS = ['*']
+ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
+ALLOWED_HOSTS = [host.strip() for host in ALLOWED_HOSTS]  # Strip whitespace from each host
 AUTH_USER_MODEL = 'core.CustomUser'
 
 # ─────────────────────────────────────────────
@@ -181,10 +180,16 @@ EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER', '')
 EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD', '')
 DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL', EMAIL_HOST_USER or 'ILES System <noreply@iles.edu>')
 
-if DEBUG and not EMAIL_HOST_USER:
+# Email backend selection based on configuration
+if EMAIL_HOST_USER and EMAIL_HOST_PASSWORD:
+    # Production: Use SMTP if credentials are provided
+    EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+elif DEBUG:
+    # Development: Use console backend for debugging
     EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 else:
-    EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+    # Production without email config: Use console backend to prevent crashes
+    EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 
 # ─────────────────────────────────────────────
 # TWILIO (SMS)
