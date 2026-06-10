@@ -10,11 +10,11 @@
  */
 
 import axios from 'axios'
-import { API_BASE_URL } from '@/constants/appConstants'
+
+const API_BASE_URL = `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'}/api`
 
 const api = axios.create({
     baseURL: API_BASE_URL,
-})
 })
 /** @returns {string|null} Access token from localStorage */
 const getAccessToken = () => localStorage.getItem('access_token');
