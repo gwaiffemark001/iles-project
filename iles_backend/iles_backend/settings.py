@@ -33,8 +33,9 @@ ALLOWED_HOSTS = [
 ]
 
 # Add custom hosts from environment if provided
-if os.getenv('ALLOWED_HOSTS'):
-    custom_hosts = [host.strip() for host in os.getenv('ALLOWED_HOSTS').split(',')]
+custom_allowed_hosts = os.getenv('ALLOWED_HOSTS')
+if custom_allowed_hosts:
+    custom_hosts = [host.strip() for host in custom_allowed_hosts.split(',')]
     ALLOWED_HOSTS.extend(custom_hosts)
 
 AUTH_USER_MODEL = 'core.CustomUser'
@@ -199,16 +200,17 @@ MEDIA_ROOT = BASE_DIR / 'media'
 CORS_ALLOW_ALL_ORIGINS = DEBUG # True in dev, False in production
 
 CORS_ALLOWED_ORIGINS = [
-    origin.strip() for origin in os.getenv(
-        'CORS_ALLOWED_ORIGINS',
-        'http://localhost:5173,http://localhost:5174,http://localhost:3000'
+    origin.strip()
+    for origin in (
+        os.getenv('CORS_ALLOWED_ORIGINS')
+        or 'http://localhost:5173,http://localhost:5174,http://localhost:3000'
     ).split(',')
 ]
 
 CSRF_TRUSTED_ORIGINS = [
-    origin.strip() for origin in os.getenv(
-        'CSRF_TRUSTED_ORIGINS',
-        'http://localhost:5173'
+    origin.strip()
+    for origin in (
+        os.getenv('CSRF_TRUSTED_ORIGINS') or 'http://localhost:5173'
     ).split(',')
 ]
 
