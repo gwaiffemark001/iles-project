@@ -1200,8 +1200,9 @@ class AdminStatisticsView(APIView):
                 {'error': 'Admin only'},
                 status=status.HTTP_403_FORBIDDEN
             )
-        # Count unique logs that have been evaluated (per log, not per evaluator)
-        logs_with_evaluations = WeeklyLog.objects.filter(evaluation__isnull=False).distinct().count()
+        # Count unique (placement, week_number) combinations that have evaluations
+        # Each combination represents one log that has been evaluated
+        logs_with_evaluations = Evaluation.objects.values('placement_id', 'week_number').distinct().count()
         
         stats = {
             'total_students': CustomUser.objects.filter(role='student').count(),
