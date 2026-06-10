@@ -43,11 +43,17 @@ class UserProfileDetailSerializer(serializers.ModelSerializer):
         return None
 
     def _build_absolute_url(self, relative_url):
-        """Convert relative media URL to absolute URL with full request context."""
+        """Convert relative media URL to absolute URL with full request context.
+        
+        Handles both development and production (Railway) environments.
+        In production, Railway's reverse proxy sends X-Forwarded-Proto:https.
+        """
         if not relative_url or relative_url.startswith('http'):
             return relative_url
         request = self.context.get('request')
         if request:
+            # Use build_absolute_uri which respects X-Forwarded-Proto and X-Forwarded-Host
+            # when SECURE_PROXY_HEADER and USE_X_FORWARDED_HOST are set in settings
             return request.build_absolute_uri(relative_url)
         return relative_url
 
