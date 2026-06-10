@@ -9,7 +9,11 @@ from datetime import timedelta
 import dj_database_url
 from dotenv import load_dotenv
 
-load_dotenv()
+# Load environment variables from .env.local (development) or .env (production)
+if os.path.exists('.env.local'):
+    load_dotenv('.env.local')
+else:
+    load_dotenv()
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
