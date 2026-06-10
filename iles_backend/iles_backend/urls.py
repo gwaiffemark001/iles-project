@@ -96,5 +96,11 @@ urlpatterns = [
     path('api/chat/messages/<int:recipient_id>/', ChatMessagesView.as_view(), name='chat-messages'),
 ]
 
-# Serve media files in both development and production
-urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+# Serve media files in development
+# In production, media files should be served by the reverse proxy (nginx) or cloud storage (S3)
+if settings.DEBUG:
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+else:
+    # Production configuration: ensure MEDIA_URL is absolute and reachable
+    # Consider using cloud storage (AWS S3, Azure Blob, etc.) for production media files
+    pass

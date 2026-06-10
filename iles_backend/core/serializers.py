@@ -32,7 +32,10 @@ class UserProfileDetailSerializer(serializers.ModelSerializer):
     def get_avatar_url(self, obj):
         if obj.avatar_image:
             return self._build_absolute_url(obj.avatar_image.url)
-        return obj.avatar_url
+        if obj.avatar_url:
+            # Return avatar_url as-is if it's already a valid URL
+            return obj.avatar_url
+        return None
 
     def get_avatar_image(self, obj):
         if obj.avatar_image:

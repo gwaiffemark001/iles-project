@@ -20,7 +20,7 @@ const UserAvatar = ({ user, size = 'medium', className = '', onClick = null }) =
     if (url.startsWith('http')) return url;
     // If it's relative, prepend the backend server URL
     if (url.startsWith('/')) {
-      return `${API_SERVER_URL}${url}`
+      return `${API_SERVER_URL}${url}`;
     }
     return url;
   };
