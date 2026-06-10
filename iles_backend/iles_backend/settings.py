@@ -41,7 +41,8 @@ AUTH_USER_MODEL = 'core.CustomUser'
 
 if not DEBUG:
     # HTTPS & Cookies
-    SECURE_SSL_REDIRECT = True
+    # Disable for Railway - proxy handles HTTPS, we trust X-Forwarded-Proto
+    SECURE_SSL_REDIRECT = False  # Railway reverse proxy handles this
     SESSION_COOKIE_SECURE = True
     CSRF_COOKIE_SECURE = True
     
