@@ -371,7 +371,7 @@ class Evaluation(models.Model):
     evaluated_at = models.DateTimeField(auto_now_add=True)
     
     def calculate_weighted_score(self):
-        """Calculate weighted score from related EvaluationItem entries"""
+        """Calculate weighted score from related EvaluationItem entries (capped at 0-100)"""
         try:
             # Use the declared related_name from EvaluationItem model
             items_qs = getattr(self, 'evaluation_items', None)
@@ -410,21 +410,31 @@ class Evaluation(models.Model):
         except Exception:
             pass
 
-        # Generic per-criteria weighted percent fallback (uses the evaluator role share)
-        total = Decimal('0')
-        for item in items_qs:
-            crit = item.criteria
-            try:
-                if crit.max_score and crit.max_score > 0:
-                    role_share = crit.supervisor_share if self.evaluation_type == 'supervisor' else crit.academic_share
-                    contribution = (Decimal(str(item.score)) / Decimal(str(crit.max_score))) * Decimal(str(role_share))
-                else:
-                    contribution = Decimal('0')
-            except Exception:
-                contribution = Decimal('0')
-            total += Decimal(str(contribution))
+        # Fallback: Calculate weighted average from individual items with normalization
+        try:
+            if items_qs:
+                total_score = Decimal('0')
+                total_weight = Decimal('0')
+                
+                for item in items_qs:
+                    crit = item.criteria
+                    if crit and crit.max_score and crit.max_score > 0 and item.score is not None:
+                        # Normalize item score to 0-100
+                        normalized_score = (Decimal(str(item.score)) / Decimal(str(crit.max_score))) * Decimal('100')
+                        # Use weight_percent directly
+                        weight = Decimal(str(crit.weight_percent)) / Decimal('100')
+                        total_score += (normalized_score * weight)
+                        total_weight += weight
+                
+                if total_weight > 0:
+                    final_score = (total_score / total_weight)
+                    # Ensure score is within 0-100 range
+                    final_score = max(Decimal('0'), min(Decimal('100'), final_score))
+                    return float(round(final_score, 2))
+        except Exception:
+            pass
 
-        return float(round(total, 2))
+        return 0.0
 
     def update_score_from_items(self):
         """Recalculate `weighted_score` from EvaluationItem entries and save the model."""
