@@ -13,7 +13,8 @@ import axios from 'axios'
 import { API_BASE_URL } from '@/constants/appConstants'
 
 const api = axios.create({
-    baseURL: import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000',
+    baseURL: API_BASE_URL,
+})
 })
 /** @returns {string|null} Access token from localStorage */
 const getAccessToken = () => localStorage.getItem('access_token');
