@@ -7,17 +7,15 @@ export const getGradeWeight = (score) => {
     return null
   }
 
-  // Normalize score to 0-100 range if it's higher (since combined score is sum of two evaluations)
-  const normalizedScore = numericScore > 100 ? numericScore / 2 : numericScore
-
-  if (normalizedScore > 80) return 5
-  if (normalizedScore > 75) return 4.5
-  if (normalizedScore > 70) return 4
-  if (normalizedScore > 65) return 3.5
-  if (normalizedScore > 60) return 3
-  if (normalizedScore > 55) return 2.5
-  if (normalizedScore > 50) return 2
-  if (normalizedScore > 30) return 1
+  // Score should be 0-100 (normalized average of supervisor and academic evaluations)
+  if (numericScore > 80) return 5
+  if (numericScore > 75) return 4.5
+  if (numericScore > 70) return 4
+  if (numericScore > 65) return 3.5
+  if (numericScore > 60) return 3
+  if (numericScore > 55) return 2.5
+  if (numericScore > 50) return 2
+  if (numericScore > 30) return 1
   return 0
 }
 
@@ -57,9 +55,16 @@ const getOverdueWeeks = (placement, today = new Date()) => {
 
 const calculateCombinedWeekScore = (supervisorEvaluation, academicEvaluation) => {
   // Card totals should use already-saved final role-contribution scores.
+  // Each score is already 0-100 normalized, so average them instead of adding
   const supervisorScore = Number(supervisorEvaluation?.weighted_score ?? supervisorEvaluation?.score ?? 0)
   const academicScore = Number(academicEvaluation?.weighted_score ?? academicEvaluation?.score ?? 0)
-  return Number((supervisorScore + academicScore).toFixed(2))
+  
+  // If we have both evaluations, average them. If only one, use that one.
+  if (supervisorScore > 0 && academicScore > 0) {
+    return Number(((supervisorScore + academicScore) / 2).toFixed(2))
+  } else {
+    return Number((supervisorScore + academicScore).toFixed(2))
+  }
 }
 
 export const buildWeeklyEvaluationSummaries = (evaluations = [], placements = [], logs = []) => {
