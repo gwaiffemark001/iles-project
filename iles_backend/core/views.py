@@ -527,28 +527,36 @@ class PasswordResetRequestView(APIView):
         reset_path = f"/reset-password?uid={uid}&token={token}"
         reset_url = f"{frontend_base.rstrip('/')}{reset_path}"
 
-        subject = 'ILES password reset'
+        subject = 'ILES Password Reset'
         message = (
             f"Hello {user.get_full_name() or user.username},\n\n"
             f"You (or someone else) requested a password reset for your ILES account.\n"
             f"Click the link below to reset your password:\n\n{reset_url}\n\n"
-            "If you did not request this, you can ignore this email.\n\n"
-            "Thanks,\nILES Team"
+            "If you did not request this, you can ignore this email.\n"
+            "This link will expire in 24 hours.\n\n"
+            "Thanks,\nILES System Team"
         )
 
         try:
             from django.conf import settings
+            from_email = settings.EMAIL_HOST_USER or settings.DEFAULT_FROM_EMAIL
+            if not from_email or from_email == 'ILES System <noreply@iles.edu>':
+                # If no proper email configured, log and return success anyway
+                logger.warning('Email not properly configured for password reset. Reset link: %s', reset_url)
+                return Response({'message': 'If an account with that email exists, a reset link has been sent.'})
+            
             send_mail(
                 subject,
                 message,
-                settings.EMAIL_HOST_USER or settings.DEFAULT_FROM_EMAIL,
+                from_email,
                 [user.email],
                 fail_silently=False,
             )
+            logger.info('Password reset email sent to %s', user.email)
         except Exception as e:
-            # Fallback: log if email backend not configured or sending fails
-            logger.info('Password reset link (development): %s', reset_url)
-            logger.exception('Email error when sending password reset')
+            # Log the error but still return success to user for security
+            logger.error('Failed to send password reset email to %s: %s', user.email, str(e))
+            logger.info('Password reset link (fallback): %s', reset_url)
 
         return Response({'message': 'If an account with that email exists, a reset link has been sent.'})
 
@@ -661,6 +669,19 @@ class EvaluationListView(APIView):
         serializer = EvaluationSerializer(data=data, context={'request': request})
         if serializer.is_valid():
             evaluation = serializer.save()
+            
+            # Update the weekly log status to 'reviewed' if it's not already 'approved'
+            if placement_id and week_number:
+                try:
+                    weekly_log = WeeklyLog.objects.get(placement_id=placement_id, week_number=week_number)
+                    if weekly_log.status != 'approved':
+                        weekly_log.status = 'reviewed'
+                        weekly_log.reviewed_at = timezone.now()
+                        weekly_log.reviewed_by = request.user
+                        weekly_log.save()
+                except WeeklyLog.DoesNotExist:
+                    pass
+            
             notify_evaluation_status_changed(
                 evaluation,
                 actor=request.user,
@@ -1188,7 +1209,7 @@ class AdminStatisticsView(APIView):
             'pending_logs': WeeklyLog.objects.filter(status='submitted').count(),
             'approved_logs': WeeklyLog.objects.filter(status='approved').count(),
             'draft_logs': WeeklyLog.objects.filter(status='draft').count(),
-            'total_evaluations': Evaluation.objects.count(),
+            'total_evaluations': WeeklyLog.objects.filter(evaluations__id__isnull=False).distinct().count(),
             'logs_by_status': list(
                 WeeklyLog.objects.values('status').annotate(count=Count('id'))
             ),
