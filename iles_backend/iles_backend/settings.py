@@ -49,12 +49,15 @@ if not DEBUG:
     # Railway terminates SSL, so requests arrive as HTTP but were originally HTTPS
     SECURE_PROXY_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
     
-    # Security Headers
+    # Also trust other forwarded headers
+    USE_X_FORWARDED_HOST = True
+    
+    # Security Headers (temporarily lowered HSTS for testing)
     SECURE_BROWSER_XSS_FILTER = True
     X_FRAME_OPTIONS = 'DENY'
-    SECURE_HSTS_SECONDS = 31536000  # 1 year
+    SECURE_HSTS_SECONDS = 3600  # 1 hour (lowered from 1 year for testing)
     SECURE_HSTS_INCLUDE_SUBDOMAINS = True
-    SECURE_HSTS_PRELOAD = True
+    # SECURE_HSTS_PRELOAD = True  # Disabled temporarily
     
     # Content Security Policy
     SECURE_CONTENT_SECURITY_POLICY = {
