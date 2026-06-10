@@ -9,4 +9,8 @@ export default defineConfig({
       '@': fileURLToPath(new URL('./src', import.meta.url)),
     },
   },
+  // Add this preview configuration block:
+  preview: {
+    allowedHosts: true
+  }
 })
