@@ -72,9 +72,10 @@ class NotificationService:
             )
             if connection and getattr(connection, 'open', False):
                 logger.info(f"Email sent successfully to {recipient.email}")
+                return True
             else:
                 logger.warning(f"Email attempted but SMTP connection was not open for {recipient.email}")
-            return True
+                return False
         except Exception as e:
             logger.error(f"Failed to send email to {recipient.email}: {str(e)}")
             return False

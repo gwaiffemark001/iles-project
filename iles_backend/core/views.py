@@ -38,6 +38,8 @@ from .serializers import (
     WeeklyLogSerializer,
     ChatMessageSerializer,
 )
+from .notification_service import NotificationService
+from .gmail_oauth2 import send_email_via_gmail_api, get_gmail_oauth2_setup_instructions
 
 logger = logging.getLogger(__name__)
 from .services import (
@@ -540,30 +542,34 @@ class PasswordResetRequestView(APIView):
 
         try:
             from django.conf import settings
-            from_email = settings.EMAIL_HOST_USER or settings.DEFAULT_FROM_EMAIL
-            if not from_email or from_email == 'ILES System <noreply@iles.edu>':
-                # If no proper email configured, log and return success anyway
-                logger.warning('Email not properly configured for password reset. Reset link: %s', reset_url)
-                return Response({'message': 'If an account with that email exists, a reset link has been sent.'})
-
-            connection = get_connection(fail_silently=True)
-            send_mail(
-                subject,
-                message,
-                from_email,
-                [user.email],
-                connection=connection,
-                fail_silently=True,
+            
+            # Try Gmail OAuth2 API first (preferred over SMTP on Railway)
+            sent = send_email_via_gmail_api(
+                recipient_email=user.email,
+                subject=subject,
+                message=message,
             )
-
-            if connection and getattr(connection, 'open', False):
-                logger.info('Password reset email sent to %s via SMTP.', user.email)
+            
+            if sent:
+                logger.info('✓ Password reset email sent via Gmail OAuth2 API to %s', user.email)
             else:
-                logger.warning('Password reset email attempted but SMTP connection was not open. Email may not have been delivered. Reset link: %s', reset_url)
+                # Fall back to standard email notification service (SMTP or console)
+                logger.info('Gmail OAuth2 not configured or failed. Attempting SMTP fallback...')
+                sent = NotificationService.send_email_notification(
+                    recipient=user,
+                    subject=subject,
+                    message=message,
+                )
+                
+                if sent:
+                    logger.info('✓ Password reset email sent via SMTP fallback to %s', user.email)
+                else:
+                    logger.warning('✗ Password reset email failed for %s (no delivery service available). Reset link: %s', user.email, reset_url)
+                    logger.info('Setup Gmail OAuth2 to enable reliable email delivery.')
         except Exception as e:
             # Log the error but still return success to user for security
-            logger.error('Failed to send password reset email to %s: %s', user.email, str(e))
-            logger.info('Password reset link (fallback): %s', reset_url)
+            logger.error('Unexpected error sending password reset email to %s: %s', user.email, str(e))
+            logger.debug('Password reset link (fallback): %s', reset_url)
 
         return Response({'message': 'If an account with that email exists, a reset link has been sent.'})
 
