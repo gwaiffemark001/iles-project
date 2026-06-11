@@ -1,0 +1,1 @@
+web: cd iles_backend && python manage.py migrate && python manage.py collectstatic --noinput && gunicorn iles_backend.wsgi --bind 0.0.0.0:$PORT --log-file -

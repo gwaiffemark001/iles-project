@@ -11,6 +11,7 @@ import os
 from django.utils import timezone
 from rest_framework import status
 from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from django.core.exceptions import ValidationError
@@ -550,7 +551,7 @@ class PasswordResetRequestView(APIView):
                 message,
                 from_email,
                 [user.email],
-                fail_silently=False,
+                fail_silently=True,
             )
             logger.info('Password reset email sent to %s', user.email)
         except Exception as e:
@@ -693,6 +694,7 @@ class EvaluationListView(APIView):
     
 class UserProfileView(APIView):
     permission_classes = [IsAuthenticated]
+    parser_classes = [MultiPartParser, FormParser, JSONParser]
 
     def get(self, request):
         serializer = CustomUserSerializer(request.user)

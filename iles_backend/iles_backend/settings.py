@@ -191,7 +191,7 @@ STATIC_URL = 'static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 MEDIA_URL = '/media/'
-MEDIA_ROOT = BASE_DIR / 'media'
+MEDIA_ROOT = Path(os.getenv('MEDIA_ROOT', BASE_DIR / 'media'))
 
 # ─────────────────────────────────────────────
 # AWS S3 CONFIGURATION (For Production Image/Media Storage)
@@ -245,14 +245,19 @@ CORS_ALLOWED_ORIGINS = [
     origin.strip()
     for origin in (
         os.getenv('CORS_ALLOWED_ORIGINS')
-        or 'http://localhost:5173,http://localhost:5174,http://localhost:3000'
+        or 'http://localhost:5173,http://localhost:5174,http://localhost:3000,https://iles-project-iles-frontend.up.railway.app'
     ).split(',')
+]
+
+CORS_ALLOWED_ORIGIN_REGEXES = [
+    r'^https://.+\.up\.railway\.app$',
 ]
 
 CSRF_TRUSTED_ORIGINS = [
     origin.strip()
     for origin in (
-        os.getenv('CSRF_TRUSTED_ORIGINS') or 'http://localhost:5173'
+        os.getenv('CSRF_TRUSTED_ORIGINS')
+        or 'http://localhost:5173,https://iles-project-iles-frontend.up.railway.app'
     ).split(',')
 ]
 
@@ -293,15 +298,15 @@ EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER', '')
 EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD', '')
 DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL', EMAIL_HOST_USER or 'ILES System <noreply@iles.edu>')
 
+# Email timeout to avoid long SMTP hangs
+EMAIL_TIMEOUT = int(os.getenv('EMAIL_TIMEOUT', '10'))
+
 # Email backend selection based on configuration
 if EMAIL_HOST_USER and EMAIL_HOST_PASSWORD:
-    # Production: Use SMTP if credentials are provided
+    # Production: Use SMTP only when credentials are provided
     EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-elif DEBUG:
-    # Development: Use console backend for debugging
-    EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 else:
-    # Production without email config: Use console backend to prevent crashes
+    # Development or missing credentials: use console backend
     EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 
 # ─────────────────────────────────────────────

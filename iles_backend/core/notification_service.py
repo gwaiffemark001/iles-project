@@ -29,7 +29,7 @@ class NotificationService:
                 from_email=settings.DEFAULT_FROM_EMAIL,
                 recipient_list=[recipient.email],
                 html_message=html_message,
-                fail_silently=False,
+                fail_silently=True,
             )
             logger.info(f"Email sent successfully to {recipient.email}")
             return True

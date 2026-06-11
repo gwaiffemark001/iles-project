@@ -14,8 +14,8 @@ from .models import (
 )
 
 class UserProfileDetailSerializer(serializers.ModelSerializer):
-    avatar_url = serializers.SerializerMethodField()
-    avatar_image = serializers.SerializerMethodField()
+    avatar_url = serializers.URLField(required=False, allow_blank=True, allow_null=True)
+    avatar_image = serializers.ImageField(required=False, allow_null=True)
 
     class Meta:
         model = UserProfile
@@ -29,33 +29,13 @@ class UserProfileDetailSerializer(serializers.ModelSerializer):
             'updated_at',
         ]
 
-    def get_avatar_url(self, obj):
-        if obj.avatar_image:
-            return self._build_absolute_url(obj.avatar_image.url)
-        if obj.avatar_url:
-            # Return avatar_url as-is if it's already a valid URL
-            return obj.avatar_url
-        return None
-
-    def get_avatar_image(self, obj):
-        if obj.avatar_image:
-            return self._build_absolute_url(obj.avatar_image.url)
-        return None
-
-    def _build_absolute_url(self, relative_url):
-        """Convert relative media URL to absolute URL with full request context.
-        
-        Handles both development and production (Railway) environments.
-        In production, Railway's reverse proxy sends X-Forwarded-Proto:https.
-        """
-        if not relative_url or relative_url.startswith('http'):
-            return relative_url
-        request = self.context.get('request')
-        if request:
-            # Use build_absolute_uri which respects X-Forwarded-Proto and X-Forwarded-Host
-            # when SECURE_PROXY_HEADER and USE_X_FORWARDED_HOST are set in settings
-            return request.build_absolute_uri(relative_url)
-        return relative_url
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        if instance.avatar_image:
+            return data
+        if instance.avatar_url:
+            data['avatar_image'] = instance.avatar_url
+        return data
 
 class UserSummarySerializer(serializers.ModelSerializer):
     full_name = serializers.SerializerMethodField()
