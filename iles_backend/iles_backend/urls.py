@@ -3,6 +3,7 @@ from django.urls import path
 from django.conf import settings
 from django.conf.urls.static import static
 from django.views.decorators.csrf import csrf_exempt
+from django.views.static import serve
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from core.views import (
     WeeklyLogListView,
@@ -100,3 +101,8 @@ urlpatterns = [
 # Critical for avatar/profile images to load properly
 # WhiteNoise middleware efficiently caches and compresses in production
 urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+
+if not settings.DEBUG:
+    urlpatterns += [
+        path('media/<path:path>', serve, {'document_root': settings.MEDIA_ROOT}),
+    ]
