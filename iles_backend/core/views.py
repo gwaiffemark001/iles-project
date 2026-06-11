@@ -6,7 +6,7 @@ from django.db.models import Count
 from django.contrib.auth.tokens import PasswordResetTokenGenerator
 from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
 from django.utils.encoding import force_bytes, force_str
-from django.core.mail import send_mail
+from django.core.mail import get_connection, send_mail
 import os
 from django.utils import timezone
 from rest_framework import status
@@ -545,15 +545,21 @@ class PasswordResetRequestView(APIView):
                 # If no proper email configured, log and return success anyway
                 logger.warning('Email not properly configured for password reset. Reset link: %s', reset_url)
                 return Response({'message': 'If an account with that email exists, a reset link has been sent.'})
-            
+
+            connection = get_connection(fail_silently=True)
             send_mail(
                 subject,
                 message,
                 from_email,
                 [user.email],
+                connection=connection,
                 fail_silently=True,
             )
-            logger.info('Password reset email sent to %s', user.email)
+
+            if connection and getattr(connection, 'open', False):
+                logger.info('Password reset email sent to %s via SMTP.', user.email)
+            else:
+                logger.warning('Password reset email attempted but SMTP connection was not open. Email may not have been delivered. Reset link: %s', reset_url)
         except Exception as e:
             # Log the error but still return success to user for security
             logger.error('Failed to send password reset email to %s: %s', user.email, str(e))

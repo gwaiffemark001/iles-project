@@ -2,7 +2,7 @@
 Enhanced Notification Service (Lecture 7: Notifications and Workflow Integration)
 Implements email and SMS notifications with Django signals integration
 """
-from django.core.mail import send_mail
+from django.core.mail import get_connection, send_mail
 from django.conf import settings
 from django.db.models.signals import post_save
 from django.dispatch import receiver
@@ -23,15 +23,20 @@ class NotificationService:
                 logger.warning("Email not configured. Skipping email notification.")
                 return False
                 
+            connection = get_connection(fail_silently=True)
             send_mail(
                 subject=subject,
                 message=message,
                 from_email=settings.DEFAULT_FROM_EMAIL,
                 recipient_list=[recipient.email],
                 html_message=html_message,
+                connection=connection,
                 fail_silently=True,
             )
-            logger.info(f"Email sent successfully to {recipient.email}")
+            if connection and getattr(connection, 'open', False):
+                logger.info(f"Email sent successfully to {recipient.email}")
+            else:
+                logger.warning(f"Email attempted but SMTP connection was not open for {recipient.email}")
             return True
         except Exception as e:
             logger.error(f"Failed to send email to {recipient.email}: {str(e)}")
