@@ -299,10 +299,18 @@ EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER', '')
 EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD', '')
 DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL', EMAIL_HOST_USER or 'ILES System <noreply@iles.edu>')
 
+# Gmail API (OAuth2) settings - when provided, backend will use Gmail REST API
+GMAIL_CLIENT_ID = os.getenv('GMAIL_CLIENT_ID', '')
+GMAIL_CLIENT_SECRET = os.getenv('GMAIL_CLIENT_SECRET', '')
+GMAIL_REFRESH_TOKEN = os.getenv('GMAIL_REFRESH_TOKEN', '')
+GMAIL_API_USER = os.getenv('GMAIL_API_USER', EMAIL_HOST_USER or '')
+
 # Email timeout to avoid long SMTP hangs
 EMAIL_TIMEOUT = int(os.getenv('EMAIL_TIMEOUT', '10'))
 
 # Email backend selection based on configuration
+# If Gmail API is configured, we'll keep the normal EMAIL_BACKEND but
+# NotificationService will prefer the Gmail API path when GMAIL_CLIENT_ID is set.
 if EMAIL_HOST_USER and EMAIL_HOST_PASSWORD:
     # Production: Use SMTP only when credentials are provided
     EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
