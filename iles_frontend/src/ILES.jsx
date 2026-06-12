@@ -53,6 +53,8 @@ export function ILES() {
   const [profile, setProfile] = useState(null)
   const [status, setStatus] = useState('')
   const [error, setError] = useState('')
+  const [registerErrors, setRegisterErrors] = useState({})
+  const [phoneCountryCode, setPhoneCountryCode] = useState('+254')
   const [loading, setLoading] = useState(false)
 
   const api = useMemo(
@@ -110,19 +112,24 @@ export function ILES() {
     e.preventDefault()
     setError('')
     setStatus('')
+    setRegisterErrors({})
+    if (!validateRegisterForm()) {
+      return
+    }
     setLoading(true)
     try {
+      const normalizedPhone = registerData.phone ? `${phoneCountryCode}${registerData.phone.replace(/\D/g, '')}` : ''
       await api.post(
         '/register/',
         {
           username: registerData.username,
-          email: registerData.email,
+          email: registerData.email.trim(),
           password: registerData.password,
           confirm_password: registerData.confirmPassword,
-          first_name: registerData.firstName,
-          last_name: registerData.lastName,
+          first_name: registerData.firstName.trim(),
+          last_name: registerData.lastName.trim(),
           role: registerData.role,
-          phone: registerData.phone,
+          phone: normalizedPhone,
           department: registerData.department,
           student_number: registerData.studentNumber,
           registration_number: registerData.registrationNumber,
@@ -210,6 +217,67 @@ export function ILES() {
   }
 
   const isStudent = registerData.role === 'student'
+
+  const countryPhoneRules = {
+    '+254': { label: 'Kenya', digits: 9 },
+    '+256': { label: 'Uganda', digits: 9 },
+    '+1': { label: 'USA/Canada', digits: 10 },
+    '+44': { label: 'United Kingdom', digits: 10 },
+    '+91': { label: 'India', digits: 10 },
+  }
+
+  const validateRegisterForm = () => {
+    const errors = {}
+    const namePattern = /^[A-Za-z'-]+$/
+    const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    const phoneRule = countryPhoneRules[phoneCountryCode]
+    const localPhone = (registerData.phone || '').replace(/\D/g, '')
+
+    if (!registerData.username.trim()) {
+      errors.username = 'Username is required.'
+    }
+
+    if (!registerData.email.trim()) {
+      errors.email = 'Email is required.'
+    } else if (!emailPattern.test(registerData.email.trim())) {
+      errors.email = 'Please enter a valid email address.'
+    }
+
+    if (!registerData.password) {
+      errors.password = 'Password is required.'
+    }
+
+    if (registerData.password !== registerData.confirmPassword) {
+      errors.confirmPassword = 'Passwords do not match.'
+    }
+
+    if (registerData.firstName && !namePattern.test(registerData.firstName)) {
+      errors.firstName = 'First name may only contain letters, hyphens, and apostrophes.'
+    }
+
+    if (registerData.lastName && !namePattern.test(registerData.lastName)) {
+      errors.lastName = 'Last name may only contain letters, hyphens, and apostrophes.'
+    }
+
+    if (registerData.firstName && /\s/.test(registerData.firstName)) {
+      errors.firstName = 'First name must not contain spaces.'
+    }
+
+    if (registerData.lastName && /\s/.test(registerData.lastName)) {
+      errors.lastName = 'Last name must not contain spaces.'
+    }
+
+    if (registerData.phone) {
+      if (!/^[0-9]+$/.test(localPhone)) {
+        errors.phone = 'Phone number must contain only digits.'
+      } else if (phoneRule && localPhone.length !== phoneRule.digits) {
+        errors.phone = `Phone number must be ${phoneRule.digits} digits for ${phoneRule.label}.`
+      }
+    }
+
+    setRegisterErrors(errors)
+    return Object.keys(errors).length === 0
+  }
 
   // ── Render role-based dashboard when logged in ──────────────────────────────
   if (session.access && profile) {
@@ -336,8 +404,13 @@ export function ILES() {
                     id="reg-first-name"
                     type="text"
                     value={registerData.firstName}
-                    onChange={(e) => setRegisterData((p) => ({ ...p, firstName: e.target.value }))}
+                    onChange={(e) => {
+                      const cleaned = e.target.value.replace(/[^A-Za-z'-]/g, '')
+                      setRegisterData((p) => ({ ...p, firstName: cleaned }))
+                    }}
+                    placeholder="No spaces or symbols"
                   />
+                  {registerErrors.firstName && <p className="error">{registerErrors.firstName}</p>}
                 </div>
                 <div>
                   <label htmlFor="reg-last-name">Last name</label>
@@ -345,8 +418,13 @@ export function ILES() {
                     id="reg-last-name"
                     type="text"
                     value={registerData.lastName}
-                    onChange={(e) => setRegisterData((p) => ({ ...p, lastName: e.target.value }))}
+                    onChange={(e) => {
+                      const cleaned = e.target.value.replace(/[^A-Za-z'-]/g, '')
+                      setRegisterData((p) => ({ ...p, lastName: cleaned }))
+                    }}
+                    placeholder="No spaces or symbols"
                   />
+                  {registerErrors.lastName && <p className="error">{registerErrors.lastName}</p>}
                 </div>
               </div>
               <label htmlFor="reg-username">Username</label>
@@ -362,8 +440,10 @@ export function ILES() {
                 id="reg-email"
                 type="email"
                 value={registerData.email}
-                onChange={(e) => setRegisterData((p) => ({ ...p, email: e.target.value }))}
+                onChange={(e) => setRegisterData((p) => ({ ...p, email: e.target.value.trim() }))}
+                placeholder="name@example.com"
               />
+              {registerErrors.email && <p className="error">{registerErrors.email}</p>}
               <label htmlFor="reg-role">Role</label>
               <select
                 id="reg-role"
@@ -376,12 +456,30 @@ export function ILES() {
                 <option value="admin">Administrator</option>
               </select>
               <label htmlFor="reg-phone">Phone</label>
-              <input
-                id="reg-phone"
-                type="text"
-                value={registerData.phone}
-                onChange={(e) => setRegisterData((p) => ({ ...p, phone: e.target.value }))}
-              />
+              <div className="phone-field-grid">
+                <select
+                  id="reg-phone-country"
+                  value={phoneCountryCode}
+                  onChange={(e) => setPhoneCountryCode(e.target.value)}
+                >
+                  {Object.entries(countryPhoneRules).map(([code, info]) => (
+                    <option key={code} value={code}>
+                      {code} {info.label}
+                    </option>
+                  ))}
+                </select>
+                <input
+                  id="reg-phone"
+                  type="text"
+                  value={registerData.phone}
+                  onChange={(e) => {
+                    const digits = e.target.value.replace(/\D/g, '')
+                    setRegisterData((p) => ({ ...p, phone: digits }))
+                  }}
+                  placeholder={`Enter ${countryPhoneRules[phoneCountryCode].digits} digits`}
+                />
+              </div>
+              {registerErrors.phone && <p className="error">{registerErrors.phone}</p>}
               <label htmlFor="reg-department">Department</label>
               <input
                 id="reg-department"

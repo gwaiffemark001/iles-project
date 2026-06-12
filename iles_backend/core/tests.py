@@ -97,6 +97,58 @@ class AuthenticationTests(TestCase):
         user.refresh_from_db()
         self.assertTrue(user.check_password('NewPass123'))
 
+    @patch('core.views.verify_email_exists', return_value=False)
+    def test_registration_rejects_unverified_email(self, mock_verify_email_exists):
+        response = self.client.post('/api/register/', {
+            'username': 'unverifieduser',
+            'password': 'ValidPass123',
+            'confirm_password': 'ValidPass123',
+            'email': 'test@example.com',
+            'first_name': 'John',
+            'last_name': 'Doe',
+            'phone': '254712345678',
+            'role': 'student',
+        }, format='json')
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('email', response.data)
+        self.assertEqual(response.data['email'][0], 'Email could not be verified. Please use a valid existing email address.')
+
+    @patch('core.views.verify_email_exists', return_value=True)
+    def test_registration_rejects_invalid_name_and_phone(self, mock_verify_email_exists):
+        response = self.client.post('/api/register/', {
+            'username': 'baduser',
+            'password': 'ValidPass123',
+            'confirm_password': 'ValidPass123',
+            'email': 'valid@example.com',
+            'first_name': 'John Doe',
+            'last_name': 'Smith ',
+            'phone': '12345',
+            'role': 'student',
+        }, format='json')
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('first_name', response.data)
+        self.assertIn('last_name', response.data)
+        self.assertIn('phone', response.data)
+
+    @patch('core.views.verify_email_exists', return_value=True)
+    def test_registration_accepts_valid_international_phone(self, mock_verify_email_exists):
+        response = self.client.post('/api/register/', {
+            'username': 'validuser',
+            'password': 'ValidPass123',
+            'confirm_password': 'ValidPass123',
+            'email': 'valid@example.com',
+            'first_name': 'John',
+            'last_name': 'Smith',
+            'phone': '+254712345678',
+            'role': 'student',
+        }, format='json')
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(response.data['username'], 'validuser')
+        self.assertEqual(response.data['role'], 'student')
+
 class WeeklyLogTests(TestCase):
 
     def setUp(self):

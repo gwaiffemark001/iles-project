@@ -7,7 +7,11 @@ from django.contrib.auth.tokens import PasswordResetTokenGenerator
 from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
 from django.utils.encoding import force_bytes, force_str
 import os
+import re
+import socket
+import smtplib
 from django.utils import timezone
+from django.core.validators import EmailValidator
 from rest_framework import status
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
@@ -38,6 +42,66 @@ from .serializers import (
     WeeklyLogSerializer,
     ChatMessageSerializer,
 )
+
+EMAIL_VALIDATOR = EmailValidator()
+
+
+def normalize_phone_number(phone):
+    if phone is None:
+        return None
+    raw = re.sub(r'[^0-9]', '', str(phone or ''))
+    if not raw:
+        return None
+    if not re.fullmatch(r'[1-9]\d{7,14}', raw):
+        raise ValidationError(
+            'Phone number must include a country code and contain 8 to 15 digits.'
+        )
+    return raw
+
+
+def validate_name_field(value, field_name):
+    if not value:
+        return ''
+    if re.search(r'\s', value):
+        raise ValidationError(f'{field_name} must not contain spaces.')
+    if not re.fullmatch(r"[A-Za-z'-]+", value):
+        raise ValidationError(
+            f'{field_name} may only contain letters, hyphens, and apostrophes.'
+        )
+    return value
+
+
+def verify_email_domain_exists(email):
+    try:
+        domain = email.split('@', 1)[1]
+    except IndexError:
+        return False
+    try:
+        socket.getaddrinfo(domain, None)
+        return True
+    except OSError:
+        return False
+
+
+def verify_email_exists(email):
+    try:
+        EMAIL_VALIDATOR(email)
+    except ValidationError:
+        return False
+
+    if not verify_email_domain_exists(email):
+        return False
+
+    try:
+        domain = email.split('@', 1)[1]
+        with smtplib.SMTP(timeout=10) as smtp:
+            smtp.connect(domain)
+            smtp.ehlo_or_helo_if_needed()
+            smtp.mail('verify@iles-project.com')
+            code, _ = smtp.rcpt(email)
+            return code in (250, 251)
+    except (smtplib.SMTPException, OSError, socket.timeout, ConnectionRefusedError):
+        return False
 from .notification_service import NotificationService
 from .gmail_oauth2 import send_email_via_gmail_api, get_gmail_oauth2_setup_instructions
 
@@ -455,35 +519,65 @@ class UserRegistrationView(APIView):
         username = request.data.get('username')
         password = request.data.get('password')
         confirm_password = request.data.get('confirm_password')
-        email = request.data.get('email', '')
+        email = request.data.get('email', '').strip()
+        first_name = request.data.get('first_name', '')
+        last_name = request.data.get('last_name', '')
+        phone = request.data.get('phone')
+
+        errors = {}
 
         if not username:
-            return Response({'username': ['This field is required.']}, status=status.HTTP_400_BAD_REQUEST)
+            errors['username'] = ['This field is required.']
         if not password:
-            return Response({'password': ['This field is required.']}, status=status.HTTP_400_BAD_REQUEST)
+            errors['password'] = ['This field is required.']
         if confirm_password is not None and password != confirm_password:
-            return Response({'confirm_password': ['Passwords do not match.']}, status=status.HTTP_400_BAD_REQUEST)
+            errors['confirm_password'] = ['Passwords do not match.']
         if CustomUser.objects.filter(username=username).exists():
-            return Response({'username': ['Username already exists.']}, status=status.HTTP_400_BAD_REQUEST)
-        if email and CustomUser.objects.filter(email=email).exists():
-            return Response({'email': ['Email already exists.']}, status=status.HTTP_400_BAD_REQUEST)
+            errors['username'] = ['Username already exists.']
+        if not email:
+            errors['email'] = ['This field is required.']
+        elif CustomUser.objects.filter(email__iexact=email).exists():
+            errors['email'] = ['Email already exists.']
+
+        try:
+            first_name = validate_name_field(first_name, 'first_name')
+        except ValidationError as exc:
+            errors['first_name'] = exc.messages
+
+        try:
+            last_name = validate_name_field(last_name, 'last_name')
+        except ValidationError as exc:
+            errors['last_name'] = exc.messages
+
+        try:
+            phone = normalize_phone_number(phone)
+        except ValidationError as exc:
+            errors['phone'] = exc.messages
+
+        if email and 'email' not in errors:
+            try:
+                EMAIL_VALIDATOR(email)
+                if not verify_email_exists(email):
+                    errors['email'] = ['Email could not be verified. Please use a valid existing email address.']
+            except ValidationError as exc:
+                errors['email'] = exc.messages
 
         allowed_roles = {'student', 'workplace_supervisor', 'academic_supervisor'}
         role = request.data.get('role', 'student')
         if role not in allowed_roles:
-            return Response(
-                {'role': [f"Role must be one of: {', '.join(sorted(allowed_roles))}."]},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+            errors['role'] = [f"Role must be one of: {', '.join(sorted(allowed_roles))}."]
+
+        if errors:
+            return Response(errors, status=status.HTTP_400_BAD_REQUEST)
 
         user = CustomUser.objects.create_user(
             username=username,
             email=email,
             password=password,
             role=role,
-            first_name=request.data.get('first_name', ''),
-            last_name=request.data.get('last_name', ''),
-            phone=request.data.get('phone'),
+            first_name=first_name,
+            last_name=last_name,
+            phone=phone,
             department=request.data.get('department'),
             staff_number=request.data.get('staff_number'),
             student_number=request.data.get('student_number'),
