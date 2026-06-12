@@ -44,6 +44,7 @@ def send_email_via_gmail_api(recipient_email, subject, message, html_message=Non
         from google.auth.transport.requests import Request
         from googleapiclient.discovery import build
         from email.mime.text import MIMEText
+        from email.utils import formataddr
         import base64
         
         # Create credentials from refresh token
@@ -65,7 +66,10 @@ def send_email_via_gmail_api(recipient_email, subject, message, html_message=Non
         body_text = html_message if html_message else message
         mime_msg = MIMEText(body_text, 'html' if html_message else 'plain')
         mime_msg['to'] = recipient_email
-        mime_msg['from'] = getattr(settings, 'DEFAULT_FROM_EMAIL', '')
+        default_from = getattr(settings, 'DEFAULT_FROM_EMAIL', '')
+        if '<' not in default_from and '@' in default_from:
+            default_from = formataddr(('ILES System', default_from))
+        mime_msg['from'] = default_from
         mime_msg['subject'] = subject
         
         # Encode and send

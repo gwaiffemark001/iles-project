@@ -84,7 +84,7 @@ Status: Complete (Frontend/Backend Code) - Awaiting Railway Configuration
 
 **Current Configuration**:
 ```python
-DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL', 'ILES System <noreply@iles.edu>')
+DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL', 'ILES <mar666068@gmail.com>')
 GMAIL_CLIENT_ID = os.getenv('GMAIL_CLIENT_ID', '')
 GMAIL_CLIENT_SECRET = os.getenv('GMAIL_CLIENT_SECRET', '')
 GMAIL_REFRESH_TOKEN = os.getenv('GMAIL_REFRESH_TOKEN', '')

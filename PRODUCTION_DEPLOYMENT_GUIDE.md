@@ -50,7 +50,7 @@ GMAIL_CLIENT_ID=<your-client-id>
 GMAIL_CLIENT_SECRET=<your-client-secret>
 GMAIL_REFRESH_TOKEN=<your-refresh-token>
 GMAIL_API_USER=your-email@gmail.com
-DEFAULT_FROM_EMAIL=your-email@gmail.com
+DEFAULT_FROM_EMAIL=ILES <mar666068@gmail.com>
 
 # Twilio (optional)
 TWILIO_ACCOUNT_SID=your-account-sid
