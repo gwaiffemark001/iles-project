@@ -154,7 +154,22 @@ export function ILES() {
       setStatus('Account created successfully.')
       setRegisterData(emptyRegister())
     } catch (err) {
-      setError(err.message || 'Account creation failed')
+      // Handle backend validation errors (e.g., {email: [\"Email already exists.\"], phone: [...]})\n      if (err.response?.data && typeof err.response.data === 'object') {
+        const backendErrors = err.response.data
+        const fieldErrors = {}
+        let firstError = ''
+
+        Object.entries(backendErrors).forEach(([field, messages]) => {
+          const errorMsg = Array.isArray(messages) ? messages.join(' ') : messages
+          fieldErrors[field] = errorMsg
+          if (!firstError) firstError = errorMsg
+        })
+
+        setRegisterErrors(fieldErrors)
+        setError(firstError || 'Account creation failed')
+      } else {
+        setError(err.message || 'Account creation failed')
+      }
     } finally {
       setLoading(false)
     }
@@ -435,6 +450,7 @@ export function ILES() {
                 onChange={(e) => setRegisterData((p) => ({ ...p, username: e.target.value }))}
                 required
               />
+              {registerErrors.username && <p className="error">{registerErrors.username}</p>}
               <label htmlFor="reg-email">Email</label>
               <input
                 id="reg-email"
@@ -529,6 +545,7 @@ export function ILES() {
                 required
                 autoComplete="new-password"
               />
+              {registerErrors.password && <p className="error">{registerErrors.password}</p>}
               <label htmlFor="reg-confirm-password">Confirm password</label>
               <PasswordField
                 id="reg-confirm-password"
@@ -539,6 +556,7 @@ export function ILES() {
                 required
                 autoComplete="new-password"
               />
+              {registerErrors.confirmPassword && <p className="error">{registerErrors.confirmPassword}</p>}
               <button type="submit" disabled={loading}>
                 {loading ? 'Creating…' : 'Create account'}
               </button>
