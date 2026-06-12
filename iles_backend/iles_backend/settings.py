@@ -291,32 +291,19 @@ SIMPLE_JWT = {
 # EMAIL CONFIGURATION
 # ─────────────────────────────────────────────
 
-EMAIL_HOST = os.getenv('EMAIL_HOST', 'smtp.gmail.com')
-EMAIL_PORT = int(os.getenv('EMAIL_PORT', '587'))
-EMAIL_USE_TLS = os.getenv('EMAIL_USE_TLS', 'True').lower() == 'true'
-EMAIL_USE_SSL = os.getenv('EMAIL_USE_SSL', 'False').lower() == 'true'
-EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER', '')
-EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD', '')
-DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL', EMAIL_HOST_USER or 'ILES System <noreply@iles.edu>')
+DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL', 'ILES System <noreply@iles.edu>')
 
-# Gmail API (OAuth2) settings - when provided, backend will use Gmail REST API
+# Gmail API (OAuth2) settings - backend uses Gmail REST API for email delivery
 GMAIL_CLIENT_ID = os.getenv('GMAIL_CLIENT_ID', '')
 GMAIL_CLIENT_SECRET = os.getenv('GMAIL_CLIENT_SECRET', '')
 GMAIL_REFRESH_TOKEN = os.getenv('GMAIL_REFRESH_TOKEN', '')
-GMAIL_API_USER = os.getenv('GMAIL_API_USER', EMAIL_HOST_USER or '')
+GMAIL_API_USER = os.getenv('GMAIL_API_USER', '')
 
-# Email timeout to avoid long SMTP hangs
+# Email timeout for any Django email operations
 EMAIL_TIMEOUT = int(os.getenv('EMAIL_TIMEOUT', '10'))
 
-# Email backend selection based on configuration
-# If Gmail API is configured, we'll keep the normal EMAIL_BACKEND but
-# NotificationService will prefer the Gmail API path when GMAIL_CLIENT_ID is set.
-if EMAIL_HOST_USER and EMAIL_HOST_PASSWORD:
-    # Production: Use SMTP only when credentials are provided
-    EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-else:
-    # Development or missing credentials: use console backend
-    EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+# Explicitly disable SMTP-based sending by default
+EMAIL_BACKEND = 'django.core.mail.backends.dummy.EmailBackend'
 
 # ─────────────────────────────────────────────
 # TWILIO (SMS)

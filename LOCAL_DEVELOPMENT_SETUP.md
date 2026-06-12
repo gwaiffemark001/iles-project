@@ -70,9 +70,13 @@ DATABASE_URL=  # Leave empty for SQLite
 CORS_ALLOWED_ORIGINS=http://localhost:5173,http://localhost:3000
 CSRF_TRUSTED_ORIGINS=http://localhost:5173
 
-# Email (for password reset - optional for development)
-EMAIL_HOST_USER=
-EMAIL_HOST_PASSWORD=
+# Email (for password reset - local development)
+# The backend uses Gmail OAuth2, so set these if testing locally:
+# GMAIL_CLIENT_ID=
+# GMAIL_CLIENT_SECRET=
+# GMAIL_REFRESH_TOKEN=
+# GMAIL_API_USER=
+# DEFAULT_FROM_EMAIL=
 ```
 
 ### 1.5 Run Migrations

@@ -1,6 +1,11 @@
 # pyright: reportAttributeAccessIssue=false
+from unittest.mock import patch
+
 from django.test import TestCase
 from django.urls import reverse
+from django.contrib.auth.tokens import PasswordResetTokenGenerator
+from django.utils.encoding import force_bytes
+from django.utils.http import urlsafe_base64_encode
 from rest_framework.test import APIClient
 from rest_framework import status
 from .models import CustomUser, Evaluation, EvaluationCriteria, EvaluationItem, InternshipPlacement, Notification, WeeklyLog
@@ -43,6 +48,53 @@ class AuthenticationTests(TestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data['username'], 'teststudent')
         self.assertEqual(response.data['role'], 'student')
+
+    @patch('core.views.send_email_via_gmail_api')
+    def test_password_reset_request_sends_email_with_reset_link(self, mock_send_email_via_gmail_api):
+        mock_send_email_via_gmail_api.return_value = True
+
+        user = CustomUser.objects.create_user(
+            username='resetuser',
+            email='reset@example.com',
+            password='ResetPass123',
+            role='student'
+        )
+
+        response = self.client.post('/api/forgot-password/', {'email': user.email}, format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIn('message', response.data)
+
+        self.assertTrue(mock_send_email_via_gmail_api.called)
+
+        args, kwargs = mock_send_email_via_gmail_api.call_args
+        self.assertEqual(kwargs['recipient_email'], user.email)
+        self.assertEqual(kwargs['subject'], 'ILES Password Reset')
+        self.assertIn('http://localhost:5173/reset-password?uid=', kwargs['message'])
+        self.assertIn('&token=', kwargs['message'])
+
+    def test_password_reset_confirm_updates_password(self):
+        user = CustomUser.objects.create_user(
+            username='confirmuser',
+            email='confirm@example.com',
+            password='OldPass123',
+            role='student'
+        )
+        token_generator = PasswordResetTokenGenerator()
+        token = token_generator.make_token(user)
+        uid = urlsafe_base64_encode(force_bytes(user.pk))
+
+        response = self.client.post('/api/forgot-password-confirm/', {
+            'uid': uid,
+            'token': token,
+            'new_password': 'NewPass123',
+            'confirm_password': 'NewPass123',
+        }, format='json')
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['message'], 'Password reset successful.')
+
+        user.refresh_from_db()
+        self.assertTrue(user.check_password('NewPass123'))
 
 class WeeklyLogTests(TestCase):
 

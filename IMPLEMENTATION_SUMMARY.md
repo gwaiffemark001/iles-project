@@ -84,19 +84,15 @@ Status: Complete (Frontend/Backend Code) - Awaiting Railway Configuration
 
 **Current Configuration**:
 ```python
-EMAIL_HOST = os.getenv('EMAIL_HOST', 'smtp.gmail.com')
-EMAIL_PORT = int(os.getenv('EMAIL_PORT', '587'))
-EMAIL_USE_TLS = os.getenv('EMAIL_USE_TLS', 'True').lower() == 'true'
-EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER', '')
-EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD', '')
-DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL', EMAIL_HOST_USER)
+DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL', 'ILES System <noreply@iles.edu>')
+GMAIL_CLIENT_ID = os.getenv('GMAIL_CLIENT_ID', '')
+GMAIL_CLIENT_SECRET = os.getenv('GMAIL_CLIENT_SECRET', '')
+GMAIL_REFRESH_TOKEN = os.getenv('GMAIL_REFRESH_TOKEN', '')
+GMAIL_API_USER = os.getenv('GMAIL_API_USER', '')
 ```
 
 **Supported Email Services**:
-- Gmail (with App Passwords)
-- SendGrid
-- Mailgun
-- Any SMTP provider
+- Gmail OAuth2 via Gmail REST API
 
 **Next Steps (Manual)**: Configure Railway environment variables per guide section 1
 
@@ -150,16 +146,15 @@ else:
 ### Manual Configuration Needed (⏳ Pending)
 
 #### Email Setup (Section 1 of RAILWAY_SETUP_GUIDE.md)
-- [ ] Choose email service (Gmail/SendGrid/Mailgun)
-- [ ] Obtain SMTP credentials
-- [ ] Configure Railway environment variables:
-  - `EMAIL_HOST`
-  - `EMAIL_PORT`
-  - `EMAIL_USE_TLS`
-  - `EMAIL_HOST_USER`
-  - `EMAIL_HOST_PASSWORD`
+- [ ] Configure Gmail OAuth2 credentials
+- [ ] Add Railway environment variables:
+  - `GMAIL_CLIENT_ID`
+  - `GMAIL_CLIENT_SECRET`
+  - `GMAIL_REFRESH_TOKEN`
+  - `GMAIL_API_USER`
   - `DEFAULT_FROM_EMAIL`
-- [ ] Test email sending by inviting a user
+- [ ] Remove any legacy SMTP env vars from Railway
+- [ ] Test password reset sending
 
 #### Image Storage Setup (Section 2 of RAILWAY_SETUP_GUIDE.md)
 - [ ] Create AWS S3 bucket

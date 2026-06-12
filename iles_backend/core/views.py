@@ -6,7 +6,6 @@ from django.db.models import Count
 from django.contrib.auth.tokens import PasswordResetTokenGenerator
 from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
 from django.utils.encoding import force_bytes, force_str
-from django.core.mail import get_connection, send_mail
 import os
 from django.utils import timezone
 from rest_framework import status
@@ -541,35 +540,21 @@ class PasswordResetRequestView(APIView):
         )
 
         try:
-            from django.conf import settings
-            
-            # Try Gmail OAuth2 API first (preferred over SMTP on Railway)
             sent = send_email_via_gmail_api(
                 recipient_email=user.email,
                 subject=subject,
                 message=message,
             )
-            
+
             if sent:
                 logger.info('✓ Password reset email sent via Gmail OAuth2 API to %s', user.email)
             else:
-                # Fall back to standard email notification service (SMTP or console)
-                logger.info('Gmail OAuth2 not configured or failed. Attempting SMTP fallback...')
-                sent = NotificationService.send_email_notification(
-                    recipient=user,
-                    subject=subject,
-                    message=message,
-                )
-                
-                if sent:
-                    logger.info('✓ Password reset email sent via SMTP fallback to %s', user.email)
-                else:
-                    logger.warning('✗ Password reset email failed for %s (no delivery service available). Reset link: %s', user.email, reset_url)
-                    logger.info('Setup Gmail OAuth2 to enable reliable email delivery.')
+                logger.error('✗ Password reset email failed for %s. Ensure Gmail OAuth2 is configured correctly.', user.email)
+                logger.debug('Password reset link: %s', reset_url)
         except Exception as e:
-            # Log the error but still return success to user for security
+            # Log the error but still return success to the client for security
             logger.error('Unexpected error sending password reset email to %s: %s', user.email, str(e))
-            logger.debug('Password reset link (fallback): %s', reset_url)
+            logger.debug('Password reset link: %s', reset_url)
 
         return Response({'message': 'If an account with that email exists, a reset link has been sent.'})
 

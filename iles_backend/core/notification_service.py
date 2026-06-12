@@ -2,7 +2,6 @@
 Enhanced Notification Service (Lecture 7: Notifications and Workflow Integration)
 Implements email and SMS notifications with Django signals integration
 """
-from django.core.mail import get_connection, send_mail
 from django.conf import settings
 from django.db.models.signals import post_save
 from django.dispatch import receiver
@@ -17,65 +16,39 @@ class NotificationService:
     
     @staticmethod
     def send_email_notification(recipient, subject, message, html_message=None):
-        """Send email notification using Gmail REST API (OAuth2) when configured, otherwise SMTP via Django send_mail."""
+        """Send email notification using Gmail REST API (OAuth2) when configured."""
         try:
-            # Prefer Gmail API when OAuth2 credentials are provided
             if getattr(settings, 'GMAIL_CLIENT_ID', '') and getattr(settings, 'GMAIL_CLIENT_SECRET', '') and getattr(settings, 'GMAIL_REFRESH_TOKEN', ''):
-                try:
-                    from google.oauth2.credentials import Credentials
-                    from google.auth.transport.requests import Request
-                    from googleapiclient.discovery import build
-                    from email.mime.text import MIMEText
-                    import base64
+                from google.oauth2.credentials import Credentials
+                from google.auth.transport.requests import Request
+                from googleapiclient.discovery import build
+                from email.mime.text import MIMEText
+                import base64
 
-                    creds = Credentials(
-                        token=None,
-                        refresh_token=settings.GMAIL_REFRESH_TOKEN,
-                        client_id=settings.GMAIL_CLIENT_ID,
-                        client_secret=settings.GMAIL_CLIENT_SECRET,
-                        token_uri='https://oauth2.googleapis.com/token'
-                    )
-                    # Refresh to obtain access token
-                    creds.refresh(Request())
+                creds = Credentials(
+                    token=None,
+                    refresh_token=settings.GMAIL_REFRESH_TOKEN,
+                    client_id=settings.GMAIL_CLIENT_ID,
+                    client_secret=settings.GMAIL_CLIENT_SECRET,
+                    token_uri='https://oauth2.googleapis.com/token'
+                )
+                creds.refresh(Request())
 
-                    service = build('gmail', 'v1', credentials=creds, cache_discovery=False)
+                service = build('gmail', 'v1', credentials=creds, cache_discovery=False)
+                body_text = html_message if html_message else message
+                mime_msg = MIMEText(body_text, 'html' if html_message else 'plain')
+                mime_msg['to'] = recipient.email
+                mime_msg['from'] = settings.GMAIL_API_USER or settings.DEFAULT_FROM_EMAIL
+                mime_msg['subject'] = subject
 
-                    body_text = html_message if html_message else message
-                    mime_msg = MIMEText(body_text, 'html' if html_message else 'plain')
-                    mime_msg['to'] = recipient.email
-                    mime_msg['from'] = settings.GMAIL_API_USER or settings.DEFAULT_FROM_EMAIL
-                    mime_msg['subject'] = subject
-
-                    raw = base64.urlsafe_b64encode(mime_msg.as_bytes()).decode()
-                    send_body = {'raw': raw}
-                    service.users().messages().send(userId='me', body=send_body).execute()
-                    logger.info(f"Gmail API: Email sent successfully to {recipient.email}")
-                    return True
-                except Exception as e:
-                    logger.error(f"Gmail API email failed for {recipient.email}: {e}")
-                    # Fall back to SMTP below
-
-            # Fall back to SMTP/console path
-            if not settings.EMAIL_HOST_USER:
-                logger.warning("Email not configured. Skipping email notification.")
-                return False
-
-            connection = get_connection(fail_silently=True)
-            send_mail(
-                subject=subject,
-                message=message,
-                from_email=settings.DEFAULT_FROM_EMAIL,
-                recipient_list=[recipient.email],
-                html_message=html_message,
-                connection=connection,
-                fail_silently=True,
-            )
-            if connection and getattr(connection, 'open', False):
-                logger.info(f"Email sent successfully to {recipient.email}")
+                raw = base64.urlsafe_b64encode(mime_msg.as_bytes()).decode()
+                send_body = {'raw': raw}
+                service.users().messages().send(userId='me', body=send_body).execute()
+                logger.info(f"Gmail API: Email sent successfully to {recipient.email}")
                 return True
-            else:
-                logger.warning(f"Email attempted but SMTP connection was not open for {recipient.email}")
-                return False
+
+            logger.warning("Gmail OAuth2 credentials not fully configured. Skipping email notification.")
+            return False
         except Exception as e:
             logger.error(f"Failed to send email to {recipient.email}: {str(e)}")
             return False

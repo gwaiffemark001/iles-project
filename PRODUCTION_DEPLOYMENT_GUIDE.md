@@ -45,12 +45,11 @@ ALLOWED_HOSTS=your-app.railway.app,www.your-app.railway.app,your-custom-domain.c
 CORS_ALLOWED_ORIGINS=https://your-frontend-domain.com
 CSRF_TRUSTED_ORIGINS=https://your-frontend-domain.com
 
-# Email (optional - Gmail example)
-EMAIL_HOST=smtp.gmail.com
-EMAIL_PORT=587
-EMAIL_USE_TLS=True
-EMAIL_HOST_USER=your-email@gmail.com
-EMAIL_HOST_PASSWORD=your-app-password
+# Email (required for password reset)
+GMAIL_CLIENT_ID=<your-client-id>
+GMAIL_CLIENT_SECRET=<your-client-secret>
+GMAIL_REFRESH_TOKEN=<your-refresh-token>
+GMAIL_API_USER=your-email@gmail.com
 DEFAULT_FROM_EMAIL=your-email@gmail.com
 
 # Twilio (optional)
@@ -240,8 +239,10 @@ python manage.py migrate
 | DATABASE_URL | PostgreSQL connection | auto-set by Railway |
 | CORS_ALLOWED_ORIGINS | Frontend URL | https://myapp.vercel.app |
 | CSRF_TRUSTED_ORIGINS | CSRF trusted hosts | https://myapp.vercel.app |
-| EMAIL_HOST_USER | Email sender | your@email.com |
-| EMAIL_HOST_PASSWORD | Email password | app-specific-password |
+| GMAIL_CLIENT_ID | Gmail OAuth2 client ID | <your-client-id> |
+| GMAIL_CLIENT_SECRET | Gmail OAuth2 client secret | <your-client-secret> |
+| GMAIL_REFRESH_TOKEN | Gmail OAuth2 refresh token | <your-refresh-token> |
+| GMAIL_API_USER | Gmail sender address | your-email@gmail.com |
 | TWILIO_ACCOUNT_SID | Twilio account ID | AC... |
 | TWILIO_AUTH_TOKEN | Twilio auth token | ... |
 | TWILIO_PHONE_NUMBER | Twilio phone number | +1234567890 |

@@ -116,13 +116,9 @@ EOF
    ```
 6. Click **Save**
 
-### 6. (Optional) Remove SMTP Credentials
+### 6. Remove SMTP Credentials
 
-If you've set `EMAIL_HOST_USER` and `EMAIL_HOST_PASSWORD` before, you can leave them as-is (they'll just be ignored since Gmail OAuth2 is preferred). Or remove them:
-
-- In Railway Variables, delete or clear:
-  - `EMAIL_HOST_USER`
-  - `EMAIL_HOST_PASSWORD`
+If `EMAIL_HOST_USER` or `EMAIL_HOST_PASSWORD` are already set in Railway, delete them. The backend no longer uses SMTP fallback and now relies on Gmail OAuth2 only.
 
 ### 7. Deploy and Test
 
@@ -139,8 +135,7 @@ If you've set `EMAIL_HOST_USER` and `EMAIL_HOST_PASSWORD` before, you can leave 
    - Enter your email
    - Check Railway logs for:
      - `✓ Password reset email sent via Gmail OAuth2 API to ...` ✅ (Success!)
-     - `Gmail OAuth2 not configured or failed` (Fallback to SMTP)
-     - `✗ Password reset email failed` (No delivery service available)
+     - `✗ Password reset email failed` → Check Gmail OAuth2 credentials and logs
 
 ### 8. View Logs
 
@@ -189,9 +184,7 @@ Look for:
 2. Check logs for any errors: `railway logs --latest`
 3. Check your Gmail spam/trash folders
 4. Verify the email address receiving the reset link exists in the system
-5. Try the fallback SMTP route:
-   - Set a valid `EMAIL_HOST_USER` and `EMAIL_HOST_PASSWORD`
-   - Check if it works (emails may be delayed due to port blocking)
+5. SMTP fallback is no longer supported. The backend now requires Gmail OAuth2 to send reset emails.
 
 ## Local Development
 

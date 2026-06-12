@@ -5,7 +5,7 @@ This guide covers the configuration of email services and image/media storage fo
 ## Overview
 
 The ILES application has been updated with:
-1. **Email Services** - Configured to use SMTP (Gmail, SendGrid, etc.)
+1. **Email Services** - Configured to use Gmail OAuth2 via the Gmail REST API
 2. **Media/Image Storage** - Configured to use AWS S3 for persistent storage of profile pictures and other media files
 3. **Dashboard Fixes** - Fixed evaluation counting and label terminology
 
@@ -13,30 +13,19 @@ The ILES application has been updated with:
 
 - Railway account with access to the ILES project
 - AWS account (for S3 bucket)
-- SMTP credentials (Gmail, SendGrid, Mailgun, etc.)
+- Gmail OAuth2 credentials for email delivery
 
 ---
 
 ## 1. Email Configuration (Django/Railway)
 
-### Step 1: Create an Email Service Account
+### Step 1: Create Gmail OAuth2 Credentials
 
-Choose one option:
-
-#### Option A: Gmail
-1. Enable 2FA on your Google account
-2. Generate an App Password: https://myaccount.google.com/apppasswords
-3. Select "Mail" and "Windows Computer" to generate a 16-character password
-4. Copy the generated password
-
-#### Option B: SendGrid
-1. Create a SendGrid account: https://sendgrid.com/
-2. Navigate to Settings → API Keys
-3. Create a new API key and copy it
-
-#### Option C: Mailgun
-1. Create a Mailgun account: https://www.mailgun.com/
-2. Get your SMTP credentials from the domain settings
+1. Go to Google Cloud Console
+2. Create a new project for ILES if needed
+3. Enable the Gmail API
+4. Create OAuth client credentials for a web application
+5. Generate a refresh token with Gmail send scope
 
 ### Step 2: Configure Railway Environment Variables
 
@@ -44,41 +33,20 @@ Choose one option:
 2. Navigate to **Variables** tab
 3. Add the following environment variables:
 
-**For Gmail:**
 ```
-EMAIL_HOST=smtp.gmail.com
-EMAIL_PORT=587
-EMAIL_USE_TLS=True
-EMAIL_HOST_USER=your-email@gmail.com
-EMAIL_HOST_PASSWORD=your-app-password
-DEFAULT_FROM_EMAIL=noreply@youromain.com
-```
-
-**For SendGrid:**
-```
-EMAIL_HOST=smtp.sendgrid.net
-EMAIL_PORT=587
-EMAIL_USE_TLS=True
-EMAIL_HOST_USER=apikey
-EMAIL_HOST_PASSWORD=your-sendgrid-api-key
-DEFAULT_FROM_EMAIL=noreply@yourdomain.com
-```
-
-**For Mailgun:**
-```
-EMAIL_HOST=smtp.mailgun.org
-EMAIL_PORT=587
-EMAIL_USE_TLS=True
-EMAIL_HOST_USER=postmaster@yourdomain.mg
-EMAIL_HOST_PASSWORD=your-mailgun-password
+GMAIL_CLIENT_ID=<your-client-id>
+GMAIL_CLIENT_SECRET=<your-client-secret>
+GMAIL_REFRESH_TOKEN=<your-refresh-token>
+GMAIL_API_USER=<your-gmail-address>
 DEFAULT_FROM_EMAIL=noreply@yourdomain.com
 ```
 
 ### Step 3: Test Email Configuration
 
-The backend will automatically use the configured SMTP credentials when deployed. Test by:
-1. Triggering a user invitation or password reset
-2. Check the Railway logs for any SMTP errors
+The backend uses Gmail OAuth2 directly for email delivery. Test by:
+1. Triggering a password reset
+2. Checking Railway logs for a successful Gmail API send
+3. Verifying the recipient receives the reset email
 
 ---
 
@@ -223,10 +191,10 @@ The following fixes have been implemented:
 ## 4. Troubleshooting
 
 ### Email Not Sending
-1. Check Railway logs for SMTP errors
-2. Verify email credentials are correct
-3. For Gmail: Ensure App Password is used (not regular password)
-4. Check that the sending email address is whitelisted in your email service
+1. Check Railway logs for Gmail OAuth2 errors
+2. Verify Gmail OAuth2 credentials are correct
+3. Ensure the refresh token is valid and not expired
+4. Check that `GMAIL_API_USER` matches the Gmail account authorized by the refresh token
 
 ### Images Not Displaying After Upload
 1. Check Railway logs for S3 errors
@@ -260,11 +228,10 @@ CORS_ALLOWED_ORIGINS=https://blissful-curiosity.up.railway.app,https://yourdomai
 CSRF_TRUSTED_ORIGINS=https://blissful-curiosity.up.railway.app,https://yourdomain.com
 
 # Email Configuration
-EMAIL_HOST=smtp.gmail.com
-EMAIL_PORT=587
-EMAIL_USE_TLS=True
-EMAIL_HOST_USER=your-email@gmail.com
-EMAIL_HOST_PASSWORD=your-app-password
+GMAIL_CLIENT_ID=<your-client-id>
+GMAIL_CLIENT_SECRET=<your-client-secret>
+GMAIL_REFRESH_TOKEN=<your-refresh-token>
+GMAIL_API_USER=<your-gmail-address>
 DEFAULT_FROM_EMAIL=noreply@yourdomain.com
 
 # AWS S3 Media Storage

@@ -88,7 +88,7 @@ Access application at: `http://localhost:5173`
 | CORS | ✅ | Environment-based configuration |
 | Static Files | ✅ | WhiteNoise with compression |
 | Media Files | ✅ | Properly served outside DEBUG mode |
-| Email | ✅ | SMTP with console fallback |
+| Email | ✅ | Gmail OAuth2 via Gmail REST API |
 | Migrations | ✅ | In Procfile for Railway deployment |
 
 ### 3.2 Frontend Configuration Status
@@ -118,8 +118,10 @@ CORS_ALLOWED_ORIGINS=<frontend-domain>
 CSRF_TRUSTED_ORIGINS=<frontend-domain>
 
 # Email Service (for password reset)
-EMAIL_HOST_USER=<your-email>
-EMAIL_HOST_PASSWORD=<app-password>
+GMAIL_CLIENT_ID=<your-client-id>
+GMAIL_CLIENT_SECRET=<your-client-secret>
+GMAIL_REFRESH_TOKEN=<your-refresh-token>
+GMAIL_API_USER=<your-gmail-address>
 ```
 
 ## 4. Testing Results ✅
