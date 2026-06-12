@@ -84,23 +84,42 @@ def verify_email_domain_exists(email):
 
 
 def verify_email_exists(email):
+    """
+    Verify email exists by checking format, domain, and SMTP mailbox verification.
+    """
     try:
         EMAIL_VALIDATOR(email)
     except ValidationError:
+        logger.debug(f'Email format invalid: {email}')
         return False
 
     if not verify_email_domain_exists(email):
+        logger.debug(f'Email domain not found: {email}')
         return False
 
+    # Attempt SMTP verification with aggressive timeout to prevent hanging
     try:
         domain = email.split('@', 1)[1]
-        with smtplib.SMTP(timeout=10) as smtp:
-            smtp.connect(domain)
+        # Use shorter timeout (5 seconds) to prevent connection hanging
+        with smtplib.SMTP(timeout=5) as smtp:
+            smtp.connect(domain, timeout=5)
             smtp.ehlo_or_helo_if_needed()
             smtp.mail('verify@iles-project.com')
-            code, _ = smtp.rcpt(email)
-            return code in (250, 251)
-    except (smtplib.SMTPException, OSError, socket.timeout, ConnectionRefusedError):
+            code, response = smtp.rcpt(email)
+            is_valid = code in (250, 251)
+            if is_valid:
+                logger.debug(f'Email verified via SMTP: {email}')
+            else:
+                logger.debug(f'SMTP RCPT returned code {code} for {email}')
+            return is_valid
+    except (smtplib.SMTPServerDisconnected, smtplib.SMTPException) as e:
+        logger.warning(f'SMTP verification failed for {email}: {str(e)[:100]}')
+        return False
+    except (OSError, socket.timeout, ConnectionRefusedError, ConnectionError) as e:
+        logger.warning(f'Network error during email verification for {email}: {str(e)[:100]}')
+        return False
+    except Exception as e:
+        logger.error(f'Unexpected error verifying email {email}: {str(e)[:100]}')
         return False
 from .notification_service import NotificationService
 from .gmail_oauth2 import send_email_via_gmail_api, get_gmail_oauth2_setup_instructions
@@ -524,6 +543,8 @@ class UserRegistrationView(APIView):
         last_name = request.data.get('last_name', '')
         phone = request.data.get('phone')
 
+        logger.info(f'Registration attempt: username={username}, email={email}, phone={phone}')
+
         errors = {}
 
         if not username:
@@ -556,10 +577,16 @@ class UserRegistrationView(APIView):
 
         if email and 'email' not in errors:
             try:
+                logger.info(f'Verifying email format: {email}')
                 EMAIL_VALIDATOR(email)
+                logger.info(f'Email format valid, checking existence: {email}')
                 if not verify_email_exists(email):
+                    logger.warning(f'Email verification failed: {email}')
                     errors['email'] = ['Email could not be verified. Please use a valid existing email address.']
+                else:
+                    logger.info(f'Email verified successfully: {email}')
             except ValidationError as exc:
+                logger.warning(f'Email validation error for {email}: {exc.messages}')
                 errors['email'] = exc.messages
 
         allowed_roles = {'student', 'workplace_supervisor', 'academic_supervisor'}
@@ -568,6 +595,7 @@ class UserRegistrationView(APIView):
             errors['role'] = [f"Role must be one of: {', '.join(sorted(allowed_roles))}."]
 
         if errors:
+            logger.warning(f'Registration validation errors for {username}: {errors}')
             return Response(errors, status=status.HTTP_400_BAD_REQUEST)
 
         user = CustomUser.objects.create_user(
@@ -583,6 +611,8 @@ class UserRegistrationView(APIView):
             student_number=request.data.get('student_number'),
             registration_number=request.data.get('registration_number'),
         )
+        
+        logger.info(f'User created successfully: username={user.username}, email={user.email}, role={user.role}')
         
         # Create welcome notification for the new user
         Notification.objects.create(
