@@ -28,15 +28,17 @@ def send_email_via_gmail_api(recipient_email, subject, message, html_message=Non
         - GMAIL_API_USER: Email address to send from (usually same as account used for OAuth2)
     """
     # Check if all required credentials are set
-    if not all([
-        getattr(settings, 'GMAIL_CLIENT_ID', ''),
-        getattr(settings, 'GMAIL_CLIENT_SECRET', ''),
-        getattr(settings, 'GMAIL_REFRESH_TOKEN', ''),
-        getattr(settings, 'GMAIL_API_USER', ''),
-    ]):
-        logger.debug("Gmail OAuth2 credentials not fully configured. Skipping Gmail API send.")
+    required_vars = {
+        'GMAIL_CLIENT_ID': getattr(settings, 'GMAIL_CLIENT_ID', ''),
+        'GMAIL_CLIENT_SECRET': getattr(settings, 'GMAIL_CLIENT_SECRET', ''),
+        'GMAIL_REFRESH_TOKEN': getattr(settings, 'GMAIL_REFRESH_TOKEN', ''),
+        'GMAIL_API_USER': getattr(settings, 'GMAIL_API_USER', ''),
+    }
+    missing = [name for name, value in required_vars.items() if not value]
+    if missing:
+        logger.error("Gmail OAuth2 credentials missing: %s", ", ".join(missing))
         return False
-    
+
     try:
         from google.oauth2.credentials import Credentials
         from google.auth.transport.requests import Request
@@ -63,7 +65,7 @@ def send_email_via_gmail_api(recipient_email, subject, message, html_message=Non
         body_text = html_message if html_message else message
         mime_msg = MIMEText(body_text, 'html' if html_message else 'plain')
         mime_msg['to'] = recipient_email
-        mime_msg['from'] = settings.GMAIL_API_USER
+        mime_msg['from'] = getattr(settings, 'DEFAULT_FROM_EMAIL', '')
         mime_msg['subject'] = subject
         
         # Encode and send
