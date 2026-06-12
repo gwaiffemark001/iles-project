@@ -264,6 +264,8 @@ CSRF_TRUSTED_ORIGINS = [
 # Allow credentials in CORS requests (needed for JWT in cookies/headers)
 CORS_ALLOW_CREDENTIALS = True
 
+FRONTEND_URL = os.getenv('FRONTEND_URL', 'https://iles-project-three.vercel.app')
+
 # ─────────────────────────────────────────────
 # REST FRAMEWORK & JWT
 # ─────────────────────────────────────────────

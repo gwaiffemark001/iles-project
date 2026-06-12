@@ -3,6 +3,7 @@ from unittest.mock import patch
 
 from django.test import TestCase
 from django.urls import reverse
+from django.conf import settings
 from django.contrib.auth.tokens import PasswordResetTokenGenerator
 from django.utils.encoding import force_bytes
 from django.utils.http import urlsafe_base64_encode
@@ -69,7 +70,7 @@ class AuthenticationTests(TestCase):
         args, kwargs = mock_send_email_via_gmail_api.call_args
         self.assertEqual(kwargs['recipient_email'], user.email)
         self.assertEqual(kwargs['subject'], 'ILES Password Reset')
-        self.assertIn('http://localhost:5173/reset-password?uid=', kwargs['message'])
+        self.assertIn(f"{settings.FRONTEND_URL}/reset-password?uid=", kwargs['message'])
         self.assertIn('&token=', kwargs['message'])
 
     def test_password_reset_confirm_updates_password(self):

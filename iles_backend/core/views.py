@@ -15,6 +15,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from django.core.exceptions import ValidationError
 import logging
+from django.conf import settings
 from .models import (
     CustomUser,
     Evaluation,
@@ -511,7 +512,7 @@ class PasswordResetRequestView(APIView):
 
     def post(self, request):
         email = request.data.get('email')
-        frontend_base = os.getenv('FRONTEND_URL', 'http://localhost:5173')
+        frontend_base = getattr(settings, 'FRONTEND_URL', 'https://iles-project-three.vercel.app')
 
         if not email:
             return Response({'email': ['This field is required.']}, status=status.HTTP_400_BAD_REQUEST)
