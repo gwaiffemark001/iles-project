@@ -149,6 +149,26 @@ class AuthenticationTests(TestCase):
         self.assertEqual(response.data['username'], 'validuser')
         self.assertEqual(response.data['role'], 'student')
 
+    @patch('core.views.verify_email_exists', return_value=True)
+    def test_registration_accepts_local_uganda_phone(self, mock_verify_email_exists):
+        response = self.client.post('/api/register/', {
+            'username': 'localphoneuser',
+            'password': 'ValidPass123',
+            'confirm_password': 'ValidPass123',
+            'email': 'localphone@example.com',
+            'first_name': 'Jane',
+            'last_name': 'Doe',
+            'phone': '0787870644',
+            'role': 'student',
+        }, format='json')
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(response.data['username'], 'localphoneuser')
+        self.assertEqual(response.data['role'], 'student')
+
+        user = CustomUser.objects.get(username='localphoneuser')
+        self.assertEqual(user.phone, '256787870644')
+
 class WeeklyLogTests(TestCase):
 
     def setUp(self):

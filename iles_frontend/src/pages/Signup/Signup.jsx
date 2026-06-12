@@ -91,6 +91,7 @@ function Signup() {
 
                 <form className="logins" onSubmit={handleSignup}>
                     <select
+                        className="form-select"
                         value={role}
                         onChange={(e) => setRole(e.target.value)}
                         required
@@ -101,7 +102,7 @@ function Signup() {
                         </option>
                     ))}
                     </select>
-                    <input
+                    <input className="form-input"
                         type="email"
                         placeholder="Email"
                         value={email}
@@ -109,6 +110,7 @@ function Signup() {
                         required
                     />
                     <PasswordField
+                        className="form-input"
                         id="signup-password"
                         placeholder="Password"
                         value={password}
@@ -116,28 +118,28 @@ function Signup() {
                         required
                         autoComplete="new-password"
                     />
-                    <input
+                    <input className="form-input"
                         type="text"
                         placeholder="First Name"
                         value={firstName}
                         onChange={(e) => setFirstName(e.target.value)}
                         required
                     />
-                    <input
+                    <input className="form-input"
                         type="text"
                         placeholder="Last Name"
                         value={lastName}
                         onChange={(e) => setLastName(e.target.value)}
                         required
                     />
-                    <input
+                    <input className="form-input"
                         type="tel"
-                        placeholder="Phone"
+                        placeholder="Phone (e.g. +256787870644 or 0787870644)"
                         value={phone}
                         onChange={(e) => setPhone(e.target.value)}
                         required
                     />
-                    <input
+                    <input className="form-input"
                         type="text"
                         placeholder="Department"
                         value={department}

@@ -58,6 +58,7 @@ export default function ResetPassword() {
 
         <form className="logins" onSubmit={handleSubmit}>
           <PasswordField
+            className="form-input"
             id="reset-new-password"
             placeholder="New password"
             value={newPassword}
@@ -66,6 +67,7 @@ export default function ResetPassword() {
             autoComplete="new-password"
           />
           <PasswordField
+            className="form-input"
             id="reset-confirm-password"
             placeholder="Confirm new password"
             value={confirmPassword}

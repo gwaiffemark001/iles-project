@@ -35,6 +35,7 @@ function ForgotPassword() {
                     </header>
                     <form className="logins" onSubmit={handleSubmit}>
                         <input
+                            className="form-input"
                             type="email"
                             placeholder="Enter your email"
                             value={email}

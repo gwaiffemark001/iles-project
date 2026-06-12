@@ -52,6 +52,12 @@ def normalize_phone_number(phone):
     raw = re.sub(r'[^0-9]', '', str(phone or ''))
     if not raw:
         return None
+
+    # Accept local Ugandan mobile format and normalize it to country-code form.
+    # Example: 0787870644 -> 256787870644
+    if re.fullmatch(r'0\d{9}', raw):
+        raw = f'256{raw[1:]}'
+
     if not re.fullmatch(r'[1-9]\d{7,14}', raw):
         raise ValidationError(
             'Phone number must include a country code and contain 8 to 15 digits.'

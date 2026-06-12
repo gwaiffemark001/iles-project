@@ -52,8 +52,8 @@ function Login() {
                 </header>
                 <div>
                     <form className="logins" onSubmit={handleLogin}>
-                        <input type="text" placeholder="Username/Email" value={username} onChange={(e) => setUsername(e.target.value)} required />
-                        <input type="password" placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} required />
+                        <input className="form-input" type="text" placeholder="Username/Email" value={username} onChange={(e) => setUsername(e.target.value)} required />
+                        <input className="form-input" type="password" placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} required />
                         <button className="login-btn" type="submit" disabled={isLoading}>
                             {isLoading ? 'Logging in...' : 'Login'}
                         </button>
