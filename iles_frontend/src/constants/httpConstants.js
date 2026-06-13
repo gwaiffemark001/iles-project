@@ -56,7 +56,6 @@ export const HTTP_HEADERS = {
 }
 
 /// Content Types
-
 export const CONTENT_TYPE = {
   JSON: 'application/json',
   FORM_DATA: 'multipart/form-data',
@@ -65,3 +64,34 @@ export const CONTENT_TYPE = {
   TEXT: 'text/plain',
 }
 
+/// API Response Status
+
+export const API_RESPONSE_STATUS = {
+  SUCCESS: 'success',
+  ERROR: 'error',
+  LOADING: 'loading',
+}
+
+
+/// Error Type Classifications
+
+export const ERROR_TYPES = {
+  NETWORK_ERROR: 'NETWORK_ERROR',
+  TIMEOUT_ERROR: 'TIMEOUT_ERROR',
+  VALIDATION_ERROR: 'VALIDATION_ERROR',
+  AUTHENTICATION_ERROR: 'AUTHENTICATION_ERROR',
+  AUTHORIZATION_ERROR: 'AUTHORIZATION_ERROR',
+  NOT_FOUND_ERROR: 'NOT_FOUND_ERROR',
+  SERVER_ERROR: 'SERVER_ERROR',
+  UNKNOWN_ERROR: 'UNKNOWN_ERROR',
+}
+
+
+///Timeout values in milliseconds
+
+export const TIMEOUT_VALUES = {
+  SHORT: 3000,
+  MEDIUM: 5000,
+  LONG: 10000,
+  EXTRA_LONG: 30000,
+}
