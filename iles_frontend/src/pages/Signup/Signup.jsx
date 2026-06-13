@@ -8,12 +8,14 @@ import '../Login/Login.css';
 
 function Signup() {
     const [email, setEmail] = useState('');
+    const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
     const [role, setRole] = useState(USER_ROLES.STUDENT);
     const [errorMessage, setErrorMessage] = useState('');
     const [successMessage, setSuccessMessage] = useState('');
     const [firstName, setFirstName] = useState('');
     const [lastName, setLastName] = useState('');
+    const [phoneCountryCode, setPhoneCountryCode] = useState('+256');
     const [phone, setPhone] = useState('');
     const [department, setDepartment] = useState('');
     const [staffNumber, setStaffNumber] = useState('');
@@ -24,6 +26,15 @@ function Signup() {
     const signupRoleOptions = ROLE_OPTIONS.filter(
         (option) => option.value !== USER_ROLES.ADMIN,
     );
+
+    const countryPhoneRules = {
+        '+254': { label: 'Kenya', digits: 9 },
+        '+256': { label: 'Uganda', digits: 9 },
+        '+1': { label: 'USA/Canada', digits: 10 },
+        '+44': { label: 'United Kingdom', digits: 10 },
+        '+91': { label: 'India', digits: 10 },
+    };
+
     const handleSignup = async (e) => {
         e.preventDefault();
         setErrorMessage('');
@@ -37,49 +48,43 @@ function Signup() {
             return;
         }
 
-        const cleanedPhone = phone.replace(/[^0-9+]/g, '');
-        const normalizedPhone = cleanedPhone.startsWith('0') && /^0\d{9}$/.test(cleanedPhone)
-            ? `256${cleanedPhone.slice(1)}`
-            : cleanedPhone.replace(/^\+/, '');
+        const cleanedPhone = phone.replace(/\D/g, '');
+        const phoneRule = countryPhoneRules[phoneCountryCode];
+        if (!phoneRule) {
+            setErrorMessage('Please select a valid country code.');
+            return;
+        }
+        if (!cleanedPhone) {
+            setErrorMessage('Please enter a phone number.');
+            return;
+        }
+        if (cleanedPhone.length !== phoneRule.digits) {
+            setErrorMessage(`Please enter a ${phoneRule.digits}-digit phone number for ${phoneRule.label}.`);
+            return;
+        }
+        const normalizedPhone = `${phoneCountryCode}${cleanedPhone}`;
 
-        if (!/^\d{9,15}$/.test(normalizedPhone)) {
-            setErrorMessage('Please enter a valid phone number, including country code or local Uganda format.');
+        if (!username.trim()) {
+            setErrorMessage('Username is required.');
             return;
         }
 
         if (role === 'student') {
             if (!studentNumber || !registrationNumber || !firstName || !lastName || !phone || !department) {
-                setErrorMessage('Students must provide: first name, last name, phone, department, student number, and registration number.');
+                setErrorMessage('Students must provide: username, first name, last name, phone, department, student number, and registration number.');
                 return;
             }
         } else if (role === 'workplace_supervisor' || role === 'academic_supervisor') {
             if (!firstName || !lastName || !phone || !department) {
-                setErrorMessage('Supervisors must provide: first name, last name, phone, and department. Staff number is optional.');
+                setErrorMessage('Supervisors must provide: username, first name, last name, phone, and department. Staff number is optional.');
                 return;
             }
         }
 
         try {
-            const normalizeName = (value) => {
-                return value
-                    .trim()
-                    .toLowerCase()
-                    .replace(/[^a-z0-9-]/g, '')
-                    .replace(/__+/g, '_');
-            };
-
-            const buildUsername = (first, last) => {
-                const normalizedFirst = normalizeName(first);
-                const normalizedLast = normalizeName(last);
-                if (!normalizedFirst || !normalizedLast) {
-                    return cleanedEmail.includes('@') ? cleanedEmail.split('@')[0] : cleanedEmail;
-                }
-                return `${normalizedFirst}_${normalizedLast}`;
-            };
-
-            const username = buildUsername(firstName, lastName);
+            const usernameValue = username.trim();
             const body = {
-                username,
+                username: usernameValue,
                 email: cleanedEmail,
                 password,
                 confirm_password: password,
@@ -141,6 +146,13 @@ function Signup() {
                         onChange={(e) => setEmail(e.target.value)}
                         required
                     />
+                    <input className="form-input"
+                        type="text"
+                        placeholder="Username"
+                        value={username}
+                        onChange={(e) => setUsername(e.target.value)}
+                        required
+                    />
                     <PasswordField
                         className="form-input"
                         id="signup-password"
@@ -164,13 +176,27 @@ function Signup() {
                         onChange={(e) => setLastName(e.target.value)}
                         required
                     />
-                    <input className="form-input"
-                        type="tel"
-                        placeholder="Phone (e.g. +256787870644 or 0787870644)"
-                        value={phone}
-                        onChange={(e) => setPhone(e.target.value)}
-                        required
-                    />
+                    <div className="phone-field-grid">
+                        <select
+                            className="form-select"
+                            value={phoneCountryCode}
+                            onChange={(e) => setPhoneCountryCode(e.target.value)}
+                            required
+                        >
+                            {Object.entries(countryPhoneRules).map(([code, info]) => (
+                                <option key={code} value={code}>
+                                    {code} {info.label}
+                                </option>
+                            ))}
+                        </select>
+                        <input className="form-input"
+                            type="text"
+                            placeholder={`Enter ${countryPhoneRules[phoneCountryCode].digits} digits`}
+                            value={phone}
+                            onChange={(e) => setPhone(e.target.value.replace(/\D/g, ''))}
+                            required
+                        />
+                    </div>
                     <input className="form-input"
                         type="text"
                         placeholder="Department"

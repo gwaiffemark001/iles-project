@@ -168,22 +168,6 @@ def verify_email_exists(email):
         return False
 
 
-def generate_username_from_names(first_name: str, last_name: str) -> str:
-    if not first_name or not last_name:
-        return ''
-    normalized = f"{first_name.strip().lower()}_{last_name.strip().lower()}"
-    normalized = re.sub(r"[^\w-]+", '', normalized)
-    normalized = re.sub(r"_+", '_', normalized)
-    return normalized
-
-
-def generate_unique_username(base_username: str) -> str:
-    username = base_username
-    counter = 1
-    while CustomUser.objects.filter(username=username).exists():
-        username = f"{base_username}{counter}"
-        counter += 1
-    return username
 from .notification_service import NotificationService
 from .gmail_oauth2 import send_email_via_gmail_api, get_gmail_oauth2_setup_instructions
 
@@ -646,15 +630,10 @@ class UserRegistrationView(APIView):
             errors['last_name'] = exc.messages
 
         if not username:
-            username = generate_username_from_names(first_name, last_name)
-            if not username:
-                errors['username'] = ['Username could not be generated from first and last name.']
+            errors['username'] = ['This field is required.']
 
         if username and CustomUser.objects.filter(username=username).exists():
-            if request.data.get('username'):
-                errors['username'] = ['Username already exists.']
-            else:
-                username = generate_unique_username(username)
+            errors['username'] = ['Username already exists.']
 
         try:
             phone = normalize_phone_number(phone)
@@ -683,12 +662,6 @@ class UserRegistrationView(APIView):
         if errors:
             logger.warning(f'Registration validation errors for {username}: {errors}')
             return Response(errors, status=status.HTTP_400_BAD_REQUEST)
-
-        # If username is still missing for any reason, build it from validated names
-        if not username:
-            username = generate_username_from_names(first_name, last_name)
-            if CustomUser.objects.filter(username=username).exists():
-                username = generate_unique_username(username)
 
         user = CustomUser.objects.create_user(
             username=username,

@@ -131,6 +131,17 @@
     box-shadow: 0 0 0 3px rgba(248, 113, 113, 0.18);
 }
 
+.phone-field-grid {
+    display: grid;
+    grid-template-columns: 140px 1fr;
+    gap: 12px;
+}
+
+.phone-field-grid .form-select,
+.phone-field-grid .form-input {
+    width: 100%;
+}
+
 .extra-fields {
     display: flex;
     flex-direction: column;
