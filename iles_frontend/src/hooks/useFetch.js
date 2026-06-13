@@ -1,4 +1,5 @@
 import { useCallback, useState } from "react";
+import { getErrorMessage } from '@/api/api';
 
 // useFetch.js - A custom hook to manage API calls with loading and error states
 function useFetch(fetchFn) {
@@ -14,7 +15,7 @@ function useFetch(fetchFn) {
                 const result = await fetchFn(...args)
                 return result
             }   catch (err) {
-                setError(err?.message || 'Request failed!') 
+                setError(getErrorMessage(err, 'Request failed!')) 
                 throw err
             }   finally {
                 setLoading(false)

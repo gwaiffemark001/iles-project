@@ -164,7 +164,8 @@ export function AuthProvider({ children }) {
 
         return { success: true, data: res }
       } catch (error) {
-        throw new Error(getErrorMessage(error, 'Unable to create account.'))
+        const errorMessage = getErrorMessage(error, 'Unable to create account.')
+        throw new Error(errorMessage)
       }
     },
     [api],

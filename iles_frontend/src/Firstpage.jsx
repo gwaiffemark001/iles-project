@@ -2,6 +2,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useState } from 'react'
 import './Firstpage.css';
 import { useAuth } from '@/auth/useAuth'
+import { getErrorMessage } from '@/api/api'
 import PasswordField from '@/components/PasswordField'
 import { roleToHomePath } from './routes/roleRedirect'
 
@@ -21,7 +22,7 @@ function Firstpage() {
             const profile = await login({ usernameOrEmail, password })
             navigate(roleToHomePath(profile?.role), { replace: true })
         } catch (err) {
-            setErrorMessage(err?.message || 'Login failed.')
+            setErrorMessage(getErrorMessage(err, 'Login failed.'))
         } finally {
             setSubmitting(false)
         }

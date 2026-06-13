@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useLocation, Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '@/auth/useAuth'
+import { getErrorMessage } from '@/api/api'
 import { roleToHomePath } from '@/routes/roleRedirect'
 
 function Activate() {
@@ -33,7 +34,7 @@ function Activate() {
         }, 800)
       } catch (err) {
         setStatus('error')
-        setMessage(err?.response?.data?.detail || err?.message || 'Activation failed or link expired.')
+        setMessage(getErrorMessage(err, 'Activation failed or link expired.'))
       }
     }
     run()

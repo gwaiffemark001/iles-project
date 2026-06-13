@@ -98,25 +98,36 @@ const clearSession = () => {
  * @returns {string} User-friendly error message
  */
 export const getErrorMessage = (error, fallback = 'Something went wrong') => {
-  const data = error?.response?.data;
+  const payload = error?.payload ?? error?.response?.data ?? error?.data;
 
-  if (typeof data === 'string') {
-    return data;
+  if (typeof payload === 'string') {
+    return payload;
   }
 
-  if (data?.detail) {
-    return data.detail;
+  if (payload?.detail) {
+    return payload.detail;
   }
 
-  if (data?.error) {
-    return data.error;
+  if (payload?.error) {
+    return payload.error;
   }
 
-  if (data && typeof data === 'object') {
-    const firstValue = Object.values(data)[0];
+  if (payload?.message) {
+    return payload.message;
+  }
+
+  if (payload && typeof payload === 'object') {
+    const firstValue = Object.values(payload)[0];
     if (Array.isArray(firstValue) && firstValue.length > 0) {
-      return firstValue[0];
+      return String(firstValue[0]);
     }
+    if (typeof firstValue === 'string') {
+      return firstValue;
+    }
+  }
+
+  if (typeof error?.message === 'string' && error.message !== '') {
+    return error.message;
   }
 
   return fallback;

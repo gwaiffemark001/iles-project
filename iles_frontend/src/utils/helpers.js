@@ -101,6 +101,8 @@ export const filterByProperty = (array, property, value) => {
   });
 };
 
+import { getErrorMessage as parseApiErrorMessage } from '@/api/api';
+
 // Status utilities
 export const getStatusColor = (status) => {
   const statusColors = {
@@ -128,15 +130,7 @@ export const getStatusLabel = (status) => {
 
 export const confirmAction = (message) => window.confirm(message);
 
-export const getApiErrorMessage = (error) => {
-  if (!error) return 'An unexpected error occurred.';
-  if (error.response) {
-    const data = error.response.data;
-    if (typeof data === 'string') return data;
-    if (data?.detail) return data.detail;
-    if (data?.message) return data.message;
-    const firstValue = Object.values(data)[0];
-    if (Array.isArray(firstValue)) return firstValue[0];
-  }
-  return error.message || 'An unexpected error occurred.';
+export const getApiErrorMessage = (error, fallback = 'An unexpected error occurred.') => {
+  if (!error) return fallback;
+  return parseApiErrorMessage(error, fallback);
 };

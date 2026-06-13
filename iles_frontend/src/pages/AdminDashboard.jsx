@@ -228,8 +228,7 @@ function AdminDashboard() {
       closeEditModal()
       toast.success('Changes saved successfully.')
     } catch (requestError) {
-      const message = requestError?.response?.data?.error || requestError?.response?.data?.message || requestError?.message || 'Unable to save changes.'
-      setEditError(message)
+      setEditError(getApiErrorMessage(requestError, 'Unable to save changes.'))
     } finally {
       setEditSaving(false)
     }

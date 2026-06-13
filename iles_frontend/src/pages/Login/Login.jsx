@@ -1,6 +1,7 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { useState } from 'react';
 import { useAuth } from '@/auth/useAuth';
+import { getErrorMessage } from '@/api/api';
 import './Login.css';
 import '../../ILES.css'; 
 
@@ -37,7 +38,7 @@ function Login() {
                 navigate('/app/student/dashboard');
             }
         } catch (error) {
-            setErrorMessage(error?.message || 'Login failed. Please try again.');
+            setErrorMessage(getErrorMessage(error, 'Login failed. Please try again.'));
         } finally {
             setIsLoading(false);
         }

@@ -1,6 +1,7 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { useState } from 'react';
 import { useAuth } from '@/auth/useAuth';
+import { getErrorMessage } from '@/api/api';
 import PasswordField from '@/components/PasswordField';
 import { roleToHomePath } from '../../routes/roleRedirect';
 import { ROLE_OPTIONS, USER_ROLES } from '@/constants/appConstants';
@@ -103,18 +104,13 @@ function Signup() {
                         : {}),
             };
 
-            const result = await register(body);
-
-            if (!result || !result.success) {
-                setErrorMessage('Signup failed.');
-                return;
-            }
+            await register(body);
 
             // New flow: account requires email activation. Inform the user and do not auto-login.
             setSuccessMessage('Account created. Please check your email for an activation link before signing in.');
             setErrorMessage('');
         } catch (error) {
-            setErrorMessage(error?.message || 'Unable to reach the server. Please try again later.');
+            setErrorMessage(getErrorMessage(error, 'Unable to reach the server. Please try again later.'));
         }
     };
 

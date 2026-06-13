@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useNavigate, useSearchParams, Link } from 'react-router-dom'
 import './Login.css'
 import { useAuth } from '@/auth/useAuth'
+import { getErrorMessage } from '@/api/api'
 import PasswordField from '@/components/PasswordField'
 
 export default function ResetPassword() {
@@ -42,7 +43,7 @@ export default function ResetPassword() {
       setMessage('Password reset successful. Redirecting to login...')
       setTimeout(() => navigate('/'), 1800)
     } catch (err) {
-      setError(err?.message || 'Failed to reset password.')
+      setError(getErrorMessage(err, 'Failed to reset password.'))
     } finally {
       setLoading(false)
     }

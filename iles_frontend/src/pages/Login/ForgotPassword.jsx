@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom'
 import './Login.css'
 import { useState } from 'react'
 import { useAuth } from '@/auth/useAuth'
+import { getErrorMessage } from '@/api/api'
 
 function ForgotPassword() {
     const { api } = useAuth()
@@ -19,7 +20,7 @@ function ForgotPassword() {
             await api.post('api/forgot-password/', { email }, { auth: false })
             setMessage('If an account exists, a password reset link has been sent to the email.')
         } catch (err) {
-            setError(err?.message || 'Failed to send reset link.')
+            setError(getErrorMessage(err, 'Failed to send reset link.'))
         } finally {
             setLoading(false)
         }
