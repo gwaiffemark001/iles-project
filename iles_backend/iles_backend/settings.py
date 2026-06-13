@@ -47,6 +47,7 @@ AUTH_USER_MODEL = 'core.CustomUser'
 if not DEBUG:
     # HTTPS & Cookies
     # Disable for Railway - proxy handles HTTPS, we trust X-Forwarded-Proto
+    # 🌟 SECURE PRODUCTION SESSIONS ENFORCED
     SECURE_SSL_REDIRECT = False  # Railway reverse proxy handles this
     SESSION_COOKIE_SECURE = True
     CSRF_COOKIE_SECURE = True
@@ -174,6 +175,9 @@ else:
         }
     }
 
+# 🌟 FORCE SESSION LOGGING TO PERSISTENT DATABASE ENGINE
+SESSION_ENGINE = 'django.contrib.sessions.backends.db'
+
 # ─────────────────────────────────────────────
 # PASSWORD VALIDATION
 # ─────────────────────────────────────────────
@@ -292,8 +296,9 @@ REST_FRAMEWORK = {
     ],
 }
 
+# 🌟 INCREASED TOKEN BREATHING ROOM TO PREVENT DISCONNECT LOCKOUTS
 SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFETIME': timedelta(hours=1),
+    'ACCESS_TOKEN_LIFETIME': timedelta(days=1),
     'REFRESH_TOKEN_LIFETIME': timedelta(days=7),
     'ROTATE_REFRESH_TOKENS': True,
     'BLACKLIST_AFTER_ROTATION': True,
