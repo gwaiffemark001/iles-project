@@ -27,7 +27,7 @@ function ForgotPassword() {
 
     return (
         <>
-            <div className="page_1" style={{ height: '100vh' }}>
+            <div className="page_1">
                 <div className="centre_logins">
                     <header className="header_1">
                         <h1 className="head">RESET PASSWORD</h1>
@@ -50,7 +50,7 @@ function ForgotPassword() {
                     {message && <p className="success-message">{message}</p>}
                     {error && <p className="error-message">{error}</p>}
 
-                    <section className="failed_login" style={{ width: '480px' }}>
+                    <section className="failed_login">
                         <p className="signup">
                             <Link to="/">Back to Login</Link>
                         </p>

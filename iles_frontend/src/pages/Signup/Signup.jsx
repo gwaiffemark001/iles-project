@@ -21,12 +21,32 @@ function Signup() {
     const [registrationNumber, setRegistrationNumber] = useState('');
     const navigate = useNavigate();
     const { register, login } = useAuth();
+    const signupRoleOptions = ROLE_OPTIONS.filter(
+        (option) => option.value !== USER_ROLES.ADMIN,
+    );
     const handleSignup = async (e) => {
         e.preventDefault();
         setErrorMessage('');
         setSuccessMessage('');
 
-        // Role-specific validation
+        // Client-side validation
+        const cleanedEmail = (email || '').trim();
+        const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailPattern.test(cleanedEmail)) {
+            setErrorMessage('Please enter a valid email address.');
+            return;
+        }
+
+        const cleanedPhone = phone.replace(/[^0-9+]/g, '');
+        const normalizedPhone = cleanedPhone.startsWith('0') && /^0\d{9}$/.test(cleanedPhone)
+            ? `256${cleanedPhone.slice(1)}`
+            : cleanedPhone.replace(/^\+/, '');
+
+        if (!/^\d{9,15}$/.test(normalizedPhone)) {
+            setErrorMessage('Please enter a valid phone number, including country code or local Uganda format.');
+            return;
+        }
+
         if (role === 'student') {
             if (!studentNumber || !registrationNumber || !firstName || !lastName || !phone || !department) {
                 setErrorMessage('Students must provide: first name, last name, phone, department, student number, and registration number.');
@@ -43,12 +63,13 @@ function Signup() {
             const username = email.includes('@') ? email.split('@')[0] : email;
             const body = {
                 username,
-                email,
+                email: cleanedEmail,
                 password,
+                confirm_password: password,
                 role,
                 first_name: firstName,
                 last_name: lastName,
-                phone,
+                phone: normalizedPhone,
                 department,
                 ...(role === 'student'
                     ? {
@@ -62,22 +83,16 @@ function Signup() {
 
             const result = await register(body);
 
-            if (!result.success) {
-                setErrorMessage(result.error || 'Signup failed.');
+            if (!result || !result.success) {
+                setErrorMessage('Signup failed.');
                 return;
             }
 
-            const loginResult = await login({ usernameOrEmail: username, password });
-
-            if (!loginResult.success) {
-                setErrorMessage(loginResult.error || 'Account created, but sign-in failed.');
-                return;
-            }
-
-            setSuccessMessage('Account created successfully. Redirecting to your dashboard.');
-            navigate(roleToHomePath(loginResult.user?.role), { replace: true });
-        } catch {
-            setErrorMessage('Unable to reach the server. Please try again later.');
+            // New flow: account requires email activation. Inform the user and do not auto-login.
+            setSuccessMessage('Account created. Please check your email for an activation link before signing in.');
+            setErrorMessage('');
+        } catch (error) {
+            setErrorMessage(error?.message || 'Unable to reach the server. Please try again later.');
         }
     };
 
@@ -96,7 +111,7 @@ function Signup() {
                         onChange={(e) => setRole(e.target.value)}
                         required
                     >
-                    {ROLE_OPTIONS.map((option) => (
+                    {signupRoleOptions.map((option) => (
                         <option key={option.value} value={option.value}>
                           {option.label}
                         </option>
@@ -191,7 +206,7 @@ function Signup() {
                 <div >
                     <section className="failed_login" style={{width: "480px"}}>
                         <p className="signup">
-                            <Link to="/">Back to Login</Link>
+                            <Link to="/login">Back to Login</Link>
                         </p>
                         <p className="signup">
                             <Link to="/forgot-password">Forgot Password</Link>

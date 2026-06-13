@@ -132,8 +132,19 @@ WSGI_APPLICATION = 'iles_backend.wsgi.application'
 # ─────────────────────────────────────────────
 
 DATABASE_URL = os.getenv('DATABASE_URL')
+# If a local .env.local is present, prefer SQLite for safe local development
+FORCE_SQLITE = os.path.exists(BASE_DIR / '.env.local') or os.getenv('FORCE_SQLITE', '').lower() in ('1', 'true', 'yes')
 
-if DATABASE_URL:
+if FORCE_SQLITE:
+    # Force SQLite for local development/testing when requested
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+        }
+    }
+
+elif DATABASE_URL:
     # Railway production OR local PostgreSQL
     DATABASES = {
         'default': dj_database_url.config(
@@ -303,6 +314,7 @@ GMAIL_API_USER = os.getenv('GMAIL_API_USER', os.getenv('EMAIL_HOST_USER', ''))
 
 # Email timeout for any Django email operations
 EMAIL_TIMEOUT = int(os.getenv('EMAIL_TIMEOUT', '10'))
+EMAIL_VERIFY_USE_SMTP = os.getenv('EMAIL_VERIFY_USE_SMTP', 'false').lower() in ('1', 'true', 'yes')
 
 # Explicitly disable SMTP-based sending by default
 EMAIL_BACKEND = 'django.core.mail.backends.dummy.EmailBackend'

@@ -49,7 +49,7 @@ export default function ResetPassword() {
   }
 
   return (
-    <div className="page_1" style={{ height: '100vh' }}>
+    <div className="page_1">
       <div className="centre_logins">
         <header className="header_1">
           <h1 className="head">SET NEW PASSWORD</h1>
@@ -83,7 +83,7 @@ export default function ResetPassword() {
         {message && <p className="success-message">{message}</p>}
         {error && <p className="error-message">{error}</p>}
 
-        <section className="failed_login" style={{ width: '480px' }}>
+        <section className="failed_login">
           <p className="signup">
             <Link to="/">Back to Login</Link>
           </p>

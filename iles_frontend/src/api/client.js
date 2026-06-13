@@ -1,4 +1,26 @@
-const DEFAULT_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
+const DEFAULT_API_SERVER_URL = 'http://localhost:8000'
+
+function normalizeBaseUrl(rawUrl) {
+  const value = (rawUrl || '').toString().trim()
+  if (!value) {
+    return DEFAULT_API_SERVER_URL
+  }
+
+  if (/^:\d+$/.test(value)) {
+    return `http://localhost${value}`
+  }
+
+  const prefixed = value.match(/^https?:\/\//i) ? value : `http://${value}`
+
+  try {
+    const url = new URL(prefixed)
+    return url.origin
+  } catch {
+    return DEFAULT_API_SERVER_URL
+  }
+}
+
+const DEFAULT_BASE_URL = normalizeBaseUrl(import.meta.env.VITE_API_BASE_URL)
 
 function joinUrl(baseUrl, path) {
   const base = (baseUrl || '').replace(/\/+$/, '')

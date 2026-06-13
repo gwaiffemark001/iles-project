@@ -1,4 +1,26 @@
-export const API_SERVER_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
+const DEFAULT_API_SERVER_URL = 'http://localhost:8000'
+
+function normalizeApiServerUrl(rawUrl) {
+  const value = (rawUrl || '').toString().trim()
+  if (!value) {
+    return DEFAULT_API_SERVER_URL
+  }
+
+  if (/^:\d+$/.test(value)) {
+    return `http://localhost${value}`
+  }
+
+  const prefixed = value.match(/^https?:\/\//i) ? value : `http://${value}`
+
+  try {
+    const url = new URL(prefixed)
+    return url.origin
+  } catch {
+    return DEFAULT_API_SERVER_URL
+  }
+}
+
+export const API_SERVER_URL = normalizeApiServerUrl(import.meta.env.VITE_API_BASE_URL)
 export const API_BASE_URL = `${API_SERVER_URL}/api`
 export const DEFAULT_DATE_LOCALE = 'en-US'
 export const DATE_FORMAT_OPTIONS = {

@@ -1,0 +1,118 @@
+.homepage-page {
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 40px 24px;
+  background: radial-gradient(circle at top, rgba(59, 130, 246, 0.18), transparent 40%), #0f172a;
+  color: #f8fafc;
+  font-family: 'Manrope', sans-serif;
+}
+
+.homepage-hero {
+  width: min(1120px, 100%);
+  max-width: 1120px;
+  display: grid;
+  grid-template-columns: 1.4fr 1fr;
+  gap: 28px;
+  align-items: center;
+  padding: 40px;
+  border-radius: 28px;
+  background: rgba(15, 23, 42, 0.92);
+  box-shadow: 0 32px 84px rgba(15, 23, 42, 0.45);
+}
+
+.homepage-logo {
+  width: 72px;
+  height: 72px;
+  margin-bottom: 24px;
+}
+
+.homepage-copy h1 {
+  margin: 0;
+  font-size: clamp(2.4rem, 4vw, 3.6rem);
+  letter-spacing: -0.04em;
+  line-height: 1.05;
+}
+
+.homepage-copy p {
+  margin: 18px 0 0;
+  max-width: 620px;
+  color: #cbd5e1;
+  font-size: 1.05rem;
+  line-height: 1.8;
+}
+
+.homepage-actions {
+  display: flex;
+  gap: 16px;
+  margin-top: 28px;
+}
+
+.homepage-primary-button,
+.homepage-secondary-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 160px;
+  padding: 14px 20px;
+  border-radius: 14px;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.homepage-primary-button {
+  color: #fff;
+  background: #2563eb;
+}
+
+.homepage-secondary-button {
+  color: #e2e8f0;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(226, 232, 240, 0.12);
+}
+
+.homepage-features {
+  display: grid;
+  gap: 18px;
+}
+
+.homepage-features article {
+  padding: 24px;
+  border-radius: 22px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(148, 163, 184, 0.16);
+}
+
+.homepage-features h2 {
+  margin: 0 0 10px;
+  font-size: 1.15rem;
+}
+
+.homepage-features p {
+  margin: 0;
+  color: #cbd5e1;
+  line-height: 1.7;
+}
+
+@media (max-width: 900px) {
+  .homepage-hero {
+    grid-template-columns: 1fr;
+    padding: 30px;
+  }
+}
+
+@media (max-width: 640px) {
+  .homepage-page {
+    padding: 24px 14px;
+  }
+
+  .homepage-hero {
+    padding: 24px;
+  }
+
+  .homepage-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}

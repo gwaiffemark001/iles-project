@@ -12,6 +12,7 @@ from .models import (
     WeeklyLog,
     ChatMessage,
 )
+from phonenumber_field.serializerfields import PhoneNumberField as DRFPhoneNumberField
 
 class UserProfileDetailSerializer(serializers.ModelSerializer):
     avatar_url = serializers.URLField(required=False, allow_blank=True, allow_null=True)
@@ -64,6 +65,7 @@ class CustomUserSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, required=False)
     full_name = serializers.SerializerMethodField(read_only=True)
     profile = UserProfileDetailSerializer(read_only=True)
+    phone = DRFPhoneNumberField(required=False, allow_null=True, allow_blank=True)
 
     class Meta:
         model = CustomUser

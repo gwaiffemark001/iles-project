@@ -1,9 +1,11 @@
 import { Navigate, Route, Routes } from 'react-router-dom'
 
+import Homepage from '../pages/Homepage/Homepage'
 import Firstpage from '../Firstpage'
 import ForgotPassword from '../pages/Login/ForgotPassword'
 import ResetPassword from '../pages/Login/ResetPassword'
 import Signup from '../pages/Signup/Signup'
+import Activate from '../pages/Signup/Activate'
 import StudentDashboard from '../pages/Student/StudentDashboard'
 import PlacementsList from '../pages/Student/PlacementsList'
 import PlacementDetail from '../pages/Student/PlacementDetail'
@@ -24,8 +26,10 @@ export default function AppRoutes() {
   return (
     <Routes>
       {/* Public */}
-      <Route path="/" element={<Firstpage />} />
+      <Route path="/" element={<Homepage />} />
+      <Route path="/login" element={<Firstpage />} />
       <Route path="/signup" element={<Signup />} />
+      <Route path="/activate" element={<Activate />} />
       <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/reset-password" element={<ResetPassword />} />
 

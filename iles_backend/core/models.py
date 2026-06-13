@@ -5,6 +5,7 @@ from decimal import Decimal
 from django.contrib.auth.models import AbstractUser
 from django.utils import timezone
 from django.utils.dateparse import parse_date
+from phonenumber_field.modelfields import PhoneNumberField
 from django.db.models import Q
 
 class CustomUser(AbstractUser):
@@ -26,7 +27,7 @@ class CustomUser(AbstractUser):
     role = models.CharField(max_length=30, choices=ROLE_CHOICES, default='student')
     account_status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='active')
     email_verified = models.BooleanField(default=False)
-    phone= models.CharField(max_length=15, blank=True, null=True)
+    phone = PhoneNumberField(blank=True, null=True)
     department = models.CharField(max_length=100, blank=True, null=True)
     staff_number= models.CharField(max_length=20, blank=True, null=True)
     student_number=models.CharField(max_length=20, blank=True, null=True)

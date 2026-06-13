@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { createApiClient } from '../api/client'
 import AuthContext from "./AuthContextInstance";
 import { API_SERVER_URL } from '@/constants/appConstants'
+import { getErrorMessage } from '@/api/api'
 
 const ACCESS_KEY = 'access_token'
 const REFRESH_KEY = 'refresh_token'
@@ -121,24 +122,29 @@ export function AuthProvider({ children }) {
         'staff_number',
         'student_number',
         'registration_number',
+        'confirm_password',
       ]
       const safeExtra = Object.fromEntries(
         Object.entries(extra || {}).filter(([k, v]) => allowedExtras.includes(k) && v !== undefined),
       )
 
-      await api.post(
-        'api/register/',
-        {
-          username,
-          email: cleanedEmail,
-          password,
-          ...(role ? { role } : {}),
-          ...safeExtra,
-        },
-        { auth: false },
-      )
+      try {
+        const res = await api.post(
+          'api/register/',
+          {
+            username,
+            email: cleanedEmail,
+            password,
+            ...(role ? { role } : {}),
+            ...safeExtra,
+          },
+          { auth: false },
+        )
 
-      return await login({ usernameOrEmail: username, password })
+        return { success: true, data: res }
+      } catch (error) {
+        throw new Error(getErrorMessage(error, 'Unable to create account.'))
+      }
     },
     [api, login],
   )

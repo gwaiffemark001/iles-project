@@ -12,6 +12,7 @@ import socket
 import smtplib
 from django.utils import timezone
 from django.core.validators import EmailValidator
+import phonenumbers
 from rest_framework import status
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
@@ -19,6 +20,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from django.core.exceptions import ValidationError
 import logging
+from typing import Any, Dict, cast
 from django.conf import settings
 from .models import (
     CustomUser,
@@ -49,23 +51,37 @@ EMAIL_VALIDATOR = EmailValidator()
 def normalize_phone_number(phone):
     if phone is None:
         return None
-    raw = re.sub(r'[^0-9]', '', str(phone or ''))
-    if not raw:
+
+    phone_text = str(phone).strip()
+    if not phone_text:
         return None
 
-    # Accept local Ugandan mobile format and normalize it to country-code form.
-    # Example: 0787870644 -> 256787870644
-    if re.fullmatch(r'0\d{9}', raw):
-        raw = f'256{raw[1:]}'
+    # Try to parse using phonenumbers; prefer E.164 output
+    default_region = getattr(settings, 'PHONE_DEFAULT_REGION', 'UG')
+    try:
+        # If the number doesn't start with +, parse with default region
+        if phone_text.startswith('+'):
+            parsed = phonenumbers.parse(phone_text, None)
+        else:
+            parsed = phonenumbers.parse(phone_text, default_region)
+    except phonenumbers.NumberParseException as e:
+        raise ValidationError('Invalid phone number format.')
 
-    if not re.fullmatch(r'[1-9]\d{7,14}', raw):
-        raise ValidationError(
-            'Phone number must include a country code and contain 8 to 15 digits.'
-        )
-    return raw
+    if not phonenumbers.is_possible_number(parsed) or not phonenumbers.is_valid_number(parsed):
+        raise ValidationError('Phone number is not a possible or valid number.')
+
+    try:
+        e164 = phonenumbers.format_number(parsed, phonenumbers.PhoneNumberFormat.E164)
+    except Exception:
+        raise ValidationError('Unable to normalize phone number.')
+
+    return e164
 
 
 def validate_name_field(value, field_name):
+    if value is None:
+        return ''
+    value = str(value).strip()
     if not value:
         return ''
     if re.search(r'\s', value):
@@ -74,7 +90,23 @@ def validate_name_field(value, field_name):
         raise ValidationError(
             f'{field_name} may only contain letters, hyphens, and apostrophes.'
         )
+    if len(value) < 2:
+        raise ValidationError(f'{field_name} must be at least 2 characters long.')
     return value
+
+
+def validate_password_field(password):
+    if password is None:
+        raise ValidationError('Password is required.')
+    pw = str(password)
+    if len(pw) < 8:
+        raise ValidationError('Password must be at least 8 characters long.')
+    if not re.search(r'[A-Za-z]', pw) or not re.search(r'\d', pw):
+        raise ValidationError('Password must include at least one letter and one digit.')
+    # Optional: enforce a special character
+    # if not re.search(r'[!@#$%^&*(),.?":{}|<>]', pw):
+    #     raise ValidationError('Password must include a special character.')
+    return True
 
 
 def verify_email_domain_exists(email):
@@ -91,7 +123,7 @@ def verify_email_domain_exists(email):
 
 def verify_email_exists(email):
     """
-    Verify email exists by checking format, domain, and SMTP mailbox verification.
+    Verify email exists by checking format, domain, and optionally SMTP mailbox verification.
     """
     try:
         EMAIL_VALIDATOR(email)
@@ -103,12 +135,18 @@ def verify_email_exists(email):
         logger.debug(f'Email domain not found: {email}')
         return False
 
+    if not settings.EMAIL_VERIFY_USE_SMTP:
+        logger.debug('SMTP email verification disabled; accepting domain-valid email.')
+        return True
+
     # Attempt SMTP verification with aggressive timeout to prevent hanging
     try:
         domain = email.split('@', 1)[1]
         # Use shorter timeout (5 seconds) to prevent connection hanging
         with smtplib.SMTP(timeout=5) as smtp:
-            smtp.connect(domain, timeout=5)
+            # smtp.connect does not accept a timeout kw in some stdlib versions;
+            # the SMTP instance was created with a timeout already.
+            smtp.connect(domain)
             smtp.ehlo_or_helo_if_needed()
             smtp.mail('verify@iles-project.com')
             code, response = smtp.rcpt(email)
@@ -189,8 +227,9 @@ class WeeklyLogListView(APIView):
     def post(self, request):
         serializer = WeeklyLogSerializer(data=request.data)
         if serializer.is_valid():
-            placement = serializer.validated_data.get('placement')
-            week_number = serializer.validated_data.get('week_number')
+            validated_data: Dict[str, Any] = cast(Dict[str, Any], serializer.validated_data)
+            placement = validated_data.get('placement')
+            week_number = validated_data.get('week_number')
             if placement and placement.student != request.user:
                 return Response(
                     {'error': 'You can only create logs for your own placement'},
@@ -202,7 +241,7 @@ class WeeklyLogListView(APIView):
                     status=status.HTTP_400_BAD_REQUEST,
                 )
 
-            if placement and placement.get_computed_status() == 'pending' and serializer.validated_data.get('status') == 'submitted':
+            if placement and placement.get_computed_status() == 'pending' and validated_data.get('status') == 'submitted':
                 return Response(
                     {'error': 'Cannot submit a weekly log for a pending placement.'},
                     status=status.HTTP_400_BAD_REQUEST,
@@ -215,15 +254,15 @@ class WeeklyLogListView(APIView):
                 )
 
             deadline = WeeklyLog(placement=placement, week_number=week_number).calculate_deadline()
-            if serializer.validated_data.get('status') == 'submitted' and deadline and timezone.now().date() > deadline:
+            if validated_data.get('status') == 'submitted' and deadline and timezone.now().date() > deadline:
                 return Response(
                     {'error': 'Cannot submit after deadline'},
                     status=status.HTTP_400_BAD_REQUEST,
                 )
 
-            log = serializer.save()
+            log = cast(WeeklyLog, serializer.save())
             # Set submitted_at timestamp if status is submitted
-            if log.status == 'submitted':
+            if getattr(log, 'status', None) == 'submitted':
                 log.submitted_at = timezone.now()
                 log.save()
                 notify_log_submitted(log, actor=request.user)
@@ -279,14 +318,15 @@ class WeeklyLogDetailView(APIView):
         serializer = WeeklyLogSerializer(log, data=request.data)
                                 
         if serializer.is_valid():
-            placement = serializer.validated_data.get('placement', log.placement)
+            validated_data: Dict[str, Any] = cast(Dict[str, Any], serializer.validated_data)
+            placement = validated_data.get('placement', log.placement)
             if placement.student != request.user:
                 return Response(
                     {'error': 'You can only update logs for your own placement'},
                     status=status.HTTP_403_FORBIDDEN
                 )
 
-            status_value = serializer.validated_data.get('status', log.status)
+            status_value = validated_data.get('status', log.status)
             deadline = log.calculate_deadline()
             if status_value == 'submitted' and deadline and timezone.now().date() > deadline:
                 return Response({'error': 'Cannot submit after deadline'}, status=status.HTTP_400_BAD_REQUEST)
@@ -441,11 +481,12 @@ class PlacementApplicationListCreateView(APIView):
         if not serializer.is_valid():
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-        placement = serializer.validated_data.get('placement')
+        validated_data: Dict[str, Any] = cast(Dict[str, Any], serializer.validated_data)
+        placement = validated_data.get('placement')
         if not placement:
             return Response({'error': 'Placement is required'}, status=status.HTTP_400_BAD_REQUEST)
         
-        if placement.student_id is not None:
+        if placement.student is not None:
             return Response({'error': 'Placement is no longer available'}, status=status.HTTP_400_BAD_REQUEST)
 
         app = serializer.save()
@@ -470,7 +511,7 @@ class PlacementApplicationDecisionView(APIView):
 
         if next_status == 'approved':
             placement = app.placement
-            if placement.student_id is not None and placement.student_id != app.student_id:
+            if placement.student is not None and getattr(placement.student, 'pk', None) != getattr(app.student, 'pk', None):
                 return Response({'error': 'Placement already assigned'}, status=status.HTTP_400_BAD_REQUEST)
             placement.student = app.student
             placement.status = 'active'
@@ -557,8 +598,17 @@ class UserRegistrationView(APIView):
             errors['username'] = ['This field is required.']
         if not password:
             errors['password'] = ['This field is required.']
-        if confirm_password is not None and password != confirm_password:
+        if confirm_password is None:
+            errors['confirm_password'] = ['This field is required.']
+        elif password != confirm_password:
             errors['confirm_password'] = ['Passwords do not match.']
+
+        # Enforce password strength
+        if password:
+            try:
+                validate_password_field(password)
+            except ValidationError as exc:
+                errors['password'] = exc.messages
         if CustomUser.objects.filter(username=username).exists():
             errors['username'] = ['Username already exists.']
         if not email:
@@ -617,21 +667,47 @@ class UserRegistrationView(APIView):
             student_number=request.data.get('student_number'),
             registration_number=request.data.get('registration_number'),
         )
-        
-        logger.info(f'User created successfully: username={user.username}, email={user.email}, role={user.role}')
-        
-        # Create welcome notification for the new user
-        Notification.objects.create(
-            recipient=user,
-            actor=None,  # System-generated notification
-            notification_type='welcome',
-            title='Welcome to ILES!',
-            message='Welcome to the Internship Logging & Evaluation System! Click the help button (?) on your dashboard to access the user guide and learn how to use the system.',
-            data={'user_guide': True}
-        )
-        
+
+        # New accounts must be activated via email before they can sign in.
+        user.is_active = False
+        user.save(update_fields=['is_active'])
+
+        logger.info(f'User created (inactive): username={user.username}, email={user.email}, role={user.role}')
+
+        # Generate activation token and send activation email
+        try:
+            token_generator = PasswordResetTokenGenerator()
+            token = token_generator.make_token(user)
+            uid = urlsafe_base64_encode(force_bytes(user.pk))
+
+            # Prefer a frontend activation URL if configured, otherwise use backend activation endpoint
+            frontend_base = getattr(settings, 'FRONTEND_URL', None)
+            if frontend_base:
+                activation_url = f"{frontend_base.rstrip('/')}/activate?uid={uid}&token={token}"
+            else:
+                backend_base = getattr(settings, 'BACKEND_BASE_URL', None) or f"{request.scheme}://{request.get_host()}"
+                activation_path = f"/api/activate-account?uid={uid}&token={token}"
+                activation_url = f"{backend_base.rstrip('/')}{activation_path}"
+
+            subject = 'Activate your ILES account'
+            message = (
+                f"Hello {user.get_full_name() or user.username},\n\n"
+                "Thanks for registering for ILES. Click the link below to activate your account:\n\n"
+                f"{activation_url}\n\n"
+                "If you did not register, you can ignore this email.\n\n"
+                "Thanks,\nILES System Team"
+            )
+
+            sent = send_email_via_gmail_api(recipient_email=user.email, subject=subject, message=message)
+            if sent:
+                logger.info('Activation email sent to %s', user.email)
+            else:
+                logger.warning('Failed to send activation email to %s', user.email)
+        except Exception as e:
+            logger.error('Error sending activation email to %s: %s', user.email, str(e))
+
         return Response({
-            'message': 'User created successfully',
+            'message': 'User created. An activation email has been sent if the address is reachable.',
             'username': user.username,
             'role': user.role,
         }, status=status.HTTP_201_CREATED)
@@ -721,6 +797,47 @@ class PasswordResetConfirmView(APIView):
         return Response({'message': 'Password reset successful.'}, status=status.HTTP_200_OK)
 
 
+class AccountActivationView(APIView):
+    """Activate a user account using uid and token from activation email.
+
+    GET /api/activate-account?uid=<uid>&token=<token>
+    """
+    permission_classes = [AllowAny]
+
+    def get(self, request):
+        uid = request.query_params.get('uid')
+        token = request.query_params.get('token')
+        if not uid or not token:
+            return Response({'detail': 'uid and token are required.'}, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            uid_decoded = force_str(urlsafe_base64_decode(uid))
+            user = CustomUser.objects.get(pk=uid_decoded)
+        except Exception:
+            return Response({'detail': 'Invalid activation link.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        token_generator = PasswordResetTokenGenerator()
+        if not token_generator.check_token(user, token):
+            return Response({'detail': 'Invalid or expired token.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        user.is_active = True
+        user.save(update_fields=['is_active'])
+
+        # Create welcome notification after successful activation
+        try:
+            Notification.objects.create(
+                recipient=user,
+                actor=None,
+                notification_type='welcome',
+                title='Welcome to ILES!',
+                message='Welcome to the Internship Logging & Evaluation System! Click the help button (?) on your dashboard to access the user guide and learn how to use the system.',
+                data={'user_guide': True}
+            )
+        except Exception:
+            logger.exception('Failed to create welcome notification for %s', user.email)
+
+        return Response({'message': 'Account activated successfully.'}, status=status.HTTP_200_OK)
+
+
 class EvaluationListView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -770,9 +887,9 @@ class EvaluationListView(APIView):
             except InternshipPlacement.DoesNotExist:
                 return Response({'error': 'Placement not found'}, status=status.HTTP_404_NOT_FOUND)
 
-            if request.user.role == 'workplace_supervisor' and placement.workplace_supervisor_id != request.user.id:
+            if request.user.role == 'workplace_supervisor' and placement.workplace_supervisor.pk != request.user.pk:
                 return Response({'error': 'You can only evaluate your own placements'}, status=status.HTTP_403_FORBIDDEN)
-            if request.user.role == 'academic_supervisor' and placement.academic_supervisor_id != request.user.id:
+            if request.user.role == 'academic_supervisor' and placement.academic_supervisor.pk != request.user.pk:
                 return Response({'error': 'You can only evaluate your own placements'}, status=status.HTTP_403_FORBIDDEN)
 
             weekly_log = WeeklyLog.objects.filter(placement_id=placement_id, week_number=week_number).first()
@@ -854,8 +971,9 @@ class UserProfileView(APIView):
         if not profile_serializer.is_valid():
             return Response(profile_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-        if 'password' in serializer.validated_data:
-            serializer.validated_data.pop('password')
+        validated_data: Dict[str, Any] = cast(Dict[str, Any], serializer.validated_data)
+        if 'password' in validated_data:
+            validated_data.pop('password')
 
         serializer.save()
         profile_serializer.save()
@@ -1049,13 +1167,10 @@ class LogRevisionView(APIView):
             message=f"Your Week {log.week_number} log needs revision: {log.supervisor_comment}",
             notification_type="log_revision_requested",
             actor=request.user,
-            data={"log_id": log.id},
+            data={"log_id": log.pk},
             send_email=True,
-            send_sms=False
+            send_sms=False,
         )
-
-        serializer = WeeklyLogSerializer(log)
-        return Response(serializer.data)   
 
 class SupervisorApproveView(APIView):
     permission_classes = [IsAuthenticated]
@@ -1372,10 +1487,10 @@ class ChatContactsView(APIView):
             for placement in placements:
                 # Add workplace supervisor if exists
                 if placement.workplace_supervisor:
-                    supervisor_ids.add(placement.workplace_supervisor.id)
+                    supervisor_ids.add(getattr(placement.workplace_supervisor, 'pk', None))
                 # Add academic supervisor if exists
                 if placement.academic_supervisor:
-                    supervisor_ids.add(placement.academic_supervisor.id)
+                    supervisor_ids.add(getattr(placement.academic_supervisor, 'pk', None))
             contact_ids = supervisor_ids
             # Add admins
             admin_ids = set(CustomUser.objects.filter(role='admin').values_list('id', flat=True))
@@ -1395,7 +1510,7 @@ class ChatContactsView(APIView):
             student_ids = set()
             for placement in placements:
                 if placement.student:
-                    student_ids.add(placement.student.id)
+                    student_ids.add(getattr(placement.student, 'pk', None))
             contact_ids = student_ids
             # Add admins
             admin_ids = set(CustomUser.objects.filter(role='admin').values_list('id', flat=True))
@@ -1424,7 +1539,7 @@ class ChatContactsView(APIView):
                 ).count()
                 
                 # Use serializer to include profile data (avatar fields)
-                serialized = CustomUserSerializer(contact_user, context={'request': request}).data
+                serialized = cast(Dict[str, Any], CustomUserSerializer(contact_user, context={'request': request}).data)
                 # Add messaging metadata
                 serialized['unread_count'] = unread_count
                 serialized['last_message_time'] = most_recent.created_at if most_recent else None
@@ -1505,10 +1620,10 @@ class ChatMessagesView(APIView):
             placements = InternshipPlacement.objects.filter(student=sender)
             supervisor_ids = set()
             for placement in placements:
-                if placement.workplace_supervisor_id:
-                    supervisor_ids.add(placement.workplace_supervisor_id)
-                if placement.academic_supervisor_id:
-                    supervisor_ids.add(placement.academic_supervisor_id)
+                if placement.workplace_supervisor:
+                    supervisor_ids.add(getattr(placement.workplace_supervisor, 'pk', None))
+                if placement.academic_supervisor:
+                    supervisor_ids.add(getattr(placement.academic_supervisor, 'pk', None))
             return recipient.id in supervisor_ids
 
         elif sender.role in ['workplace_supervisor', 'academic_supervisor']:
@@ -1520,8 +1635,8 @@ class ChatMessagesView(APIView):
             
             student_ids = set()
             for placement in placements:
-                if placement.student_id:
-                    student_ids.add(placement.student_id)
+                if placement.student:
+                    student_ids.add(placement.student.pk)
             return recipient.id in student_ids
 
         return False
