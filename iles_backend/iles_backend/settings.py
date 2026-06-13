@@ -307,7 +307,7 @@ SIMPLE_JWT = {
 # EMAIL CONFIGURATION
 # ─────────────────────────────────────────────
 
-DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL', 'ILES <mar666068@gmail.com>')
+DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL', 'ILES System <mar666068@gmail.com>')
 
 # Gmail API (OAuth2) settings - backend uses Gmail REST API for email delivery
 GMAIL_CLIENT_ID = os.getenv('GMAIL_CLIENT_ID', '')

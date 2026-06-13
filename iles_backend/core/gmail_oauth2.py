@@ -4,8 +4,16 @@ Handles OAuth2 authentication and email delivery via Gmail REST API
 """
 from django.conf import settings
 import logging
+from email.utils import formataddr
 
 logger = logging.getLogger(__name__)
+
+
+def get_gmail_from_address():
+    default_from = getattr(settings, 'DEFAULT_FROM_EMAIL', '') or getattr(settings, 'GMAIL_API_USER', '')
+    if '<' not in default_from and '@' in default_from:
+        default_from = formataddr(('ILES System', default_from))
+    return default_from
 
 
 def send_email_via_gmail_api(recipient_email, subject, message, html_message=None):
@@ -66,10 +74,7 @@ def send_email_via_gmail_api(recipient_email, subject, message, html_message=Non
         body_text = html_message if html_message else message
         mime_msg = MIMEText(body_text, 'html' if html_message else 'plain')
         mime_msg['to'] = recipient_email
-        default_from = getattr(settings, 'DEFAULT_FROM_EMAIL', '')
-        if '<' not in default_from and '@' in default_from:
-            default_from = formataddr(('ILES System', default_from))
-        mime_msg['from'] = default_from
+        mime_msg['from'] = get_gmail_from_address()
         mime_msg['subject'] = subject
         
         # Encode and send

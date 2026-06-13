@@ -7,6 +7,7 @@ from django.db.models.signals import post_save
 from django.dispatch import receiver
 from .models import WeeklyLog, InternshipPlacement, Notification, CustomUser
 from .services import create_notification
+from email.utils import formataddr
 import logging
 
 logger = logging.getLogger(__name__)
@@ -38,7 +39,10 @@ class NotificationService:
                 body_text = html_message if html_message else message
                 mime_msg = MIMEText(body_text, 'html' if html_message else 'plain')
                 mime_msg['to'] = recipient.email
-                mime_msg['from'] = settings.GMAIL_API_USER or settings.DEFAULT_FROM_EMAIL
+                from_address = settings.DEFAULT_FROM_EMAIL or settings.GMAIL_API_USER
+                if '<' not in from_address and '@' in from_address:
+                    from_address = formataddr(('ILES System', from_address))
+                mime_msg['from'] = from_address
                 mime_msg['subject'] = subject
 
                 raw = base64.urlsafe_b64encode(mime_msg.as_bytes()).decode()
