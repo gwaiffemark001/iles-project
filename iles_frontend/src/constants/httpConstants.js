@@ -85,7 +85,7 @@ export const ERROR_TYPES = {
   SERVER_ERROR: 'SERVER_ERROR',
   UNKNOWN_ERROR: 'UNKNOWN_ERROR',
 }
-
+ 
 
 ///Timeout values in milliseconds
 
