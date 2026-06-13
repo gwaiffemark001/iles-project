@@ -45,3 +45,23 @@ export const HTTP_METHOD = {
 }
 
 
+/// HTTP Headers
+
+export const HTTP_HEADERS = {
+  CONTENT_TYPE: 'Content-Type',
+  AUTHORIZATION: 'Authorization',
+  ACCEPT: 'Accept',
+  USER_AGENT: 'User-Agent',
+  CACHE_CONTROL: 'Cache-Control',
+}
+
+/// Content Types
+
+export const CONTENT_TYPE = {
+  JSON: 'application/json',
+  FORM_DATA: 'multipart/form-data',
+  URL_ENCODED: 'application/x-www-form-urlencoded',
+  XML: 'application/xml',
+  TEXT: 'text/plain',
+}
+
