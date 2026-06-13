@@ -1,9 +1,11 @@
 import { useEffect, useState } from 'react'
-import { useLocation, Link } from 'react-router-dom'
+import { useLocation, Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '@/auth/useAuth'
+import { roleToHomePath } from '@/routes/roleRedirect'
 
 function Activate() {
-  const { api } = useAuth()
+  const { api, authenticateWithTokens, user } = useAuth()
+  const navigate = useNavigate()
   const location = useLocation()
   const [status, setStatus] = useState('pending')
   const [message, setMessage] = useState('Activating account...')
@@ -20,17 +22,22 @@ function Activate() {
       }
 
       try {
-        // Call backend activation endpoint
-        await api.get(`api/activate-account?uid=${encodeURIComponent(uid)}&token=${encodeURIComponent(token)}`, { auth: false })
+        // Call backend activation endpoint and auto-login using returned tokens
+        const data = await api.get(`api/activate-account?uid=${encodeURIComponent(uid)}&token=${encodeURIComponent(token)}`, { auth: false })
+        const authResult = await authenticateWithTokens({ access: data.access, refresh: data.refresh })
         setStatus('success')
-        setMessage('Account activated successfully. You may now sign in.')
+        setMessage('Account activated successfully. Redirecting...')
+        const destination = roleToHomePath(data?.role || authResult?.user?.role)
+        setTimeout(() => {
+          navigate(destination, { replace: true })
+        }, 800)
       } catch (err) {
         setStatus('error')
         setMessage(err?.response?.data?.detail || err?.message || 'Activation failed or link expired.')
       }
     }
     run()
-  }, [api, location.search])
+  }, [api, authenticateWithTokens, location.search, navigate])
 
   return (
     <div style={{ padding: 24 }}>

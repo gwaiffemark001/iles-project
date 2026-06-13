@@ -6,6 +6,7 @@ from django.db.models import Count
 from django.contrib.auth.tokens import PasswordResetTokenGenerator
 from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
 from django.utils.encoding import force_bytes, force_str
+from rest_framework_simplejwt.tokens import RefreshToken
 import os
 import re
 import socket
@@ -850,7 +851,16 @@ class AccountActivationView(APIView):
         except Exception:
             logger.exception('Failed to create welcome notification for %s', user.email)
 
-        return Response({'message': 'Account activated successfully.'}, status=status.HTTP_200_OK)
+        refresh = RefreshToken.for_user(user)
+        return Response(
+            {
+                'message': 'Account activated successfully.',
+                'access': str(refresh.access_token),
+                'refresh': str(refresh),
+                'role': user.role,
+            },
+            status=status.HTTP_200_OK,
+        )
 
 
 class EvaluationListView(APIView):

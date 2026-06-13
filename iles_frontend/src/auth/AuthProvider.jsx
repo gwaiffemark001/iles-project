@@ -109,6 +109,29 @@ export function AuthProvider({ children }) {
     [api, baseUrl, logout, setTokens],
   )
 
+  const authenticateWithTokens = useCallback(
+    async ({ access, refresh }) => {
+      if (!access || !refresh) {
+        throw new Error('Authentication failed: missing tokens.')
+      }
+
+      setTokens({ access, refresh })
+      const authenticatedApi = createApiClient({
+        baseUrl,
+        getAccessToken: () => access,
+        getRefreshToken: () => refresh,
+        setTokens,
+        clearTokens: logout,
+      })
+      const profile = await authenticatedApi.get('api/profile/')
+      setUser(profile)
+      if (profile?.role) localStorage.setItem(ROLE_KEY, profile.role)
+
+      return { success: true, user: profile, ...profile }
+    },
+    [baseUrl, logout, setTokens],
+  )
+
   const register = useCallback(
     async ({ email, password, role, ...extra }) => {
       const cleanedEmail = (email || '').trim()
@@ -193,8 +216,9 @@ export function AuthProvider({ children }) {
       logout,
       fetchProfile,
       updateUser,
+      authenticateWithTokens,
     }
-  }, [api, user, accessToken, refreshToken, loading, login, register, logout, fetchProfile, updateUser])
+  }, [api, user, accessToken, refreshToken, loading, login, register, logout, fetchProfile, updateUser, authenticateWithTokens])
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
 }
