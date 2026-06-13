@@ -1,5 +1,7 @@
+from django.contrib.auth import get_user_model
 from django.utils import timezone
 from rest_framework import serializers
+from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from .models import (
     CustomUser,
     Evaluation,
@@ -90,36 +92,19 @@ class CustomUserSerializer(serializers.ModelSerializer):
         full_name = f"{obj.first_name} {obj.last_name}".strip()
         return full_name or obj.username
 
+
+class UsernameOrEmailTokenObtainPairSerializer(TokenObtainPairSerializer):
     def validate(self, attrs):
-        role = attrs.get('role') or getattr(self.instance, 'role', None)
+        username = attrs.get(self.username_field)
+        if username and '@' in username:
+            User = get_user_model()
+            try:
+                user = User.objects.get(email__iexact=username)
+                attrs[self.username_field] = getattr(user, self.username_field)
+            except User.DoesNotExist:
+                pass
+        return super().validate(attrs)
 
-        if role == 'student':
-                        attrs['staff_number'] = ''
-        
-        if role in ('workplace_supervisor', 'academic_supervisor'):
-            attrs['student_number'] = ''
-            attrs['registration_number'] = ''
-
-        return attrs
-
-    def update(self, instance, validated_data):
-        password = validated_data.pop("password", None)
-
-        for attr, value in validated_data.items():
-            setattr(instance, attr, value)
-
-        if getattr(instance, 'role', None) == 'student':
-            instance.staff_number = ''
-
-        if getattr(instance, 'role', None) in ('workplace_supervisor', 'academic_supervisor'):
-            instance.student_number = ''
-            instance.registration_number = ''
-
-        if password:
-            instance.set_password(password)
-
-        instance.save()
-        return instance
 
 class InternshipPlacementSerializer(serializers.ModelSerializer):
     student = CustomUserSerializer(read_only=True)

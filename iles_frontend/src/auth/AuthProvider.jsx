@@ -78,7 +78,7 @@ export function AuthProvider({ children }) {
   const login = useCallback(
     async ({ usernameOrEmail, username, password }) => {
       const raw = (usernameOrEmail || username || '').trim()
-      const loginName = raw.includes('@') ? raw.split('@')[0] : raw
+      const loginName = raw
 
       const tokenPayload = await api.post(
         'api/token/',
@@ -135,9 +135,8 @@ export function AuthProvider({ children }) {
   const register = useCallback(
     async ({ email, password, role, ...extra }) => {
       const cleanedEmail = (email || '').trim()
-      const username = cleanedEmail.includes('@') ? cleanedEmail.split('@')[0] : cleanedEmail
-
       const allowedExtras = [
+        'username',
         'first_name',
         'last_name',
         'phone',
@@ -155,7 +154,6 @@ export function AuthProvider({ children }) {
         const res = await api.post(
           'api/register/',
           {
-            username,
             email: cleanedEmail,
             password,
             ...(role ? { role } : {}),
@@ -169,7 +167,7 @@ export function AuthProvider({ children }) {
         throw new Error(getErrorMessage(error, 'Unable to create account.'))
       }
     },
-    [api, login],
+    [api],
   )
 
   useEffect(() => {
