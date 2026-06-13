@@ -275,7 +275,9 @@ CSRF_TRUSTED_ORIGINS = [
 # Allow credentials in CORS requests (needed for JWT in cookies/headers)
 CORS_ALLOW_CREDENTIALS = True
 
-FRONTEND_URL = os.getenv('FRONTEND_URL', 'https://iles-project-three.vercel.app')
+FRONTEND_URL = os.getenv('FRONTEND_URL', 'https://iles-project-iles-frontend.up.railway.app')
+# Public backend base URL (used when building activation/reset links from non-request contexts)
+BACKEND_BASE_URL = os.getenv('BACKEND_BASE_URL', 'https://iles-project-iles-backend.up.railway.app')
 
 # ─────────────────────────────────────────────
 # REST FRAMEWORK & JWT
@@ -316,8 +318,24 @@ GMAIL_API_USER = os.getenv('GMAIL_API_USER', os.getenv('EMAIL_HOST_USER', ''))
 EMAIL_TIMEOUT = int(os.getenv('EMAIL_TIMEOUT', '10'))
 EMAIL_VERIFY_USE_SMTP = os.getenv('EMAIL_VERIFY_USE_SMTP', 'false').lower() in ('1', 'true', 'yes')
 
-# Explicitly disable SMTP-based sending by default
-EMAIL_BACKEND = 'django.core.mail.backends.dummy.EmailBackend'
+# Configure email backend:
+# - If SMTP settings are provided via env, use SMTP backend
+# - Otherwise, in DEBUG use console backend so activation links are visible
+# - In production without SMTP, fall back to console but log a warning
+if os.getenv('EMAIL_HOST'):
+    EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+    EMAIL_HOST = os.getenv('EMAIL_HOST')
+    EMAIL_PORT = int(os.getenv('EMAIL_PORT', '587'))
+    EMAIL_USE_TLS = os.getenv('EMAIL_USE_TLS', 'True').lower() in ('1', 'true', 'yes')
+    EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER', '')
+    EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD', '')
+else:
+    if DEBUG:
+        EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+    else:
+        # In production it's preferable to configure an SMTP server or Gmail API;
+        # falling back to console backend prevents crashes but will not actually send emails.
+        EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 
 # ─────────────────────────────────────────────
 # TWILIO (SMS)

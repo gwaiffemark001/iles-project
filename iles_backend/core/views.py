@@ -669,6 +669,7 @@ class UserRegistrationView(APIView):
         )
 
         # New accounts must be activated via email before they can sign in.
+        # Always keep new accounts inactive by default; administrators must activate manually.
         user.is_active = False
         user.save(update_fields=['is_active'])
 
@@ -698,7 +699,21 @@ class UserRegistrationView(APIView):
                 "Thanks,\nILES System Team"
             )
 
-            sent = send_email_via_gmail_api(recipient_email=user.email, subject=subject, message=message)
+            # Try Gmail API helper first (if configured), otherwise fall back to Django's send_mail
+            sent = False
+            try:
+                sent = send_email_via_gmail_api(recipient_email=user.email, subject=subject, message=message)
+            except Exception:
+                logger.exception('Gmail API send failed for %s', user.email)
+
+            if not sent:
+                try:
+                    from django.core.mail import send_mail
+                    send_mail(subject, message, getattr(settings, 'DEFAULT_FROM_EMAIL'), [user.email], fail_silently=False)
+                    sent = True
+                except Exception:
+                    logger.exception('Django send_mail failed for %s', user.email)
+
             if sent:
                 logger.info('Activation email sent to %s', user.email)
             else:

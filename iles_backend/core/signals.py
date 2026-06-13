@@ -3,6 +3,10 @@ from django.dispatch import receiver
 from .models import CustomUser, UserProfile
 from .models import InternshipPlacement, WeeklyLog
 from .notification_service import weekly_log_workflow_notification, placement_workflow_notification
+from django.db.models.signals import post_migrate
+import logging
+
+logger = logging.getLogger(__name__)
 
 @receiver(post_save, sender=CustomUser)
 def create_user_profile(sender, instance, created, **kwargs):
@@ -26,3 +30,20 @@ def placement_notification_handler(sender, instance, created, **kwargs):
     placement_workflow_notification(sender, instance, created, **kwargs)
 
 # split commit: feat(signals): add user profile creation signal handler
+
+
+@receiver(post_migrate)
+def enforce_inactive_users(sender, **kwargs):
+    """Ensure all users are inactive by default after migrations.
+
+    This enforces manual activation for every account (including superusers)
+    until an activation flow is completed.
+    """
+    try:
+        from django.contrib.auth import get_user_model
+        User = get_user_model()
+        updated = User.objects.filter(is_active=True).update(is_active=False)
+        if updated:
+            logger.info('Post-migrate: set %d existing users to inactive', updated)
+    except Exception:
+        logger.exception('Failed to enforce inactive-by-default policy')

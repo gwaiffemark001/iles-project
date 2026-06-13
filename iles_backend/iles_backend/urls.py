@@ -32,6 +32,7 @@ from core.views import (
     UserSummaryView,
     PasswordResetRequestView,
     PasswordResetConfirmView,
+    AccountActivationView,
     ChatContactsView,
     ChatMessagesView,
 )
@@ -45,6 +46,7 @@ urlpatterns = [
     path('api/register/', csrf_exempt(UserRegistrationView.as_view()), name='register'),
     path('api/forgot-password/', csrf_exempt(PasswordResetRequestView.as_view()), name='forgot-password'),
     path('api/forgot-password-confirm/', csrf_exempt(PasswordResetConfirmView.as_view()), name='forgot-password-confirm'),
+    path('api/activate-account', csrf_exempt(AccountActivationView.as_view()), name='activate-account'),
     path('api/profile/', UserProfileView.as_view(), name='profile'),
     path('api/users/', UserListView.as_view(), name='user-list'),
     path('api/users/<int:pk>/', UserListView.as_view(), name='user-detail'),
