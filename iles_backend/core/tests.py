@@ -194,11 +194,11 @@ class WeeklyLogTests(TestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
     @patch('core.views.verify_email_exists', return_value=True)
-    def test_supervisor_cannot_register_as_student(self, mock_verify_email_exists):
+    def test_student_registration_with_valid_password_succeeds(self, mock_verify_email_exists):
         response = self.client.post('/api/register/', {
             'username': 'newuser',
-            'password': 'pass123',
-            'confirm_password': 'pass123',
+            'password': 'ValidPass123',
+            'confirm_password': 'ValidPass123',
             'email': 'newuser@example.com',
             'first_name': 'Alex',
             'last_name': 'Doe',
