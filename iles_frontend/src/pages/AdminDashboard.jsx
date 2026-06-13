@@ -235,7 +235,6 @@ function AdminDashboard() {
   }
 
   const handleDeleteUser = async (userId) => {
-<<<<<<< HEAD
     if (!confirmAction('Are you sure you want to delete this user?')) {
       return
     }
@@ -246,24 +245,10 @@ function AdminDashboard() {
       toast.success('User deleted successfully.')
     } catch (error) {
       setError(getApiErrorMessage(error))
-=======
-    // Attempting to delete user
-    if (window.confirm('Are you sure you want to delete this user?')) {
-      try {
-        await axios.delete(`http://127.0.0.1:8000/api/users/${userId}/`, authHeaders)
-        setUsers(users.filter(user => user.id !== userId))
-        alert('User deleted successfully')
-      } catch (error) {
-        // Error deleting user
-        alert('Error deleting user: ' + (error.response?.data?.message || error.message))
-      }
->>>>>>> 16edc36 (chore(frontend): remove duplicate AdminDashboard CSS import
-)
     }
   }
 
   const handleDeletePlacement = async (placementId) => {
-<<<<<<< HEAD
     if (!confirmAction('Are you sure you want to delete this placement?')) {
       return
     }
@@ -274,18 +259,6 @@ function AdminDashboard() {
       toast.success('Placement deleted successfully.')
     } catch (error) {
       setError(getApiErrorMessage(error))
-=======
-    if (window.confirm('Are you sure you want to delete this placement?')) {
-      try {
-        await axios.delete(`http://127.0.0.1:8000/api/placements/${placementId}/`, authHeaders)
-        setPlacements(placements.filter(p => p.id !== placementId))
-        alert('Placement deleted successfully')
-      } catch (error) {
-        // Error deleting placement
-        alert('Error deleting placement: ' + (error.response?.data?.message || error.message))
-      }
->>>>>>> 16edc36 (chore(frontend): remove duplicate AdminDashboard CSS import
-)
     }
   }
 
@@ -527,13 +500,7 @@ function AdminDashboard() {
 
       // Dashboard data loaded successfully
     } catch (requestError) {
-<<<<<<< HEAD
       setError(getApiErrorMessage(requestError) || 'Unable to load admin dashboard data.')
-=======
-      const message = requestError?.response?.data?.message || requestError?.message || 'Unable to load admin dashboard data.'
-      setError(message)
->>>>>>> 16edc36 (chore(frontend): remove duplicate AdminDashboard CSS import
-)
       // Dashboard error
     } finally {
       setLoading(false)
