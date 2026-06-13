@@ -3,6 +3,28 @@
 from django.db import migrations
 
 
+def remove_theme_preference(apps, schema_editor):
+    """Drop the legacy theme_preference column on supported databases."""
+    vendor = schema_editor.connection.vendor
+    if vendor == 'sqlite':
+        # SQLite does not support ALTER TABLE DROP COLUMN. The test database
+        # uses SQLite, so skip this no-op cleanup there.
+        return
+    schema_editor.execute(
+        "ALTER TABLE core_userprofile DROP COLUMN IF EXISTS theme_preference;"
+    )
+
+
+def add_theme_preference(apps, schema_editor):
+    """Add back the legacy theme_preference column for reverse migrations."""
+    vendor = schema_editor.connection.vendor
+    if vendor == 'sqlite':
+        return
+    schema_editor.execute(
+        "ALTER TABLE core_userprofile ADD COLUMN theme_preference varchar(50) NOT NULL DEFAULT 'light';"
+    )
+
+
 class Migration(migrations.Migration):
 
     dependencies = [
@@ -10,8 +32,8 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.RunSQL(
-            sql="ALTER TABLE core_userprofile DROP COLUMN IF EXISTS theme_preference;",
-            reverse_sql="ALTER TABLE core_userprofile ADD COLUMN theme_preference varchar(50) NOT NULL DEFAULT 'light';",
+        migrations.RunPython(
+            remove_theme_preference,
+            add_theme_preference,
         ),
     ]

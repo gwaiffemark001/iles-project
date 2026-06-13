@@ -122,7 +122,7 @@ class AuthenticationTests(TestCase):
             'confirm_password': 'ValidPass123',
             'email': 'valid@example.com',
             'first_name': 'John Doe',
-            'last_name': 'Smith ',
+            'last_name': 'Smith Doe',
             'phone': '12345',
             'role': 'student',
         }, format='json')
@@ -167,7 +167,7 @@ class AuthenticationTests(TestCase):
         self.assertEqual(response.data['role'], 'student')
 
         user = CustomUser.objects.get(username='localphoneuser')
-        self.assertEqual(user.phone, '256787870644')
+        self.assertEqual(str(user.phone), '+256787870644')
 
 class WeeklyLogTests(TestCase):
 
@@ -193,12 +193,18 @@ class WeeklyLogTests(TestCase):
         response = self.client.get('/api/logs/')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
-    def test_supervisor_cannot_register_as_student(self):
+    @patch('core.views.verify_email_exists', return_value=True)
+    def test_supervisor_cannot_register_as_student(self, mock_verify_email_exists):
         response = self.client.post('/api/register/', {
             'username': 'newuser',
             'password': 'pass123',
+            'confirm_password': 'pass123',
+            'email': 'newuser@example.com',
+            'first_name': 'Alex',
+            'last_name': 'Doe',
+            'phone': '0787870644',
             'role': 'student'
-        })
+        }, format='json')
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
 class PermissionTests(TestCase):
