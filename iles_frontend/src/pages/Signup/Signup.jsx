@@ -60,7 +60,24 @@ function Signup() {
         }
 
         try {
-            const username = email.includes('@') ? email.split('@')[0] : email;
+            const normalizeName = (value) => {
+                return value
+                    .trim()
+                    .toLowerCase()
+                    .replace(/[^a-z0-9-]/g, '')
+                    .replace(/__+/g, '_');
+            };
+
+            const buildUsername = (first, last) => {
+                const normalizedFirst = normalizeName(first);
+                const normalizedLast = normalizeName(last);
+                if (!normalizedFirst || !normalizedLast) {
+                    return cleanedEmail.includes('@') ? cleanedEmail.split('@')[0] : cleanedEmail;
+                }
+                return `${normalizedFirst}_${normalizedLast}`;
+            };
+
+            const username = buildUsername(firstName, lastName);
             const body = {
                 username,
                 email: cleanedEmail,
