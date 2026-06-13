@@ -34,16 +34,35 @@ def placement_notification_handler(sender, instance, created, **kwargs):
 
 @receiver(post_migrate)
 def enforce_inactive_users(sender, **kwargs):
-    """Ensure all users are inactive by default after migrations.
+    """Ensure all users are inactive by default after migrations in production.
 
-    This enforces manual activation for every account (including superusers)
-    until an activation flow is completed.
+    In development (DEBUG=True), users remain active.
+    In production (DEBUG=False), enforce manual activation for every account.
     """
+    from django.conf import settings
+    from django.contrib.auth import get_user_model
+    
+    if settings.DEBUG:
+        logger.info('Post-migrate: DEBUG mode active, skipping inactive-by-default enforcement')
+        return
+    
     try:
-        from django.contrib.auth import get_user_model
         User = get_user_model()
         updated = User.objects.filter(is_active=True).update(is_active=False)
         if updated:
-            logger.info('Post-migrate: set %d existing users to inactive', updated)
+            logger.info('Post-migrate: set %d existing users to inactive (production)', updated)
     except Exception:
         logger.exception('Failed to enforce inactive-by-default policy')
+
+
+@receiver(post_save, sender=CustomUser)
+def set_superuser_role(sender, instance, created, **kwargs):
+    """Automatically set superuser role to 'admin'.
+    
+    When a superuser is created, ensure their role is set to 'admin'
+    to maintain consistency with role-based access control.
+    """
+    if instance.is_superuser and instance.role != 'admin':
+        instance.role = 'admin'
+        instance.save(update_fields=['role'])
+        logger.info(f'Set superuser {instance.username} role to admin')

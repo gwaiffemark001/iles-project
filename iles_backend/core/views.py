@@ -669,11 +669,21 @@ class UserRegistrationView(APIView):
             registration_number=request.data.get('registration_number'),
         )
 
-        # New accounts must be activated via email before they can sign in.
-        # Always keep new accounts inactive by default; administrators must activate manually.
+        # Development vs Production activation logic
+        if settings.DEBUG:
+            # In development: auto-activate users, skip email
+            user.is_active = True
+            user.save(update_fields=['is_active'])
+            logger.info(f'User created (auto-activated in DEBUG mode): username={user.username}, email={user.email}, role={user.role}')
+            return Response({
+                'message': 'User created and automatically activated (development mode).',
+                'username': user.username,
+                'role': user.role,
+            }, status=status.HTTP_201_CREATED)
+        
+        # In production: require activation via email
         user.is_active = False
         user.save(update_fields=['is_active'])
-
         logger.info(f'User created (inactive): username={user.username}, email={user.email}, role={user.role}')
 
         # Generate activation token and send activation email
