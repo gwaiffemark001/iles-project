@@ -2,16 +2,113 @@
 .homepage-page {
   min-height: 100vh;
   display: flex;
-  justify-content: center;
-  align-items: flex-start;
-  padding: 40px 24px 60px;
+  flex-direction: column;
+  align-items: center;
+  padding: 0 0 60px;
   background: radial-gradient(circle at top, rgba(37, 99, 235, 0.18), transparent 40%), #0f172a;
   color: #f8fafc;
   font-family: 'Manrope', sans-serif;
 }
 
+/* ─── Navbar ────────────────────────────────────────────────────── */
+.homepage-nav {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 40px;
+  height: 64px;
+  background: rgba(15, 23, 42, 0.9);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid rgba(148, 163, 184, 0.1);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.nav-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-decoration: none;
+}
+
+.nav-logo {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  object-fit: contain;
+}
+
+.nav-name {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #f1f5f9;
+  letter-spacing: 0.04em;
+}
+
+.nav-links {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.nav-link {
+  padding: 7px 14px;
+  border-radius: 8px;
+  font-size: 0.88rem;
+  font-weight: 500;
+  color: #94a3b8;
+  text-decoration: none;
+  transition: color 0.15s, background 0.15s;
+}
+
+.nav-link:hover {
+  color: #f1f5f9;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.nav-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.nav-login {
+  padding: 8px 18px;
+  border-radius: 10px;
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: #cbd5e1;
+  text-decoration: none;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(148, 163, 184, 0.15);
+  transition: background 0.15s, color 0.15s;
+}
+
+.nav-login:hover {
+  background: rgba(255, 255, 255, 0.11);
+  color: #f1f5f9;
+}
+
+.nav-signup {
+  padding: 8px 18px;
+  border-radius: 10px;
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: #fff;
+  text-decoration: none;
+  background: #2563eb;
+  transition: opacity 0.15s;
+}
+
+.nav-signup:hover { opacity: 0.87; }
+
+/* ─── Content wrapper ───────────────────────────────────────────── */
 .homepage-cards {
   width: min(1120px, 100%);
+  padding: 32px 24px 0;
   display: grid;
   gap: 28px;
 }
@@ -59,34 +156,22 @@
   margin-top: 28px;
 }
 
-.homepage-primary-button,
-.homepage-secondary-button {
+.homepage-primary-button {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-width: 148px;
-  padding: 13px 20px;
+  min-width: 160px;
+  padding: 13px 24px;
   border-radius: 12px;
   font-weight: 700;
   font-size: 0.95rem;
   text-decoration: none;
   transition: opacity 0.15s;
-}
-
-.homepage-primary-button {
   color: #fff;
   background: #2563eb;
 }
 
 .homepage-primary-button:hover { opacity: 0.88; }
-
-.homepage-secondary-button {
-  color: #e2e8f0;
-  background: rgba(255, 255, 255, 0.07);
-  border: 1px solid rgba(226, 232, 240, 0.15);
-}
-
-.homepage-secondary-button:hover { background: rgba(255, 255, 255, 0.12); }
 
 /* ─── Feature Cards (right column) ─────────────────────────────── */
 .homepage-features {
@@ -329,6 +414,10 @@
     grid-template-columns: 1fr;
     padding: 32px;
   }
+
+  .nav-links {
+    display: none;
+  }
 }
 
 @media (max-width: 720px) {
@@ -354,12 +443,20 @@
 }
 
 @media (max-width: 640px) {
-  .homepage-page {
-    padding: 20px 14px 40px;
+  .homepage-nav {
+    padding: 0 20px;
+  }
+
+  .homepage-cards {
+    padding: 20px 14px 0;
   }
 
   .homepage-actions {
     flex-direction: column;
     align-items: stretch;
+  }
+
+  .nav-login {
+    display: none;
   }
 }

@@ -73,17 +73,34 @@ const cards = [
 export default function Homepage() {
   return (
     <div className="homepage-page">
+
+      {/* ── Navbar ── */}
+      <nav className="homepage-nav">
+        <div className="nav-brand">
+          <img src="/ILES-Logo.png" alt="ILES logo" className="nav-logo" />
+          <span className="nav-name">ILES</span>
+        </div>
+        <div className="nav-links">
+          <a href="#features" className="nav-link">Features</a>
+          <a href="#team" className="nav-link">Team</a>
+          <a href="#contact" className="nav-link">Contact</a>
+          <a href="#" className="nav-link" onClick={(e) => e.preventDefault()}>About</a>
+          <a href="#" className="nav-link" onClick={(e) => e.preventDefault()}>Help</a>
+        </div>
+        <div className="nav-actions">
+          <Link className="nav-login" to="/login">Login</Link>
+        </div>
+      </nav>
+
       <div className="homepage-cards">
 
         {/* Hero Card */}
-        <section className="homepage-hero">
+        <section className="homepage-hero" id="features">
           <div className="homepage-copy">
-            <img className="homepage-logo" src="/ILES-Logo.png" alt="ILES logo" />
             <h1>Internship Logging &amp; Evaluation System</h1>
             <p>Streamline internship supervision, logging, and evaluations for students, supervisors, and administrators.</p>
             <div className="homepage-actions">
-              <Link className="homepage-primary-button" to="/signup">Create Account</Link>
-              <Link className="homepage-secondary-button" to="/login">Login</Link>
+              <Link className="homepage-primary-button" to="/signup">Get Started &raquo;</Link>
             </div>
           </div>
           <div className="homepage-features">
@@ -118,7 +135,7 @@ export default function Homepage() {
         </section>
 
         {/* Team Section */}
-        <section className="homepage-team-section">
+        <section className="homepage-team-section" id="team">
           <div className="team-header">
             <p>Team contributors</p>
             <h2>Meet our core contributors</h2>
@@ -176,7 +193,7 @@ export default function Homepage() {
             </div>
           </div>
 
-          <footer className="homepage-footer">
+          <footer className="homepage-footer" id="contact">
             <p>© {new Date().getFullYear()} ILES. All rights reserved.</p>
           </footer>
         </section>
