@@ -9,6 +9,7 @@ from django.utils.encoding import force_bytes
 from django.utils.http import urlsafe_base64_encode
 from rest_framework.test import APIClient
 from rest_framework import status
+from .admin import PlacementAdminForm
 from .models import CustomUser, Evaluation, EvaluationCriteria, EvaluationItem, InternshipPlacement, Notification, WeeklyLog
 from datetime import timedelta
 from django.utils import timezone
@@ -277,6 +278,7 @@ class PermissionTests(TestCase):
             role='academic_supervisor'
         )
 
+        today = timezone.now().date()
         self.client.force_authenticate(user=self.admin)
         response = self.client.post('/api/placements/', {
             'student_id': self.student.id,
@@ -284,13 +286,135 @@ class PermissionTests(TestCase):
             'academic_supervisor_id': other_academic_supervisor.id,
             'company_name': 'New Company',
             'company_address': 'Jinja',
-            'start_date': '2026-04-01',
-            'end_date': '2026-06-01',
+            'start_date': str(today),
+            'end_date': str(today + timedelta(days=60)),
             'status': 'pending',
         }, format='json')
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertIn('student_id', response.data)
+
+    def test_admin_api_create_placement_forces_today_start_date(self):
+        workplace_supervisor = CustomUser.objects.create_user(
+            username='supervisor-api-create',
+            password='pass123',
+            role='workplace_supervisor'
+        )
+        academic_supervisor = CustomUser.objects.create_user(
+            username='academic-api-create',
+            password='pass123',
+            role='academic_supervisor'
+        )
+        today = timezone.now().date()
+
+        self.client.force_authenticate(user=self.admin)
+        response = self.client.post('/api/placements/', {
+            'student_id': self.student.id,
+            'workplace_supervisor_id': workplace_supervisor.id,
+            'academic_supervisor_id': academic_supervisor.id,
+            'company_name': 'API Start Date Co',
+            'company_address': 'Kampala',
+            'end_date': str(today + timedelta(days=30)),
+        }, format='json')
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(response.data['start_date'], today.isoformat())
+
+    def test_admin_api_rejects_start_date_before_today(self):
+        workplace_supervisor = CustomUser.objects.create_user(
+            username='supervisor-api-past',
+            password='pass123',
+            role='workplace_supervisor'
+        )
+        academic_supervisor = CustomUser.objects.create_user(
+            username='academic-api-past',
+            password='pass123',
+            role='academic_supervisor'
+        )
+        yesterday = timezone.now().date() - timedelta(days=1)
+
+        self.client.force_authenticate(user=self.admin)
+        response = self.client.post('/api/placements/', {
+            'student_id': self.student.id,
+            'workplace_supervisor_id': workplace_supervisor.id,
+            'academic_supervisor_id': academic_supervisor.id,
+            'company_name': 'Past Start Date Co',
+            'company_address': 'Kampala',
+            'start_date': str(yesterday),
+            'end_date': str(yesterday + timedelta(days=30)),
+        }, format='json')
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('start_date', response.data)
+
+    def test_admin_api_update_placement_cannot_change_start_date(self):
+        workplace_supervisor = CustomUser.objects.create_user(
+            username='supervisor-api-update',
+            password='pass123',
+            role='workplace_supervisor'
+        )
+        academic_supervisor = CustomUser.objects.create_user(
+            username='academic-api-update',
+            password='pass123',
+            role='academic_supervisor'
+        )
+        today = timezone.now().date()
+        placement = InternshipPlacement.objects.create(
+            student=self.student,
+            workplace_supervisor=workplace_supervisor,
+            academic_supervisor=academic_supervisor,
+            company_name='API Update Co',
+            company_address='Kampala',
+            start_date=today,
+            end_date=today + timedelta(days=30),
+            status='pending',
+        )
+
+        self.client.force_authenticate(user=self.admin)
+        response = self.client.put(f'/api/placements/{placement.id}/', {
+            'student_id': self.student.id,
+            'workplace_supervisor_id': workplace_supervisor.id,
+            'academic_supervisor_id': academic_supervisor.id,
+            'company_name': 'API Update Co',
+            'company_address': 'Kampala',
+            'start_date': str(today + timedelta(days=1)),
+            'end_date': str(today + timedelta(days=60)),
+        }, format='json')
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('start_date', response.data)
+
+    def test_admin_placement_form_start_date_defaults_to_today_and_allows_today_or_future(self):
+        form = PlacementAdminForm()
+        today = timezone.now().date()
+
+        self.assertEqual(form.fields['start_date'].initial, today)
+        self.assertFalse(form.fields['start_date'].disabled)
+        self.assertFalse(form.fields['start_date'].required)
+        self.assertEqual(form.fields['start_date'].widget.attrs.get('min'), today.isoformat())
+
+        placement = InternshipPlacement.objects.create(
+            student=self.student,
+            workplace_supervisor=CustomUser.objects.create_user(
+                username='supervisor-form',
+                password='pass123',
+                role='workplace_supervisor'
+            ),
+            academic_supervisor=CustomUser.objects.create_user(
+                username='academic-form',
+                password='pass123',
+                role='academic_supervisor'
+            ),
+            company_name='Form Co',
+            company_address='Kampala',
+            start_date=today,
+            end_date=today + timedelta(days=30),
+            status='pending',
+        )
+
+        edit_form = PlacementAdminForm(instance=placement)
+        self.assertTrue(edit_form.fields['start_date'].disabled)
+        self.assertEqual(edit_form.fields['start_date'].initial, placement.start_date)
 
     def test_unauthenticated_cannot_access_logs(self):
         response = self.client.get('/api/logs/')
@@ -324,14 +448,15 @@ class NotificationWorkflowTests(TestCase):
 
     def test_placement_creation_creates_notifications(self):
         self.client.force_authenticate(user=self.admin)
+        today = timezone.now().date()
         response = self.client.post('/api/placements/', {
             'student_id': self.student.id,
             'workplace_supervisor_id': self.workplace_supervisor.id,
             'academic_supervisor_id': self.academic_supervisor.id,
             'company_name': 'Makerere Innovation Hub',
             'company_address': 'Kampala',
-            'start_date': '2026-05-01',
-            'end_date': '2026-07-31',
+            'start_date': str(today),
+            'end_date': str(today + timedelta(days=76)),
             'status': 'pending',
         }, format='json')
 

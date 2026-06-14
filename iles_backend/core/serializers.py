@@ -107,6 +107,7 @@ class UsernameOrEmailTokenObtainPairSerializer(TokenObtainPairSerializer):
 
 
 class InternshipPlacementSerializer(serializers.ModelSerializer):
+    start_date = serializers.DateField(required=False)
     student = CustomUserSerializer(read_only=True)
     workplace_supervisor = CustomUserSerializer(read_only=True)
     academic_supervisor = CustomUserSerializer(read_only=True)
@@ -208,9 +209,17 @@ class InternshipPlacementSerializer(serializers.ModelSerializer):
 
     def validate(self, attrs):
         placement = getattr(self, "instance", None)
+        raw_start_date = attrs.get("start_date")
         student = attrs.get("student") or getattr(placement, "student", None)
-        start_date = attrs.get("start_date") or getattr(placement, "start_date", None)
+        start_date = raw_start_date or getattr(placement, "start_date", None)
         end_date = attrs.get("end_date") or getattr(placement, "end_date", None)
+
+        today = timezone.now().date()
+        if raw_start_date and raw_start_date < today:
+            if not placement or raw_start_date != getattr(placement, "start_date", None):
+                raise serializers.ValidationError(
+                    {"start_date": ["Start date cannot be before today."]}
+                )
 
         if start_date and end_date and end_date < start_date:
             raise serializers.ValidationError(
@@ -234,7 +243,23 @@ class InternshipPlacementSerializer(serializers.ModelSerializer):
                     }
                 )
 
+        if placement and 'start_date' in self.initial_data:
+            requested_start_date = attrs.get('start_date', getattr(placement, 'start_date', None))
+            if requested_start_date != placement.start_date:
+                raise serializers.ValidationError(
+                    {'start_date': ['Start date cannot be changed once set.']}
+                )
+
         return attrs
+
+    def create(self, validated_data):
+        if 'start_date' not in validated_data or validated_data.get('start_date') is None:
+            validated_data['start_date'] = timezone.now().date()
+        return super().create(validated_data)
+
+    def update(self, instance, validated_data):
+        validated_data.pop('start_date', None)
+        return super().update(instance, validated_data)
 
     def get_student_name(self, obj):
         if not obj.student:

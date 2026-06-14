@@ -1,8 +1,8 @@
-from datetime import date
-
 from django import forms
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
+from django.core.exceptions import ValidationError
+from django.utils import timezone
 from .models import CustomUser, InternshipPlacement, WeeklyLog, EvaluationCriteria, Evaluation, Notification
 
 
@@ -17,8 +17,31 @@ class PlacementAdminForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        today = date.today().isoformat()
-        self.fields['start_date'].widget.attrs['min'] = today
+        today = timezone.now().date()
+        today_iso = today.isoformat()
+
+        self.fields['start_date'].required = False
+
+        if self.instance and self.instance.pk:
+            self.fields['start_date'].disabled = True
+            self.fields['start_date'].initial = self.instance.start_date
+            self.fields['start_date'].widget.attrs['min'] = today_iso
+        else:
+            self.fields['start_date'].initial = today
+            self.fields['start_date'].widget.attrs['min'] = today_iso
+            self.fields['start_date'].disabled = False
+
+    def clean_start_date(self):
+        if self.instance and self.instance.pk:
+            return self.instance.start_date
+
+        start_date = self.cleaned_data.get('start_date')
+        today = timezone.now().date()
+        if start_date is None:
+            return today
+        if start_date < today:
+            raise ValidationError('Start date cannot be before today.')
+        return start_date
 
 
 class CustomUserAdmin(UserAdmin):
