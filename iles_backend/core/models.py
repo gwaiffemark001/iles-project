@@ -389,10 +389,7 @@ class Evaluation(models.Model):
                 max_score = Decimal(str(crit.max_score))
                 normalized_score = (Decimal(str(item.score)) / max_score) * Decimal('100')
                 criterion_weight = Decimal(str(crit.weight_percent)) / Decimal('100')
-                role_share = Decimal(
-                    str(crit.academic_share if self.evaluation_type == 'academic' else crit.supervisor_share)
-                ) / Decimal('100')
-                total_score += normalized_score * criterion_weight * role_share
+                total_score += normalized_score * criterion_weight
 
         total_score = max(Decimal('0'), min(Decimal('100'), total_score))
         return float(round(total_score, 2))
