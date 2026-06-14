@@ -54,17 +54,12 @@ const getOverdueWeeks = (placement, today = new Date()) => {
 }
 
 const calculateCombinedWeekScore = (supervisorEvaluation, academicEvaluation) => {
-  // Card totals should use already-saved final role-contribution scores.
-  // Each score is already 0-100 normalized, so average them instead of adding
+  // Weekly total should reflect the sum of supervisor and academic marks,
+  // matching the score card display where each evaluator contributes fully.
   const supervisorScore = Number(supervisorEvaluation?.weighted_score ?? supervisorEvaluation?.score ?? 0)
   const academicScore = Number(academicEvaluation?.weighted_score ?? academicEvaluation?.score ?? 0)
-  
-  // If we have both evaluations, average them. If only one, use that one.
-  if (supervisorScore > 0 && academicScore > 0) {
-    return Number(((supervisorScore + academicScore) / 2).toFixed(2))
-  } else {
-    return Number((supervisorScore + academicScore).toFixed(2))
-  }
+
+  return Number((supervisorScore + academicScore).toFixed(2))
 }
 
 export const buildWeeklyEvaluationSummaries = (evaluations = [], placements = [], logs = []) => {
