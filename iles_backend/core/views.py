@@ -749,7 +749,7 @@ class PasswordResetRequestView(APIView):
 
     def post(self, request):
         email = request.data.get('email')
-        frontend_base = getattr(settings, 'FRONTEND_URL', 'https://iles-project-three.vercel.app')
+        frontend_base = getattr(settings, 'FRONTEND_URL', 'http://localhost:5173')
 
         if not email:
             return Response({'email': ['This field is required.']}, status=status.HTTP_400_BAD_REQUEST)

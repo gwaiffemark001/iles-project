@@ -156,7 +156,7 @@ iles-project/
 ## 🚀 Deployment
 
 ### Production Deployment
-- **Frontend**: Deployed to Vercel/Netlify
+- **Frontend**: Deployed to a hosting provider of your choice (e.g. Vercel/Netlify/Railway). Update `FRONTEND_URL` in `iles_backend/.env` with your deployment URL.
 - **Backend**: Deployed to Heroku/AWS
 - **Database**: Managed PostgreSQL service
 - **CDN**: Cloudflare for static assets
