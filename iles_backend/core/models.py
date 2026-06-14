@@ -372,70 +372,30 @@ class Evaluation(models.Model):
     evaluated_at = models.DateTimeField(auto_now_add=True)
     
     def calculate_weighted_score(self):
-        """Calculate weighted score from related EvaluationItem entries (capped at 0-100)"""
+        """Calculate final evaluator score using item-level criteria and role shares."""
         try:
-            # Use the declared related_name from EvaluationItem model
             items_qs = getattr(self, 'evaluation_items', None)
-            if items_qs is None:
-                items_qs = []
-            else:
-                items_qs = items_qs.all() if hasattr(items_qs, 'all') else []
-        except (AttributeError, Exception):
+            items_qs = items_qs.all() if hasattr(items_qs, 'all') else []
+        except Exception:
             items_qs = []
 
-        # Calculate weighted score using actual criteria and their weights
-        try:
-            if items_qs:
-                total_score = Decimal('0')
-                total_weight = Decimal('0')
-                
-                for item in items_qs:
-                    if item.criteria and item.score is not None:
-                        # Normalize score to 0-100 based on criteria max_score
-                        max_s = Decimal(str(item.criteria.max_score)) if item.criteria.max_score else Decimal('100')
-                        score_val = (Decimal(str(item.score)) / max_s) * Decimal('100')
-                        
-                        # Get criteria weight (convert from percentage to decimal)
-                        weight = Decimal(str(item.criteria.weight_percent)) / Decimal('100')
-                        
-                        # Add weighted contribution
-                        total_score += (score_val * weight)
-                        total_weight += weight
-                
-                # Calculate final weighted score (out of 100)
-                if total_weight > 0:
-                    final_score = (total_score / total_weight)
-                    # Ensure score is within 0-100 range
-                    final_score = max(Decimal('0'), min(Decimal('100'), final_score))
-                    return float(round(final_score, 2))
-        except Exception:
-            pass
+        if not items_qs:
+            return 0.0
 
-        # Fallback: Calculate weighted average from individual items with normalization
-        try:
-            if items_qs:
-                total_score = Decimal('0')
-                total_weight = Decimal('0')
-                
-                for item in items_qs:
-                    crit = item.criteria
-                    if crit and crit.max_score and crit.max_score > 0 and item.score is not None:
-                        # Normalize item score to 0-100
-                        normalized_score = (Decimal(str(item.score)) / Decimal(str(crit.max_score))) * Decimal('100')
-                        # Use weight_percent directly
-                        weight = Decimal(str(crit.weight_percent)) / Decimal('100')
-                        total_score += (normalized_score * weight)
-                        total_weight += weight
-                
-                if total_weight > 0:
-                    final_score = (total_score / total_weight)
-                    # Ensure score is within 0-100 range
-                    final_score = max(Decimal('0'), min(Decimal('100'), final_score))
-                    return float(round(final_score, 2))
-        except Exception:
-            pass
+        total_score = Decimal('0')
+        for item in items_qs:
+            crit = getattr(item, 'criteria', None)
+            if crit and item.score is not None and crit.max_score and crit.max_score > 0:
+                max_score = Decimal(str(crit.max_score))
+                normalized_score = (Decimal(str(item.score)) / max_score) * Decimal('100')
+                criterion_weight = Decimal(str(crit.weight_percent)) / Decimal('100')
+                role_share = Decimal(
+                    str(crit.academic_share if self.evaluation_type == 'academic' else crit.supervisor_share)
+                ) / Decimal('100')
+                total_score += normalized_score * criterion_weight * role_share
 
-        return 0.0
+        total_score = max(Decimal('0'), min(Decimal('100'), total_score))
+        return float(round(total_score, 2))
 
     def update_score_from_items(self):
         """Recalculate `weighted_score` from EvaluationItem entries and save the model."""
@@ -475,39 +435,18 @@ class Evaluation(models.Model):
         if not sup_eval and not acad_eval:
             return 0.0
             
-        # Calculate combined score using weighted scores from both evaluations
-        combined_score = 0.0
-        total_weight = 0.0
-        
-        # Get all criteria and their weights
-        criteria = EvaluationCriteria.objects.all()
-        for crit in criteria:
-            total_weight += float(crit.weight_percent)
-            
-        # Add supervisor contribution
-        if sup_eval and sup_eval.weighted_score:
-            sup_weight = float(crit.weight_percent) / 100.0
-            combined_score += float(sup_eval.weighted_score) * sup_weight
-            total_weight += sup_weight
-            
-        # Add academic contribution  
-        if acad_eval and acad_eval.weighted_score:
-            acad_weight = float(crit.weight_percent) / 100.0
-            combined_score += float(acad_eval.weighted_score) * acad_weight
-            total_weight += acad_weight
-            
-        # Normalize by total weight used
-        if total_weight > 0:
-            combined_score = (combined_score / total_weight) * 100
-            
+combined_score = 0.0
+        if sup_eval:
+            combined_score += float(sup_eval.weighted_score or 0.0)
+        if acad_eval:
+            combined_score += float(acad_eval.weighted_score or 0.0)
         return round(combined_score, 2)
 
     @staticmethod
     def combined_score_for_week(placement, week_number):
         """
         Calculate the combined total score for a placement for a given week by
-        combining the academic and supervisor evaluations according to
-        the shares configured on each EvaluationCriteria.
+        summing the supervisor and academic final evaluator scores.
 
         Returns a dict with per-role scores and the combined total.
         """
@@ -542,64 +481,55 @@ class Evaluation(models.Model):
             placement=placement, evaluation_type='academic', week_number=week_number
         ).first()
 
-        # Load all criteria
         criteria = EvaluationCriteria.objects.all()
-
-        total = Decimal('0')
-        # Track per-role totals (weighted by the evaluator role share for each criterion)
-        sup_total = None
-        acad_total = None
-
-        # per-criterion breakdown
         crit_breakdown = []
+        total = Decimal('0')
 
-        # If we have evaluator-level totals stored (score field), we can use them as fallback
+        sup_total = Decimal('0')
+        acad_total = Decimal('0')
+
         if sup_eval:
-            try:
-                sup_total = Decimal(str(sup_eval.score))
-            except Exception:
-                sup_total = None
+            sup_total = Decimal(str(sup_eval.weighted_score or 0.0))
         if acad_eval:
-            try:
-                acad_total = Decimal(str(acad_eval.score))
-            except Exception:
-                acad_total = None
+            acad_total = Decimal(str(acad_eval.weighted_score or 0.0))
 
-        # Best-effort combined per-criteria calculation using item-level scores when available
+        total = sup_total + acad_total
+
         for crit in criteria:
-            crit_contrib = Decimal('0')
+            crit_id = getattr(crit, 'id', None)
+            max_score = Decimal(str(crit.max_score)) if crit.max_score else Decimal('100')
             sup_score_val = None
             acad_score_val = None
             sup_contribution = Decimal('0')
             acad_contribution = Decimal('0')
-            crit_id = getattr(crit, 'id', None)
-            sup_items = getattr(sup_eval, 'evaluation_items', None) if sup_eval else None
-            acad_items = getattr(acad_eval, 'evaluation_items', None) if acad_eval else None
 
-            # supervisor contribution for this criterion
-            if sup_items is not None:
+            if sup_eval is not None:
                 try:
-                    sup_item = sup_items.get(criteria=crit)
-                    if crit.max_score and crit.max_score > 0:
-                        sup_score = Decimal(str(sup_item.score))
-                        sup_score_val = float(sup_score)
-                        sup_contribution = (sup_score / Decimal(str(crit.max_score))) * Decimal(str(crit.supervisor_share))
-                        crit_contrib += sup_contribution
-                except EvaluationItem.DoesNotExist:
-                    pass
-            # academic contribution for this criterion
-            if acad_items is not None:
-                try:
-                    acad_item = acad_items.get(criteria=crit)
-                    if crit.max_score and crit.max_score > 0:
-                        acad_score = Decimal(str(acad_item.score))
-                        acad_score_val = float(acad_score)
-                        acad_contribution = (acad_score / Decimal(str(crit.max_score))) * Decimal(str(crit.academic_share))
-                        crit_contrib += acad_contribution
+                    sup_item = sup_eval.evaluation_items.get(criteria=crit)
+                    if sup_item.score is not None and max_score > 0:
+                        sup_score_val = float(Decimal(str(sup_item.score)))
+                        sup_contribution = (
+                            Decimal(str(sup_item.score))
+                            / max_score
+                            * (Decimal(str(crit.weight_percent)) / Decimal('100'))
+                            * (Decimal(str(crit.supervisor_share)) / Decimal('100'))
+                        )
                 except EvaluationItem.DoesNotExist:
                     pass
 
-            total += crit_contrib
+            if acad_eval is not None:
+                try:
+                    acad_item = acad_eval.evaluation_items.get(criteria=crit)
+                    if acad_item.score is not None and max_score > 0:
+                        acad_score_val = float(Decimal(str(acad_item.score)))
+                        acad_contribution = (
+                            Decimal(str(acad_item.score))
+                            / max_score
+                            * (Decimal(str(crit.weight_percent)) / Decimal('100'))
+                            * (Decimal(str(crit.academic_share)) / Decimal('100'))
+                        )
+                except EvaluationItem.DoesNotExist:
+                    pass
 
             crit_breakdown.append({
                 'criteria_id': crit_id,
@@ -610,48 +540,13 @@ class Evaluation(models.Model):
                 'academic_score': acad_score_val,
                 'supervisor_contribution': float(round(sup_contribution, 2)) if sup_contribution else 0.0,
                 'academic_contribution': float(round(acad_contribution, 2)) if acad_contribution else 0.0,
-                'total_contribution': float(round(crit_contrib, 2)),
+                'total_contribution': float(round(sup_contribution + acad_contribution, 2)),
             })
-
-        # If no item-level data was present but evaluator totals exist, combine them via a simple share across roles
-        if total == Decimal('0') and (sup_total is not None or acad_total is not None):
-            # Determine global role split by averaging shares across criteria (fallback)
-            avg_sup_share = Decimal('0')
-            avg_acad_share = Decimal('0')
-            crit_count = criteria.count() or 1
-            for crit in criteria:
-                avg_sup_share += Decimal(str(crit.supervisor_share))
-                avg_acad_share += Decimal(str(crit.academic_share))
-            avg_sup_share = (avg_sup_share / crit_count) / Decimal('100')
-            avg_acad_share = (avg_acad_share / crit_count) / Decimal('100')
-
-            # Use evaluator totals (assumed to be 0-100 scale)
-            sup_val = sup_total if sup_total is not None else Decimal('0')
-            acad_val = acad_total if acad_total is not None else Decimal('0')
-            total = (sup_val * avg_sup_share) + (acad_val * avg_acad_share)
-
-            # When using evaluator-level fallback, provide a minimal breakdown per criterion using averaged shares
-            crit_breakdown = []
-            for crit in criteria:
-                crit_id = getattr(crit, 'id', None)
-                sup_contr = float(round((sup_val / Decimal(str(crit.max_score))) * Decimal(str(crit.supervisor_share)), 2)) if sup_total is not None else 0.0
-                acad_contr = float(round((acad_val / Decimal(str(crit.max_score))) * Decimal(str(crit.academic_share)), 2)) if acad_total is not None else 0.0
-                crit_breakdown.append({
-                    'criteria_id': crit_id,
-                    'criteria_name': crit.name,
-                    'max_score': float(crit.max_score),
-                    'weight_percent': float(crit.weight_percent),
-                    'supervisor_score': float(sup_val) if sup_total is not None else None,
-                    'academic_score': float(acad_val) if acad_total is not None else None,
-                    'supervisor_contribution': sup_contr,
-                    'academic_contribution': acad_contr,
-                    'total_contribution': float(round((sup_contr + acad_contr), 2)),
-                })
 
         return {
             'week_number': week_number,
-            'supervisor_score': float(sup_total) if sup_total is not None else None,
-            'academic_score': float(acad_total) if acad_total is not None else None,
+            'supervisor_score': float(sup_total) if sup_eval else None,
+            'academic_score': float(acad_total) if acad_eval else None,
             'combined_score': float(round(total, 2)),
             'criteria_breakdown': crit_breakdown,
             'log_status': log.status,

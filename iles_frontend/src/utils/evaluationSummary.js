@@ -54,10 +54,9 @@ const getOverdueWeeks = (placement, today = new Date()) => {
 }
 
 const calculateCombinedWeekScore = (supervisorEvaluation, academicEvaluation) => {
-  // Weekly total should reflect the sum of supervisor and academic marks,
-  // matching the score card display where each evaluator contributes fully.
-  const supervisorScore = Number(supervisorEvaluation?.weighted_score ?? supervisorEvaluation?.score ?? 0)
-  const academicScore = Number(academicEvaluation?.weighted_score ?? academicEvaluation?.score ?? 0)
+  // Weekly total should reflect the sum of supervisor and academic final scores.
+  const supervisorScore = Number(supervisorEvaluation?.weighted_score ?? 0)
+  const academicScore = Number(academicEvaluation?.weighted_score ?? 0)
 
   return Number((supervisorScore + academicScore).toFixed(2))
 }
@@ -178,8 +177,8 @@ export const buildWeeklyEvaluationSummaries = (evaluations = [], placements = []
       return {
         ...group,
         has_evaluation: Boolean(group.supervisorEvaluation || group.academicEvaluation),
-        supervisor_score: group.supervisor_score ?? group.supervisorEvaluation?.weighted_score ?? group.supervisorEvaluation?.score ?? null,
-        academic_score: group.academic_score ?? group.academicEvaluation?.weighted_score ?? group.academicEvaluation?.score ?? null,
+        supervisor_score: group.supervisor_score ?? group.supervisorEvaluation?.weighted_score ?? null,
+        academic_score: group.academic_score ?? group.academicEvaluation?.weighted_score ?? null,
         combined_score: combinedScore,
         grade_weight: getGradeWeight(combinedScore),
       }
