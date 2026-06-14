@@ -434,8 +434,8 @@ class Evaluation(models.Model):
         
         if not sup_eval and not acad_eval:
             return 0.0
-            
-combined_score = 0.0
+
+        combined_score = 0.0
         if sup_eval:
             combined_score += float(sup_eval.weighted_score or 0.0)
         if acad_eval:
