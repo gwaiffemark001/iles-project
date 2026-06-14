@@ -302,7 +302,10 @@ export default function WorkplaceSupervisorDashboard() {
         </div>
       )}
       <aside className="workplace-sidebar">
-        <div className="workplace-brand">ILES</div>
+        <div className="workplace-brand">
+          <img className="sidebar-logo-img" src="/ILES-Logo.png" alt="ILES logo" onError={(e) => { e.target.style.display = 'none' }} />
+          <span className="sidebar-logo-text">ILES</span>
+        </div>
         <div className="workplace-role">Workplace Supervisor</div>
         <div className="workplace-sidebar-divider" />
         <div className="workplace-sidebar-nav">

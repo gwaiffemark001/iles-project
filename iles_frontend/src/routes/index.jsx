@@ -1,6 +1,9 @@
 import { Navigate, Route, Routes } from 'react-router-dom'
 
 import Homepage from '../pages/Homepage/Homepage'
+import About from '../pages/About/About'
+import Help from '../pages/Help/Help'
+import Features from '../pages/Features/Features'
 import Firstpage from '../Firstpage'
 import ForgotPassword from '../pages/Login/ForgotPassword'
 import ResetPassword from '../pages/Login/ResetPassword'
@@ -27,6 +30,9 @@ export default function AppRoutes() {
     <Routes>
       {/* Public */}
       <Route path="/" element={<Homepage />} />
+      <Route path="/about" element={<About />} />
+      <Route path="/help" element={<Help />} />
+      <Route path="/features" element={<Features />} />
       <Route path="/login" element={<Firstpage />} />
       <Route path="/signup" element={<Signup />} />
       <Route path="/activate" element={<Activate />} />

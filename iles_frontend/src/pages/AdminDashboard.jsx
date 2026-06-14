@@ -538,7 +538,10 @@ function AdminDashboard() {
         <div style={{ marginBottom: '30px', display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
           <UserAvatar user={user} size="large" onClick={() => navigate('/app/profile')} />
           <div>
-            <h2 style={{ margin: '0 0 10px 0' }}>ILES</h2>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <img src="/ILES-Logo.png" alt="ILES logo" style={{ width: 36, height: 36, borderRadius: 8, objectFit: 'contain' }} onError={(e) => { e.target.style.display = 'none' }} />
+              <h2 style={{ margin: 0 }}>ILES</h2>
+            </div>
             <p style={{ margin: '0', fontSize: '14px', opacity: 0.8 }}>{user?.username || 'Admin'}</p>
             <p style={{ margin: '0', fontSize: '12px', opacity: 0.6 }}>Administrator</p>
           </div>
@@ -1626,4 +1629,4 @@ const editInputStyle = {
   fontSize: '14px',
 }
 
-export default AdminDashboard// split commit: feat(admin): implement comprehensive dashboard
+export default AdminDashboard

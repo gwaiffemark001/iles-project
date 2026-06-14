@@ -516,7 +516,10 @@ const AcademicSupervisorDashboard = () => {
         </div>
       )}
       <div className="sidebar">
-        <div className="sidebar-logo">ILES</div>
+        <div className="sidebar-logo">
+          <img className="sidebar-logo-img" src="/ILES-Logo.png" alt="ILES logo" onError={(e) => { e.target.style.display = 'none' }} />
+          <span className="sidebar-logo-text">ILES</span>
+        </div>
         <div className="sidebar-role">Academic Supervisor</div>
         <div className="sidebar-divider" />
         <nav className="sidebar-nav">

@@ -35,7 +35,10 @@ const Sidebar = ({ role, userName }) => {
 
     return (
         <div className="sidebar">
-            <div className="sidebar-logo">ILES</div>
+                <div className="sidebar-logo">
+                    <img className="sidebar-logo-img" src="/ILES-Logo.png" alt="ILES logo" onError={(e) => { e.target.style.display = 'none' }} />
+                    <span className="sidebar-logo-text">ILES</span>
+                </div>
             <div className="sidebar-role">{role}</div>
             <div className="sidebar-divider"></div>
             <nav className="sidebar-nav">

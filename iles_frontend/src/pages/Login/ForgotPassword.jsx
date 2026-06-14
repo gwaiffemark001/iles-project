@@ -53,7 +53,7 @@ function ForgotPassword() {
 
                     <section className="failed_login">
                         <p className="signup">
-                            <Link to="/">Back to Login</Link>
+                            <Link to="/login">Back to Login</Link>
                         </p>
                         <p className="signup">
                             <Link to="/signup">Sign up</Link>
