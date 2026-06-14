@@ -1,4 +1,5 @@
-import { Link } from 'react-router-dom'
+import { useEffect } from 'react'
+import { Link, useLocation } from 'react-router-dom'
 import gwaiffeImage from '../../assets/gwaiffe .png'
 import gideonImage from '../../assets/mugabe gideon.jpeg'
 import graceImage from '../../assets/ahurira grace.jpeg'
@@ -71,21 +72,33 @@ const cards = [
 ]
 
 export default function Homepage() {
+  const location = useLocation();
+
+  useEffect(() => {
+    if (location.hash) {
+      const target = document.querySelector(location.hash);
+      if (target) {
+        target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    }
+  }, [location.hash]);
+
   return (
     <div className="homepage-page">
 
       {/* ── Navbar ── */}
       <nav className="homepage-nav">
         <div className="nav-brand">
-          <img src="/ILES-Logo.png" alt="ILES logo" className="nav-logo" />
+          <img className="nav-logo" src="/ILES-Logo.png" alt="ILES logo" onError={(e) => { e.target.style.display = 'none' }} />
           <span className="nav-name">ILES</span>
         </div>
         <div className="nav-links">
-          <a href="#features" className="nav-link">Features</a>
+          <Link to="/" className="nav-link">Home</Link>
+          <Link to="/features" className="nav-link">Features</Link>
           <a href="#team" className="nav-link">Team</a>
-          <a href="#contact" className="nav-link">Contact</a>
-          <a href="#" className="nav-link" onClick={(e) => e.preventDefault()}>About</a>
-          <a href="#" className="nav-link" onClick={(e) => e.preventDefault()}>Help</a>
+          <Link to="/about" className="nav-link">About</Link>
+          <Link to="/help" className="nav-link">Help</Link>
+          <Link to="#contact" className="nav-link">Contact</Link>
         </div>
         <div className="nav-actions">
           <Link className="nav-login" to="/login">Login</Link>
@@ -97,10 +110,11 @@ export default function Homepage() {
         {/* Hero Card */}
         <section className="homepage-hero" id="features">
           <div className="homepage-copy">
+            <img className="homepage-logo" src="/ILES-Logo.png" alt="ILES logo" onError={(e) => { e.target.style.display = 'none' }} />
             <h1>Internship Logging &amp; Evaluation System</h1>
             <p>Streamline internship supervision, logging, and evaluations for students, supervisors, and administrators.</p>
             <div className="homepage-actions">
-              <Link className="homepage-primary-button" to="/signup">Get Started &raquo;</Link>
+              <Link className="homepage-primary-button" to="/signup">Get Started »</Link>
             </div>
           </div>
           <div className="homepage-features">
@@ -131,6 +145,7 @@ export default function Homepage() {
                 <p>Manage placements, approvals, and system workflows from one place.</p>
               </div>
             </article>
+            {/* About & Help cards removed per user request */}
           </div>
         </section>
 
@@ -190,6 +205,60 @@ export default function Homepage() {
             <div className="stat-item">
               <span className="stat-num">4</span>
               <span className="stat-lbl">User roles</span>
+            </div>
+          </div>
+
+          {/* Contact Card */}
+          <div className="contact-card-section" id="contact">
+            <div className="contact-card-header">
+              <h2>Get in Touch</h2>
+              <p>Reach out to our core team for support and inquiries</p>
+            </div>
+            <div className="contact-cards-grid">
+              <div className="contact-card">
+                <div className="contact-card-top">
+                  <div className="contact-card-image">
+                    <img src={gwaiffeImage} alt="Gwaiffe Mark" />
+                  </div>
+                  <div className="contact-card-info">
+                    <h3>Gwaiffe Mark</h3>
+                    <span className="contact-card-role">Product Lead</span>
+                  </div>
+                </div>
+                <div className="contact-card-body">
+                  <hr className="card-sep" />
+                  <div className="contact-method">
+                    <svg className="contact-method-icon" viewBox="0 0 24 24" width="18" height="18"><path fill="#10b981" d="M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4z"/></svg>
+                    <a href="https://wa.me/256787870644" target="_blank" rel="noreferrer" className="contact-method-link">WhatsApp</a>
+                  </div>
+                  <div className="contact-method">
+                    <svg className="contact-method-icon" viewBox="0 0 24 24" width="18" height="18"><path fill="#94a3b8" d="M6.62 10.79a15.05 15.05 0 006.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1C10.29 21 3 13.71 3 4.99 3 4.45 3.45 4 4 4h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.24 1.02l-2.21 2.2z"/></svg>
+                    <a href="tel:+256787870644" className="contact-method-link">+256787870644</a>
+                  </div>
+                </div>
+              </div>
+              <div className="contact-card">
+                <div className="contact-card-top">
+                  <div className="contact-card-image">
+                    <img src={gideonImage} alt="Mugabe Gideon" />
+                  </div>
+                  <div className="contact-card-info">
+                    <h3>Mugabe Gideon</h3>
+                    <span className="contact-card-role">Backend Engineer</span>
+                  </div>
+                </div>
+                <div className="contact-card-body">
+                  <hr className="card-sep" />
+                  <div className="contact-method">
+                    <svg className="contact-method-icon" viewBox="0 0 24 24" width="18" height="18"><path fill="#10b981" d="M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4z"/></svg>
+                    <a href="https://wa.me/256772224117" target="_blank" rel="noreferrer" className="contact-method-link">WhatsApp</a>
+                  </div>
+                  <div className="contact-method">
+                    <svg className="contact-method-icon" viewBox="0 0 24 24" width="18" height="18"><path fill="#94a3b8" d="M6.62 10.79a15.05 15.05 0 006.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1C10.29 21 3 13.71 3 4.99 3 4.45 3.45 4 4 4h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.24 1.02l-2.21 2.2z"/></svg>
+                    <a href="tel:+256772224117" className="contact-method-link">+256772224117</a>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
 

@@ -5,7 +5,7 @@ import { getErrorMessage } from '@/api/api'
 import { roleToHomePath } from '@/routes/roleRedirect'
 
 function Activate() {
-  const { api, authenticateWithTokens, user } = useAuth()
+  const { api, authenticateWithTokens } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
   const [status, setStatus] = useState('pending')

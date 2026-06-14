@@ -8,7 +8,3 @@ export default function App() {
     </BrowserRouter>
   )
 }
-
-//
-
-// split commit: refactor(app): restructure main entry component

@@ -219,5 +219,3 @@ def notify_evaluation_status_changed(evaluation, actor=None, created=False, week
             "evaluation_type": evaluation.evaluation_type,
         },
     )
-
-# split commit: refactor(services): improve notification recipient filtering

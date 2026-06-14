@@ -74,5 +74,3 @@ class EvaluationCriteriaAdmin(admin.ModelAdmin):
 admin.site.register(EvaluationCriteria, EvaluationCriteriaAdmin)
 admin.site.register(Evaluation)
 admin.site.register(Notification, NotificationAdmin)
-
-# split commit: UX(admin): configure admin interface customizations

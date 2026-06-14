@@ -50,7 +50,7 @@ class CustomUser(AbstractUser):
     
     def can_manage_users(self) -> bool:
         """Check if user has permission to manage other users."""
-        return self.is_admin_user() and self.is_active_user()
+        return self.is_admin() and self.is_active_user()
 
 class UserProfile(models.Model):
     """
@@ -653,4 +653,4 @@ class ChatMessage(models.Model):
         ]
 
     def __str__(self):
-        return f"{self.sender.username} -> {self.recipient.username}"# split commit: fix(models): clarify computed status and date handling
+        return f"{self.sender.username} -> {self.recipient.username}"

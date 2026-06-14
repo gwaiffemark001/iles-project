@@ -1,9 +1,8 @@
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { useState } from 'react';
 import { useAuth } from '@/auth/useAuth';
 import { getErrorMessage } from '@/api/api';
 import PasswordField from '@/components/PasswordField';
-import { roleToHomePath } from '../../routes/roleRedirect';
 import { ROLE_OPTIONS, USER_ROLES } from '@/constants/appConstants';
 import '../Login/Login.css';
 
@@ -22,8 +21,7 @@ function Signup() {
     const [staffNumber, setStaffNumber] = useState('');
     const [studentNumber, setStudentNumber] = useState('');
     const [registrationNumber, setRegistrationNumber] = useState('');
-    const navigate = useNavigate();
-    const { register, login } = useAuth();
+    const { register } = useAuth();
     const signupRoleOptions = ROLE_OPTIONS.filter(
         (option) => option.value !== USER_ROLES.ADMIN,
     );

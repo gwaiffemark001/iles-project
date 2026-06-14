@@ -154,7 +154,8 @@ export function ILES() {
       setStatus('Account created successfully.')
       setRegisterData(emptyRegister())
     } catch (err) {
-      // Handle backend validation errors (e.g., {email: [\"Email already exists.\"], phone: [...]})\n      if (err.response?.data && typeof err.response.data === 'object') {
+      // Handle backend validation errors (e.g., {email: ["Email already exists."], phone: [...]})
+      if (err.response?.data && typeof err.response.data === 'object') {
         const backendErrors = err.response.data
         const fieldErrors = {}
         let firstError = ''
@@ -615,5 +616,3 @@ export function ILES() {
 //
 
 export default ILES
-
-// split commit: feat(auth): implement session management and auth forms

@@ -147,11 +147,12 @@ if FORCE_SQLITE:
 
 elif DATABASE_URL:
     # Railway production OR local PostgreSQL
+    # Always enforce SSL for remote PostgreSQL connections (Railway requires it)
     DATABASES = {
         'default': dj_database_url.config(
             default=DATABASE_URL,
-            conn_max_age=600,
-            ssl_require=not DEBUG,  # Require SSL only in production
+            conn_max_age=600,      # Keep connections alive for 10 minutes to prevent peer resets
+            ssl_require=True,      # Always require SSL for PostgreSQL (Railway demands this for secure protocol negotiation)
         )
     }
 elif os.getenv('DB_NAME') and os.getenv('DB_USER'):

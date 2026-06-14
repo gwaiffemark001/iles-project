@@ -726,4 +726,3 @@ class ChatMessageSerializer(serializers.ModelSerializer):
 
     def get_recipient_name(self, obj):
         return obj.recipient.get_full_name() or obj.recipient.username
-# split commit: feat(serializers): add average score computation methods

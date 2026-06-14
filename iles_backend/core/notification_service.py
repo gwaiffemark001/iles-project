@@ -257,5 +257,3 @@ def trigger_manual_notification(recipients, title, message, notification_type, a
         notifications_sent.append(notification)
     
     return notifications_sent
-
-# split commit: feat(notifications): add email and SMS integration

@@ -104,9 +104,6 @@ def validate_password_field(password):
         raise ValidationError('Password must be at least 8 characters long.')
     if not re.search(r'[A-Za-z]', pw) or not re.search(r'\d', pw):
         raise ValidationError('Password must include at least one letter and one digit.')
-    # Optional: enforce a special character
-    # if not re.search(r'[!@#$%^&*(),.?":{}|<>]', pw):
-    #     raise ValidationError('Password must include a special character.')
     return True
 
 
@@ -1683,4 +1680,3 @@ class ChatMessagesView(APIView):
             return recipient.id in student_ids
 
         return False
-# split commit: refactor(views): enhance weekly log status validation
