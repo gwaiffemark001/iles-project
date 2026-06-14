@@ -655,6 +655,24 @@ class EvaluationPolicyTests(TestCase):
         expected_score = (80 * 0.4) + (70 * 0.3) + (90 * 0.3)
         self.assertAlmostEqual(float(response.data['weighted_score']), expected_score, places=1)
 
+    def test_evaluation_list_includes_week_number(self):
+        self.client.force_authenticate(user=self.workplace_supervisor)
+        create_response = self.client.post('/api/evaluations/', {
+            'placement_id': self.placement.id,
+            'week_number': 1,
+            'evaluation_type': 'supervisor',
+            'items': [
+                {'criteria_id': self.technical.id, 'score': 85},
+            ],
+        }, format='json')
+        self.assertEqual(create_response.status_code, status.HTTP_201_CREATED)
+
+        list_response = self.client.get('/api/evaluations/')
+        self.assertEqual(list_response.status_code, status.HTTP_200_OK)
+        self.assertIsInstance(list_response.data, list)
+        self.assertTrue(any(ev.get('week_number') == 1 for ev in list_response.data))
+        self.assertTrue(any(ev.get('evaluation_type') == 'supervisor' for ev in list_response.data))
+
     def test_cannot_create_evaluation_without_weekly_log(self):
         self.client.force_authenticate(user=self.workplace_supervisor)
         response = self.client.post('/api/evaluations/', {

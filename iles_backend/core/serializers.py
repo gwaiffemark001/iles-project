@@ -469,7 +469,7 @@ class EvaluationSerializer(serializers.ModelSerializer):
         write_only=True,
         required=False,
     )
-    week_number = serializers.IntegerField(write_only=True, required=False)
+    week_number = serializers.IntegerField(required=False)
     evaluator = CustomUserSerializer(read_only=True) 
     evaluator_id = serializers.PrimaryKeyRelatedField(
         source="evaluator",
@@ -558,6 +558,9 @@ class EvaluationSerializer(serializers.ModelSerializer):
             expected_type = 'supervisor' if request.user.role == 'workplace_supervisor' else 'academic'
             attrs['evaluation_type'] = expected_type
             evaluation_type = expected_type
+
+        if week_number is None:
+            raise serializers.ValidationError({'week_number': ['Week number is required.']})
 
         if placement and evaluation_type and week_number:
             # Ensure weekly log exists for this placement/week

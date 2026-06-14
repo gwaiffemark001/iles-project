@@ -263,94 +263,22 @@ function AdminDashboard() {
   }
 
   const fetchPlacementWeeklySummary = (placement) => {
-    // Filter evaluations for this placement - try both placement?.id and placement_id
     const placementEvaluations = evaluations.filter((evaluation) => {
       const evalPlacementId = evaluation.placement?.id ?? evaluation.placement_id
       return evalPlacementId === placement.id
     })
 
-    // placement debug info (hidden)
+    const { weeklySummaries: placementWeeklySummaries, averageScore } = buildWeeklyEvaluationSummaries(
+      placementEvaluations,
+      [placement],
+      [],
+      criteria,
+    )
 
-    const weekNumbers = Array.from(new Set(placementEvaluations.map((evaluation) => evaluation.week_number).filter((weekNumber) => weekNumber !== undefined && weekNumber !== null)))
-      .sort((left, right) => left - right)
-
-    // week numbers found
-
-    const summary = {
-      weeks: weekNumbers.map((weekNumber) => {
-        const supervisorEvaluation = placementEvaluations.find((evaluation) => evaluation.week_number === weekNumber && evaluation.evaluation_type === 'supervisor')
-        const academicEvaluation = placementEvaluations.find((evaluation) => evaluation.week_number === weekNumber && evaluation.evaluation_type === 'academic')
-
-        // week evaluation debug info (hidden)
-
-        const criteriaBreakdown = criteria.map((criterion) => {
-          const supervisorItem = supervisorEvaluation?.items?.find((item) => item.criteria?.id === criterion.id)
-          const academicItem = academicEvaluation?.items?.find((item) => item.criteria?.id === criterion.id)
-          const supervisorScore = supervisorItem?.score ?? null
-          const academicScore = academicItem?.score ?? null
-          const maxScore = Number(criterion.max_score || 0)
-          const weightPercent = Number(criterion.weight_percent || 0)
-          const supervisorShare = Number(criterion.supervisor_share || 0)
-          const academicShare = Number(criterion.academic_share || 0)
-          // Note: weighted_score already includes weight_percent from backend, so we only apply role shares
-          const supervisorContribution = supervisorScore !== null && maxScore > 0
-            ? ((Number(supervisorScore) / maxScore) * (supervisorShare / 100)) * 100
-            : 0
-          const academicContribution = academicScore !== null && maxScore > 0
-            ? ((Number(academicScore) / maxScore) * (academicShare / 100)) * 100
-            : 0
-
-          return {
-            criteria_id: criterion.id,
-            criteria_name: criterion.name,
-            max_score: maxScore,
-            weight_percent: weightPercent,
-            supervisor_score: supervisorScore,
-            academic_score: academicScore,
-            supervisor_contribution: Number(supervisorContribution.toFixed(2)),
-            academic_contribution: Number(academicContribution.toFixed(2)),
-            total_contribution: Number((supervisorContribution + academicContribution).toFixed(2)),
-          }
-        })
-
-        // Calculate supervisor and academic total scores from criteria items
-        let supervisorTotalScore = null
-        let academicTotalScore = null
-
-        if (supervisorEvaluation?.items?.length > 0) {
-          supervisorTotalScore = Number((supervisorEvaluation.items.reduce((total, item) => total + (Number(item.score) || 0), 0) / supervisorEvaluation.items.length).toFixed(2))
-        } else if (supervisorEvaluation?.score != null) {
-          // Fallback to the evaluation's score field if items are empty
-          supervisorTotalScore = Number(supervisorEvaluation.score)
-        }
-
-        if (academicEvaluation?.items?.length > 0) {
-          academicTotalScore = Number((academicEvaluation.items.reduce((total, item) => total + (Number(item.score) || 0), 0) / academicEvaluation.items.length).toFixed(2))
-        } else if (academicEvaluation?.score != null) {
-          // Fallback to the evaluation's score field if items are empty
-          academicTotalScore = Number(academicEvaluation.score)
-        }
-
-        // Combined score is the sum of all contributions from criteria breakdown
-        const combinedScore = Number((criteriaBreakdown.reduce((total, cb) => total + Number(cb.total_contribution || 0), 0)).toFixed(2))
-
-        return {
-          week_number: weekNumber,
-          supervisor_score: supervisorTotalScore,
-          academic_score: academicTotalScore,
-          combined_score: combinedScore,
-          criteria_breakdown: criteriaBreakdown,
-        }
-      }),
-      average: null,
-    }
-
-    summary.average = summary.weeks.length > 0
-      ? Number((summary.weeks.reduce((total, week) => total + week.combined_score, 0) / summary.weeks.length).toFixed(2))
-      : null
-
-    // final summary computed 
-    setWeeklySummary(summary)
+    setWeeklySummary({
+      weeks: placementWeeklySummaries,
+      average: averageScore,
+    })
     setSelectedPlacementForWeekly(placement)
     setShowWeeklyModal(true)
   }

@@ -147,15 +147,15 @@ const AcademicSupervisorDashboard = () => {
     const students = getStudentsData();
     return {
       assignedStudents: students.length,
-      logsSubmitted: students.reduce((acc, student) => acc + student.logs, 0),
+      logsSubmitted: logs.filter((log) => log.status === 'submitted').length,
       evaluationsCompleted: evaluations.filter(
         (evaluation) =>
           evaluation.evaluation_type === 'academic'
           && Number(evaluation.evaluator?.id ?? evaluation.evaluator_id) === Number(user?.id),
       ).length,
-      pendingReviews: students.reduce((acc, student) => acc + student.pendingLogs, 0),
-      reviewedLogs: students.reduce((acc, student) => acc + student.reviewedLogs, 0),
-      approvedLogs: students.reduce((acc, student) => acc + student.approvedLogs, 0),
+      pendingReviews: logs.filter((log) => log.status === 'submitted').length,
+      reviewedLogs: logs.filter((log) => log.status === 'reviewed').length,
+      approvedLogs: logs.filter((log) => log.status === 'approved').length,
     };
   };
 
