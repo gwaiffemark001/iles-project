@@ -95,6 +95,126 @@
   line-height: 1.7;
 }
 
+.homepage-team-section {
+  width: min(1120px, 100%);
+  margin-top: 42px;
+  padding: 36px 40px 28px;
+  border-radius: 28px;
+  background: rgba(15, 23, 42, 0.84);
+  border: 1px solid rgba(148, 163, 184, 0.18);
+}
+
+.team-header {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 28px;
+}
+
+.team-header p {
+  margin: 0;
+  color: #93c5fd;
+  font-size: 0.95rem;
+  text-transform: uppercase;
+  letter-spacing: 0.2em;
+}
+
+.team-header h2 {
+  margin: 0;
+  font-size: clamp(2rem, 3.5vw, 2.8rem);
+}
+
+.team-cards {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(220px, 1fr));
+  gap: 22px;
+}
+
+.team-card {
+  display: grid;
+  grid-template-rows: auto 1fr;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(148, 163, 184, 0.14);
+  border-radius: 24px;
+  overflow: hidden;
+  min-height: 280px;
+}
+
+.team-card-image {
+  min-height: 170px;
+  background: linear-gradient(135deg, rgba(37, 99, 235, 0.15), rgba(15, 23, 42, 0.75));
+  display: grid;
+  place-items: center;
+}
+
+.team-card-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.team-card-body {
+  padding: 22px;
+  display: grid;
+  gap: 10px;
+}
+
+.team-card-body h3 {
+  margin: 0;
+  font-size: 1.15rem;
+}
+
+.team-card-body p {
+  margin: 0;
+  color: #cbd5e1;
+  line-height: 1.6;
+}
+
+.team-card-contact {
+  color: #94a3b8;
+  font-size: 0.95rem;
+}
+
+.team-card-body a {
+  color: #7dd3fc;
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.team-card-highlight {
+  display: inline-block;
+  margin-top: 8px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: rgba(59, 130, 246, 0.14);
+  color: #bfdbfe;
+  font-size: 0.9rem;
+}
+
+.homepage-footer {
+  margin-top: 32px;
+  padding-top: 1px;
+  border-top: 1px solid rgba(148, 163, 184, 0.12);
+}
+
+.homepage-footer p {
+  margin: 0;
+  color: #94a3b8;
+  font-size: 0.95rem;
+}
+
+@media (max-width: 1024px) {
+  .team-cards {
+    grid-template-columns: repeat(2, minmax(220px, 1fr));
+  }
+}
+
+@media (max-width: 720px) {
+  .team-cards {
+    grid-template-columns: 1fr;
+  }
+}
+
 @media (max-width: 900px) {
   .homepage-hero {
     grid-template-columns: 1fr;

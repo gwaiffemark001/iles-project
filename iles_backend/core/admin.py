@@ -1,6 +1,25 @@
+from datetime import date
+
+from django import forms
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 from .models import CustomUser, InternshipPlacement, WeeklyLog, EvaluationCriteria, Evaluation, Notification
+
+
+class PlacementAdminForm(forms.ModelForm):
+    class Meta:
+        model = InternshipPlacement
+        fields = '__all__'
+        widgets = {
+            'start_date': forms.DateInput(attrs={'type': 'date'}),
+            'end_date': forms.DateInput(attrs={'type': 'date'}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        today = date.today().isoformat()
+        self.fields['start_date'].widget.attrs['min'] = today
+
 
 class CustomUserAdmin(UserAdmin):
     fieldsets = UserAdmin.fieldsets + (
@@ -25,6 +44,7 @@ class WeeklyLogAdmin(admin.ModelAdmin):
     search_fields = ['placement__student__username']
 
 class PlacementAdmin(admin.ModelAdmin):
+    form = PlacementAdminForm
     list_display = ['student', 'company_name', 'status', 'start_date', 'end_date']
     list_filter = ['status']
     search_fields = ['student__username', 'company_name']

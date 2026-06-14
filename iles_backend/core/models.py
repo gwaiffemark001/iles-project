@@ -143,6 +143,13 @@ class InternshipPlacement(models.Model):
                 'end_date': 'End date must be after start date.'
             })
 
+        # Prevent admin from creating placements that start in the past.
+        today = timezone.now().date()
+        if self.start_date and self.start_date < today:
+            raise ValidationError({
+                'start_date': 'Start date cannot be in the past.'
+            })
+
     def sync_status_from_dates(self):
         """Keep the stored status aligned with the placement dates."""
         start_date = self.start_date if not isinstance(self.start_date, str) else parse_date(self.start_date)
