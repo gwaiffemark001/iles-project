@@ -104,6 +104,29 @@
   border: 1px solid rgba(148, 163, 184, 0.18);
 }
 
+.main-card {
+  display: grid;
+  gap: 20px;
+}
+
+.inner-card {
+  background: rgba(255,255,255,0.03);
+  border-radius: 16px;
+  padding: 18px;
+  border: 1px solid rgba(148,163,184,0.06);
+}
+
+.system-card {
+  display:flex;
+  gap:18px;
+  align-items:center;
+}
+
+.system-card-left { flex: 0 0 84px }
+.system-card-logo { width:64px; height:64px }
+.system-card-right h2 { margin:0; font-size:1.6rem }
+.system-card-right p { margin:8px 0 0; color:#cbd5e1 }
+
 .team-header {
   display: flex;
   flex-direction: column;
