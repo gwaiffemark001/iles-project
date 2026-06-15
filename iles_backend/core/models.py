@@ -143,6 +143,20 @@ class InternshipPlacement(models.Model):
                 'end_date': 'End date must be after start date.'
             })
 
+        # Enforce that newly created placements cannot have a start date before today.
+        # Existing placements with past start dates are preserved to avoid breaking historical data,
+        # but new saves must use today or a future date.
+        try:
+            today = timezone.now().date()
+        except Exception:
+            from django.utils import timezone as _tz
+            today = _tz.now().date()
+
+        if self.start_date and (self.pk is None) and self.start_date < today:
+            raise ValidationError({
+                'start_date': 'Start date cannot be before today.'
+            })
+
     def sync_status_from_dates(self):
         """Keep the stored status aligned with the placement dates."""
         start_date = self.start_date if not isinstance(self.start_date, str) else parse_date(self.start_date)

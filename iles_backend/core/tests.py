@@ -262,8 +262,9 @@ class PermissionTests(TestCase):
             academic_supervisor=academic_supervisor,
             company_name='Existing Company',
             company_address='Kampala',
-            start_date='2026-01-01',
-            end_date='2026-03-01',
+            # use today-based dates so model validation (no past start_date on create) passes
+            start_date=timezone.now().date(),
+            end_date=timezone.now().date() + timedelta(days=60),
             status='active',
         )
 
@@ -464,14 +465,15 @@ class NotificationWorkflowTests(TestCase):
         self.assertEqual(Notification.objects.filter(notification_type='placement_created').count(), 9)
 
     def test_placement_status_update_creates_notifications(self):
+        today = timezone.now().date()
         placement = InternshipPlacement.objects.create(
             student=self.student,
             workplace_supervisor=self.workplace_supervisor,
             academic_supervisor=self.academic_supervisor,
             company_name='Makerere Innovation Hub',
             company_address='Kampala',
-            start_date='2026-05-01',
-            end_date='2026-07-31',
+            start_date=today,
+            end_date=today + timedelta(days=76),
             status='pending',
         )
 
@@ -482,8 +484,8 @@ class NotificationWorkflowTests(TestCase):
             'academic_supervisor_id': self.academic_supervisor.id,
             'company_name': 'Makerere Innovation Hub',
             'company_address': 'Kampala',
-            'start_date': '2026-05-01',
-            'end_date': '2026-07-31',
+            'start_date': str(today),
+            'end_date': str(today + timedelta(days=76)),
             'status': 'active',
         }, format='json')
 
@@ -561,14 +563,16 @@ class WeeklyLogPolicyTests(TestCase):
             password='pass123',
             role='academic_supervisor'
         )
+        # ensure start_date is today or future so model create validation passes
+        today = timezone.now().date()
         self.placement = InternshipPlacement.objects.create(
             student=self.student,
             workplace_supervisor=self.workplace_supervisor,
             academic_supervisor=self.academic_supervisor,
             company_name='Policy Co',
             company_address='Kampala',
-            start_date='2026-05-01',
-            end_date='2026-06-30',
+            start_date=today,
+            end_date=today + timedelta(days=45),
             status='active',
         )
 
@@ -579,7 +583,8 @@ class WeeklyLogPolicyTests(TestCase):
             activities='Work',
             status='draft',
         )
-        self.assertEqual(str(log.deadline), '2026-05-07')
+        expected_deadline = str(self.placement.start_date + timedelta(days=6))
+        self.assertEqual(str(log.deadline), expected_deadline)
 
     def test_student_cannot_submit_after_deadline(self):
         # Keep placement active, but set week 1 deadline in the past.
@@ -749,8 +754,8 @@ class EvaluationPolicyTests(TestCase):
             academic_supervisor=self.academic_supervisor,
             company_name='Eval Co',
             company_address='Kampala',
-            start_date='2026-05-01',
-            end_date='2026-06-30',
+            start_date=timezone.now().date(),
+            end_date=timezone.now().date() + timedelta(days=45),
             status='active',
         )
         WeeklyLog.objects.create(
