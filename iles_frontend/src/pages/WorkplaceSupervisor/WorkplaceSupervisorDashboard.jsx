@@ -55,7 +55,7 @@ function normalizePlacement(placement, logs, evaluations) {
     evaluatedAt: supervisorEvaluation?.evaluated_at || null,
   }
 }
-
+'no comment'
 export default function WorkplaceSupervisorDashboard() {
   const location = useLocation()
   const navigate = useNavigate()
