@@ -50,7 +50,7 @@ const Modal = ({
             <h3>{title}</h3>
             {showCloseButton && (
               <button className="modal-close" onClick={onClose}>
-                ×
+                ✓
               </button>
             )}
           </div>

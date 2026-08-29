@@ -1198,7 +1198,7 @@ function AdminDashboard() {
                   cursor: 'pointer',
                 }}
               >
-                ×
+                ✓
               </button>
             </div>
 
@@ -1421,7 +1421,7 @@ function AdminDashboard() {
                   cursor: 'pointer',
                 }}
               >
-                ×
+                ✓
               </button>
             </div>
 
