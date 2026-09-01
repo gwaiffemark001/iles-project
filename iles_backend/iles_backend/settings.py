@@ -22,7 +22,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # ─────────────────────────────────────────────
 
 SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-fallback-key-change-in-production')
-DEBUG = os.getenv('DEBUG', 'False') == 'True'
+DEBUG = True
 
 # Allow Railway domains and localhost
 ALLOWED_HOSTS = [
