@@ -219,7 +219,19 @@ class WeeklyLogListView(APIView):
         # Allow filtering by week: /api/logs/?week=3
         week_filter = request.query_params.get('week')
         if week_filter:
-            logs = logs.filter(week_number=week_filter)
+            try:
+                week_number = int(week_filter)
+            except (TypeError, ValueError):
+                return Response(
+                    {'error': 'week must be a positive integer'},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            if week_number < 1:
+                return Response(
+                    {'error': 'week must be a positive integer'},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            logs = logs.filter(week_number=week_number)
 
         serializer = WeeklyLogSerializer(logs, many=True)
         return Response(serializer.data) 

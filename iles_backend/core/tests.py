@@ -194,6 +194,14 @@ class WeeklyLogTests(TestCase):
         response = self.client.get('/api/logs/')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
+    def test_logs_endpoint_rejects_invalid_week_filter(self):
+        self.client.force_authenticate(user=self.student)
+        for week in ('not-a-number', '0', '-1'):
+            with self.subTest(week=week):
+                response = self.client.get('/api/logs/', {'week': week})
+                self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+                self.assertEqual(response.data['error'], 'week must be a positive integer')
+
     @patch('core.views.verify_email_exists', return_value=True)
     def test_student_registration_with_valid_password_succeeds(self, mock_verify_email_exists):
         response = self.client.post('/api/register/', {
